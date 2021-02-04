@@ -5,3 +5,5 @@ nose==1.3.7
 splinter>=0.13.0
 -e git+https://github.com/ckan/ckanapi@ckanapi-4.3#egg=ckanapi
 pyfakefs==2.7
+pytest~=4.6.5
+pytest-cov~=2.7.1

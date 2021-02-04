@@ -51,7 +51,7 @@ jobs:
     - name: Install requirements
       run: |
         pip install -r dev-requirements.txt
-        pip install -r pip-requirements.txt
+        #pip install -r pip-requirements.txt
         pip install -e .
         # Replace default path to CKAN core config file with the one on the container
         sed -i -e 's/use = config:.*/use = config:\/srv\/app\/src\/ckan\/test-core.ini/' test.ini
@@ -68,6 +68,6 @@ jobs:
         paster --plugin=ckan db init -c test.ini
     - name: Run all tests
       run: pytest --ckan-ini=test.ini --cov=ckanext.validation ckanext/validation/tests
-#    - name: Run BDD tests
-#      run: |
-#        behave ${*:-/app/test/features} --tags=-format_autocomplete || [ "${ALLOW_BDD_FAIL:-0}" -eq 1
+    - name: Run BDD tests
+      run: |
+        behave ${*:-/app/test/features} --tags=-format_autocomplete || [ "${ALLOW_BDD_FAIL:-0}" -eq 1
