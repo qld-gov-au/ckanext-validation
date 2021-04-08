@@ -1,4 +1,4 @@
-from six import builtins
+from six.moves import builtins
 import cgi
 import functools
 import mock
