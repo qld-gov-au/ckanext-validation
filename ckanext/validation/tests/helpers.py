@@ -1,4 +1,4 @@
-import __builtin__ as builtins
+from six import builtins
 import cgi
 import functools
 import mock

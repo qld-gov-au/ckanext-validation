@@ -1,5 +1,5 @@
 import datetime
-import StringIO
+from six import StringIO
 import io
 import json
 

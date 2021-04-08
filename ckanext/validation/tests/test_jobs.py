@@ -1,5 +1,5 @@
 import mock
-import StringIO
+from six import StringIO
 import json
 import io
 
