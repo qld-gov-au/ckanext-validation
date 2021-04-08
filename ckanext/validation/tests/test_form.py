@@ -7,9 +7,21 @@ from nose.tools import assert_in, assert_equals
 
 from ckantoolkit.tests.factories import Sysadmin, Dataset
 from ckantoolkit.tests.helpers import (
-    FunctionalTestBase, submit_and_follow, webtest_submit, call_action,
+    FunctionalTestBase, call_action,
     reset_db
 )
+
+try:
+    # CKAN 2.8
+    from ckantoolkit.tests.helpers import submit_and_follow, webtest_submit
+except ImportError:
+    # CKAN 2.9 should be able to use webtest functions directly
+    def submit_and_follow(app, form, extra_environ=None, name=None,
+                          value=None, **args):
+        return form.submit(name, value=value, **args).follow()
+
+    def webtest_submit(form, name=None, index=None, value=None, **args):
+        return form.submit(name, value=value, **args)
 
 from ckanext.validation.model import create_tables, tables_exist
 from ckanext.validation.tests.helpers import (
