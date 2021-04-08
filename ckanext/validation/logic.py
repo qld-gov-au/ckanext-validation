@@ -95,8 +95,8 @@ def resource_validation_run(context, data_dict):
     # Ensure format is supported
     if not resource.get(u'format', u'').lower() in settings.SUPPORTED_FORMATS:
         raise t.ValidationError(
-            {u'format': u'Unsupported resource format.' +
-             u'Must be one of {}'.format(
+            {u'format': u'Unsupported resource format.'
+             + u'Must be one of {}'.format(
                  u','.join(settings.SUPPORTED_FORMATS))})
 
     # Ensure there is a URL or file upload
@@ -387,8 +387,8 @@ def _update_search_params(search_data_dict, user_search_params=None):
         else:
             search_data_dict['fq'] = user_search_params['fq']
 
-    if (user_search_params.get('fq_list') and
-            isinstance(user_search_params['fq_list'], list)):
+    if (user_search_params.get('fq_list')
+            and isinstance(user_search_params['fq_list'], list)):
         search_data_dict['fq_list'].extend(user_search_params['fq_list'])
 
 
@@ -492,9 +492,9 @@ def resource_create(context, data_dict):
 
         if run_validation:
             is_local_upload = (
-                hasattr(upload, 'filename') and
-                upload.filename is not None and
-                isinstance(upload, uploader.ResourceUpload))
+                hasattr(upload, 'filename')
+                and upload.filename is not None
+                and isinstance(upload, uploader.ResourceUpload))
             _run_sync_validation(
                 resource_id, local_upload=is_local_upload, new_resource=True)
 
@@ -564,8 +564,8 @@ def resource_update(context, data_dict):
         raise t.ObjectNotFound(t._('Resource was not found.'))
 
     # Persist the datastore_active extra if already present and not provided
-    if ('datastore_active' in resource.extras and
-            'datastore_active' not in data_dict):
+    if ('datastore_active' in resource.extras
+            and 'datastore_active' not in data_dict):
         data_dict['datastore_active'] = resource.extras['datastore_active']
 
     for plugin in plugins.PluginImplementations(plugins.IResourceController):
@@ -608,9 +608,9 @@ def resource_update(context, data_dict):
 
         if run_validation:
             is_local_upload = (
-                hasattr(upload, 'filename') and
-                upload.filename is not None and
-                isinstance(upload, uploader.ResourceUpload))
+                hasattr(upload, 'filename')
+                and upload.filename is not None
+                and isinstance(upload, uploader.ResourceUpload))
             _run_sync_validation(
                 id, local_upload=is_local_upload, new_resource=True)
 
