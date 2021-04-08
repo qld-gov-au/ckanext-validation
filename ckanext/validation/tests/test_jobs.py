@@ -27,6 +27,8 @@ class MockUploader(ResourceUpload):
 
 
 def mock_get_resource_uploader(data_dict):
+    if 'url' not in data_dict:
+        data_dict['url'] = 'http://example.com'
     return MockUploader(data_dict)
 
 
