@@ -206,7 +206,7 @@ class TestValidationJob(object):
     def test_job_local_paths_are_hidden(self, mock_open):
 
         invalid_csv = 'id,type\n' + '1,a,\n' * 1010
-        invalid_file = StringIO.StringIO()
+        invalid_file = StringIO()
 
         invalid_file.write(invalid_csv)
 
@@ -246,7 +246,7 @@ a,b,c
             'skip_rows': ['#']
         }
 
-        invalid_file = StringIO.StringIO()
+        invalid_file = StringIO()
 
         invalid_file.write(invalid_csv)
 
@@ -283,7 +283,7 @@ a;b;c
             "skip_rows": ["#"]
         }'''
 
-        invalid_file = StringIO.StringIO()
+        invalid_file = StringIO()
 
         invalid_file.write(invalid_csv)
 

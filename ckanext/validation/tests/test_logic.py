@@ -459,7 +459,7 @@ class TestResourceValidationOnCreate(FunctionalTestBase):
     @mock_uploads
     def test_validation_fails_on_upload(self, mock_open):
 
-        invalid_file = StringIO.StringIO()
+        invalid_file = StringIO()
         invalid_file.write(INVALID_CSV)
 
         mock_upload = MockFieldStorage(invalid_file, 'invalid.csv')
@@ -486,7 +486,7 @@ class TestResourceValidationOnCreate(FunctionalTestBase):
     @mock_uploads
     def test_validation_fails_no_validation_object_stored(self, mock_open):
 
-        invalid_file = StringIO.StringIO()
+        invalid_file = StringIO()
         invalid_file.write(INVALID_CSV)
 
         mock_upload = MockFieldStorage(invalid_file, 'invalid.csv')
@@ -514,7 +514,7 @@ class TestResourceValidationOnCreate(FunctionalTestBase):
     @mock_uploads
     def test_validation_passes_on_upload(self, mock_open):
 
-        invalid_file = StringIO.StringIO()
+        invalid_file = StringIO()
         invalid_file.write(VALID_CSV)
 
         mock_upload = MockFieldStorage(invalid_file, 'invalid.csv')
@@ -576,7 +576,7 @@ class TestResourceValidationOnUpdate(FunctionalTestBase):
             }
         ])
 
-        invalid_file = StringIO.StringIO()
+        invalid_file = StringIO()
         invalid_file.write(INVALID_CSV)
 
         mock_upload = MockFieldStorage(invalid_file, 'invalid.csv')
@@ -607,7 +607,7 @@ class TestResourceValidationOnUpdate(FunctionalTestBase):
             }
         ])
 
-        invalid_file = StringIO.StringIO()
+        invalid_file = StringIO()
         invalid_file.write(INVALID_CSV)
 
         mock_upload = MockFieldStorage(invalid_file, 'invalid.csv')
@@ -638,7 +638,7 @@ class TestResourceValidationOnUpdate(FunctionalTestBase):
             }
         ])
 
-        valid_file = StringIO.StringIO()
+        valid_file = StringIO()
         valid_file.write(INVALID_CSV)
 
         mock_upload = MockFieldStorage(valid_file, 'valid.csv')
@@ -752,7 +752,7 @@ class TestSchemaFields(FunctionalTestBase):
     @mock_uploads
     def test_schema_upload_field(self, mock_open):
 
-        schema_file = StringIO.StringIO('{"fields":[{"name":"category"}]}')
+        schema_file = StringIO('{"fields":[{"name":"category"}]}')
 
         mock_upload = MockFieldStorage(schema_file, 'schema.json')
 
