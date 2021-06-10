@@ -34,7 +34,7 @@ COPY .docker/scripts/ckan_cli ${APP_DIR}/bin/
 # Add current extension and files.
 COPY ckanext $WORKDIR/ckanext
 
-COPY requirements.txt dev-requirements.txt setup.py $WORKDIR/
+COPY requirements.txt dev-requirements.txt setup.cfg setup.py .flake8 $WORKDIR/
 
 RUN fix-permissions $WORKDIR/ckan \
     && chmod +x $WORKDIR/scripts/*.sh\

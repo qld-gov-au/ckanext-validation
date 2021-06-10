@@ -6,12 +6,12 @@
 set -e
 
 CKAN_ACTION_URL=http://ckan:3000/api/action
-CURL="curl -L -s --header 'Authorization: ${API_KEY}'"
 
 . ${APP_DIR}/bin/activate
 
 # We know the "admin" sysadmin account exists, so we'll use her API KEY to create further data
 API_KEY=$(ckan_cli user admin | tr -d '\n' | sed -r 's/^(.*)apikey=(\S*)(.*)/\2/')
+CURL="curl -L -s --header 'Authorization: ${API_KEY}'"
 
 # Creating test data hierarchy which creates organisations assigned to datasets
 ckan_cli create-test-data hierarchy
