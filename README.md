@@ -1,4 +1,7 @@
-# ckanext-validation
+[![Tests](https://github.com/qld-gov-au/ckanext-validation/actions/workflows/test.yml/badge.svg)](https://github.com/qld-gov-au/ckanext-validation/actions/workflows/test.yml)
+==================
+ckanext-validation
+==================
 
 [![Build Status](https://travis-ci.org/frictionlessdata/ckanext-validation.svg?branch=master)](https://travis-ci.org/frictionlessdata/ckanext-validation)
 [![Coverage Status](https://coveralls.io/repos/github/frictionlessdata/ckanext-validation/badge.svg?branch=master)](https://coveralls.io/github/frictionlessdata/ckanext-validation?branch=master)
