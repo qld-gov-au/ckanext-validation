@@ -4,10 +4,10 @@
 #
 set -e
 
-. /app/ckan/default/bin/activate
-
-pip install -r "/app/requirements.txt"
-pip install -r "/app/dev-requirements.txt"
+. ${APP_DIR}/bin/activate
+cd $WORKDIR
+pip install -r "requirements.txt"
+pip install -r "dev-requirements.txt"
 python setup.py develop
 installed_name=$(grep '^\s*name=' setup.py |sed "s|[^']*'\([-a-zA-Z0-9]*\)'.*|\1|")
 

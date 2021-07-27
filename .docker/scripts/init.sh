@@ -4,18 +4,20 @@
 #
 set -e
 
-CKAN_INI_FILE=/app/ckan/default/production.ini
 CKAN_USER_NAME="${CKAN_USER_NAME:-admin}"
+CKAN_DISPLAY_NAME="${CKAN_DISPLAY_NAME:-Administrator}"
 CKAN_USER_PASSWORD="${CKAN_USER_PASSWORD:-Password123!}"
 CKAN_USER_EMAIL="${CKAN_USER_EMAIL:-admin@localhost}"
 
-. /app/ckan/default/bin/activate \
-  && cd /app/ckan/default/src/ckan \
-  && paster db clean -c $CKAN_INI_FILE \
-  && paster db init -c $CKAN_INI_FILE \
-  && paster --plugin=ckanext-validation validation init-db -c $CKAN_INI_FILE \
-  && paster --plugin=ckan user add "${CKAN_USER_NAME}" email="${CKAN_USER_EMAIL}" password="${CKAN_USER_PASSWORD}" -c $CKAN_INI_FILE \
-  && paster --plugin=ckan sysadmin add "${CKAN_USER_NAME}" -c $CKAN_INI_FILE
+. ${APP_DIR}/bin/activate
+ckan_cli db clean
+ckan_cli db init
+PASTER_PLUGIN=ckanext-validation ckan_cli validation init-db
+ckan_cli user add "${CKAN_USER_NAME}"\
+ fullname="${CKAN_DISPLAY_NAME}"\
+ email="${CKAN_USER_EMAIL}"\
+ password="${CKAN_USER_PASSWORD}"
+ckan_cli sysadmin add "${CKAN_USER_NAME}"
 
 # Create some base test data
-. /app/scripts/create-test-data.sh
+. $WORKDIR/scripts/create-test-data.sh
