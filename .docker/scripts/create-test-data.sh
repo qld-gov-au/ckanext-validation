@@ -29,11 +29,11 @@ ckan_cli create-test-data hierarchy
 # Creating basic test data which has datasets with resources
 ckan_cli create-test-data
 
-add_user_if_needed organisation_admin organisation_admin@localhost
-add_user_if_needed publisher publisher@localhost
-add_user_if_needed foodie foodie@localhost
-add_user_if_needed group_admin group_admin@localhost
-add_user_if_needed walker walker@localhost
+add_user_if_needed organisation_admin "Organisation Admin" organisation_admin@localhost
+add_user_if_needed publisher "Publisher" publisher@localhost
+add_user_if_needed foodie "Foodie" foodie@localhost
+add_user_if_needed group_admin "Group Admin" group_admin@localhost
+add_user_if_needed walker "Walker" walker@localhost
 
 echo "Updating annakarenina to use department-of-health Organisation:"
 package_owner_org_update=$( \
