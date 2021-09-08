@@ -5,7 +5,7 @@ import datetime
 
 from nose.tools import assert_in, assert_equals
 
-from ckantoolkit.tests.factories import Sysadmin, Dataset
+from ckantoolkit.tests import factories
 from ckantoolkit.tests.helpers import (
     FunctionalTestBase, submit_and_follow, webtest_submit, call_action,
     reset_db
@@ -18,7 +18,7 @@ from ckanext.validation.tests.helpers import (
 
 
 def _get_resource_new_page_as_sysadmin(app, id):
-    user = Sysadmin()
+    user = factories.Sysadmin()
     env = {'REMOTE_USER': user['name'].encode('ascii')}
     response = app.get(
         url='/dataset/new_resource/{}'.format(id),
@@ -28,7 +28,7 @@ def _get_resource_new_page_as_sysadmin(app, id):
 
 
 def _get_resource_update_page_as_sysadmin(app, id, resource_id):
-    user = Sysadmin()
+    user = factories.Sysadmin()
     env = {'REMOTE_USER': user['name'].encode('ascii')}
     response = app.get(
         url='/dataset/{}/resource_edit/{}'.format(id, resource_id),
@@ -43,9 +43,10 @@ class TestResourceSchemaForm(FunctionalTestBase):
         reset_db()
         if not tables_exist():
             create_tables()
+        self.owner_org = factories.Organization(name='test-org')
 
     def test_resource_form_includes_json_fields(self):
-        dataset = Dataset()
+        dataset = factories.Dataset(owner_org=self.owner_org)
 
         app = self._get_test_app()
         env, response = _get_resource_new_page_as_sysadmin(app, dataset['id'])
@@ -56,7 +57,7 @@ class TestResourceSchemaForm(FunctionalTestBase):
         assert_equals(form.fields['schema_url'][0].tag, 'input')
 
     def test_resource_form_create(self):
-        dataset = Dataset()
+        dataset = factories.Dataset(owner_org=self.owner_org)
 
         app = self._get_test_app()
         env, response = _get_resource_new_page_as_sysadmin(app, dataset['id'])
@@ -80,7 +81,7 @@ class TestResourceSchemaForm(FunctionalTestBase):
         assert_equals(dataset['resources'][0]['schema'], value)
 
     def test_resource_form_create_json(self):
-        dataset = Dataset()
+        dataset = factories.Dataset(owner_org=self.owner_org)
 
         app = self._get_test_app()
         env, response = _get_resource_new_page_as_sysadmin(app, dataset['id'])
@@ -105,7 +106,7 @@ class TestResourceSchemaForm(FunctionalTestBase):
 
     @mock_uploads
     def test_resource_form_create_upload(self, mock_open):
-        dataset = Dataset()
+        dataset = factories.Dataset(owner_org=self.owner_org)
 
         app = self._get_test_app()
         env, response = _get_resource_new_page_as_sysadmin(app, dataset['id'])
@@ -130,7 +131,7 @@ class TestResourceSchemaForm(FunctionalTestBase):
         assert_equals(dataset['resources'][0]['schema'], value)
 
     def test_resource_form_create_url(self):
-        dataset = Dataset()
+        dataset = factories.Dataset(owner_org=self.owner_org)
 
         app = self._get_test_app()
         env, response = _get_resource_new_page_as_sysadmin(app, dataset['id'])
@@ -154,7 +155,8 @@ class TestResourceSchemaForm(FunctionalTestBase):
                 {'name': 'department'}
             ]
         }
-        dataset = Dataset(
+        dataset = factories.Dataset(
+            owner_org=self.owner_org,
             resources=[{
                 'url': 'https://example.com/data.csv',
                 'schema': value
@@ -197,7 +199,8 @@ class TestResourceSchemaForm(FunctionalTestBase):
                 {'name': 'department'}
             ]
         }
-        dataset = Dataset(
+        dataset = factories.Dataset(
+            owner_org=self.owner_org,
             resources=[{
                 'url': 'https://example.com/data.csv',
                 'schema': value
@@ -237,7 +240,8 @@ class TestResourceSchemaForm(FunctionalTestBase):
                 {'name': 'department'}
             ]
         }
-        dataset = Dataset(
+        dataset = factories.Dataset(
+            owner_org=self.owner_org,
             resources=[{
                 'url': 'https://example.com/data.csv',
                 'schema': value
@@ -269,7 +273,8 @@ class TestResourceSchemaForm(FunctionalTestBase):
                 {'name': 'department'}
             ]
         }
-        dataset = Dataset(
+        dataset = factories.Dataset(
+            owner_org=self.owner_org,
             resources=[{
                 'url': 'https://example.com/data.csv',
                 'schema': value
@@ -311,9 +316,10 @@ class TestResourceValidationOptionsForm(FunctionalTestBase):
         reset_db()
         if not tables_exist():
             create_tables()
+        self.owner_org = factories.Organization(name='test-org')
 
     def test_resource_form_includes_json_fields(self):
-        dataset = Dataset()
+        dataset = factories.Dataset(owner_org=self.owner_org)
 
         app = self._get_test_app()
         env, response = _get_resource_new_page_as_sysadmin(app, dataset['id'])
@@ -322,7 +328,7 @@ class TestResourceValidationOptionsForm(FunctionalTestBase):
         assert_equals(form.fields['validation_options'][0].tag, 'textarea')
 
     def test_resource_form_create(self):
-        dataset = Dataset()
+        dataset = factories.Dataset(owner_org=self.owner_org)
 
         app = self._get_test_app()
         env, response = _get_resource_new_page_as_sysadmin(app, dataset['id'])
@@ -351,7 +357,8 @@ class TestResourceValidationOptionsForm(FunctionalTestBase):
             'skip_rows': ['#'],
         }
 
-        dataset = Dataset(
+        dataset = factories.Dataset(
+            owner_org=self.owner_org,
             resources=[{
                 'url': 'https://example.com/data.csv',
                 'validation_options': value
@@ -399,7 +406,7 @@ class TestResourceValidationOnCreateForm(FunctionalTestBase):
 
     @mock_uploads
     def test_resource_form_create_valid(self, mock_open):
-        dataset = Dataset()
+        dataset = factories.Dataset(owner_org=self.owner_org)
 
         app = self._get_test_app()
         env, response = _get_resource_new_page_as_sysadmin(app, dataset['id'])
@@ -420,7 +427,7 @@ class TestResourceValidationOnCreateForm(FunctionalTestBase):
 
     @mock_uploads
     def test_resource_form_create_invalid(self, mock_open):
-        dataset = Dataset()
+        dataset = factories.Dataset(owner_org=self.owner_org)
 
         app = self._get_test_app()
         env, response = _get_resource_new_page_as_sysadmin(app, dataset['id'])
@@ -454,11 +461,12 @@ class TestResourceValidationOnUpdateForm(FunctionalTestBase):
     @mock_uploads
     def test_resource_form_update_valid(self, mock_open):
 
-        dataset = Dataset(resources=[
-            {
+        dataset = factories.Dataset(
+            owner_org=self.owner_org,
+            resources=[{
                 'url': 'https://example.com/data.csv'
-            }
-        ])
+            }]
+        )
 
         app = self._get_test_app()
         env, response = _get_resource_update_page_as_sysadmin(
@@ -481,11 +489,12 @@ class TestResourceValidationOnUpdateForm(FunctionalTestBase):
     @mock_uploads
     def test_resource_form_update_invalid(self, mock_open):
 
-        dataset = Dataset(resources=[
-            {
+        dataset = factories.Dataset(
+            owner_org=self.owner_org,
+            resources=[{
                 'url': 'https://example.com/data.csv'
-            }
-        ])
+            }]
+        )
 
         app = self._get_test_app()
         env, response = _get_resource_update_page_as_sysadmin(
@@ -520,13 +529,14 @@ class TestResourceValidationFieldsPersisted(FunctionalTestBase):
 
     def test_resource_form_fields_are_persisted(self):
 
-        dataset = Dataset(resources=[
-            {
+        dataset = factories.Dataset(
+            owner_org=self.owner_org,
+            resources=[{
                 'url': 'https://example.com/data.csv',
                 'validation_status': 'success',
                 'validation_timestamp': datetime.datetime.now().isoformat()
-            }
-        ])
+            }]
+        )
 
         app = self._get_test_app()
         env, response = _get_resource_update_page_as_sysadmin(
