@@ -7,7 +7,17 @@ set -e
 
 CKAN_ACTION_URL=http://ckan:3000/api/action
 
-. ${APP_DIR}/bin/activate
+if [ "$VENV_DIR" != "" ]; then
+  . ${VENV_DIR}/bin/activate
+fi
+
+add_user_if_needed () {
+    echo "Adding user '$2' ($1) with email address [$3]"
+    ckan_cli user "$1" | grep "$1" || ckan_cli user add "$1"\
+        fullname="$2"\
+        email="$3"\
+        password="${4:-Password123!}"
+}
 
 # We know the "admin" sysadmin account exists, so we'll use her API KEY to create further data
 API_KEY=$(ckan_cli user admin | tr -d '\n' | sed -r 's/^(.*)apikey=(\S*)(.*)/\2/')
@@ -19,11 +29,11 @@ ckan_cli create-test-data hierarchy
 # Creating basic test data which has datasets with resources
 ckan_cli create-test-data
 
-ckan_cli user add organisation_admin email=organisation_admin@localhost password="Password123!"
-ckan_cli user add publisher email=publisher@localhost password="Password123!"
-ckan_cli user add foodie email=foodie@localhost password="Password123!"
-ckan_cli user add group_admin email=group_admin@localhost password="Password123!"
-ckan_cli user add walker email=walker@localhost password="Password123!"
+add_user_if_needed organisation_admin email=organisation_admin@localhost
+add_user_if_needed publisher email=publisher@localhost
+add_user_if_needed foodie email=foodie@localhost
+add_user_if_needed group_admin email=group_admin@localhost
+add_user_if_needed walker email=walker@localhost
 
 echo "Updating annakarenina to use department-of-health Organisation:"
 package_owner_org_update=$( \
@@ -74,4 +84,6 @@ walker_update=$( \
 )
 echo ${walker_update}
 
-deactivate
+if [ "$VENV_DIR" != "" ]; then
+  deactivate
+fi
