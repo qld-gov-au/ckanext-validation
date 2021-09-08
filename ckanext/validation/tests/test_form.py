@@ -403,6 +403,7 @@ class TestResourceValidationOnCreateForm(FunctionalTestBase):
         reset_db()
         if not tables_exist():
             create_tables()
+        self.owner_org = factories.Organization(name='test-org')
 
     @mock_uploads
     def test_resource_form_create_valid(self, mock_open):
@@ -457,6 +458,7 @@ class TestResourceValidationOnUpdateForm(FunctionalTestBase):
         reset_db()
         if not tables_exist():
             create_tables()
+        self.owner_org = factories.Organization(name='test-org')
 
     @mock_uploads
     def test_resource_form_update_valid(self, mock_open):
@@ -526,6 +528,7 @@ class TestResourceValidationFieldsPersisted(FunctionalTestBase):
         reset_db()
         if not tables_exist():
             create_tables()
+        self.owner_org = factories.Organization(name='test-org')
 
     def test_resource_form_fields_are_persisted(self):
 
