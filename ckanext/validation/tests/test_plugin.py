@@ -15,6 +15,7 @@ class TestResourceControllerHooksUpdate(object):
         reset_db()
         if not tables_exist():
             create_tables()
+        self.owner_org = factories.Organization(name='test-org')
 
     @change_config('ckanext.validation.run_on_create_async', False)
     @mock.patch('ckanext.validation.logic.enqueue_job')
@@ -22,7 +23,8 @@ class TestResourceControllerHooksUpdate(object):
 
         resource = {'format': 'CSV'}
 
-        dataset = factories.Dataset(resources=[resource])
+        dataset = factories.Dataset(
+            owner_org=self.owner_org['id'], resources=[resource])
 
         dataset['resources'][0]['description'] = 'Some resource'
 
@@ -36,7 +38,8 @@ class TestResourceControllerHooksUpdate(object):
 
         resource = {'format': 'PDF'}
 
-        dataset = factories.Dataset(resources=[resource])
+        dataset = factories.Dataset(
+            owner_org=self.owner_org['id'], resources=[resource])
 
         call_action('resource_update', {}, **dataset['resources'][0])
 
@@ -52,7 +55,8 @@ class TestResourceControllerHooksUpdate(object):
             'url_type': 'upload'
         }
 
-        dataset = factories.Dataset(resources=[resource])
+        dataset = factories.Dataset(
+            owner_org=self.owner_org['id'], resources=[resource])
 
         call_action('resource_update', {}, **dataset['resources'][0])
 
@@ -69,7 +73,8 @@ class TestResourceControllerHooksUpdate(object):
 
         resource = {'format': 'CSV', 'url': 'https://some.url'}
 
-        dataset = factories.Dataset(resources=[resource])
+        dataset = factories.Dataset(
+            owner_org=self.owner_org['id'], resources=[resource])
 
         dataset['resources'][0]['url'] = 'https://some.new.url'
 
@@ -96,7 +101,8 @@ class TestResourceControllerHooksUpdate(object):
             }
         }
 
-        dataset = factories.Dataset(resources=[resource])
+        dataset = factories.Dataset(
+            owner_org=self.owner_org['id'], resources=[resource])
 
         dataset['resources'][0]['schema'] = {
             'fields': [
@@ -149,6 +155,7 @@ class TestResourceControllerHooksCreate(object):
         reset_db()
         if not tables_exist():
             create_tables()
+        self.owner_org = factories.Organization(name='test-org')
 
     @mock.patch('ckanext.validation.logic.enqueue_job')
     def test_validation_does_not_run_on_other_formats(self, mock_enqueue):
@@ -184,7 +191,7 @@ class TestResourceControllerHooksCreate(object):
     @mock.patch('ckanext.validation.logic.enqueue_job')
     def test_validation_does_not_run_when_config_false(self, mock_enqueue):
 
-        dataset = factories.Dataset()
+        dataset = factories.Dataset(owner_org=self.owner_org['id'])
 
         resource = {
             'format': 'CSV',
@@ -203,11 +210,13 @@ class TestPackageControllerHooksCreate(object):
         reset_db()
         if not tables_exist():
             create_tables()
+        self.owner_org = factories.Organization(name='test-org')
 
     @mock.patch('ckanext.validation.logic.enqueue_job')
     def test_validation_does_not_run_on_other_formats(self, mock_enqueue):
 
-        factories.Dataset(resources=[{'format': 'PDF'}])
+        factories.Dataset(
+            owner_org=self.owner_org['id'], resources=[{'format': 'PDF'}])
 
         mock_enqueue.assert_not_called()
 
@@ -215,8 +224,9 @@ class TestPackageControllerHooksCreate(object):
     @mock.patch('ckanext.validation.logic.enqueue_job')
     def test_validation_does_not_run_when_config_false(self, mock_enqueue):
 
-        factories.Dataset(resources=[
-            {'format': 'CSV', 'url': 'http://some.data'}])
+        factories.Dataset(
+            owner_org=self.owner_org['id'], resources=[
+                {'format': 'CSV', 'url': 'http://some.data'}])
 
         mock_enqueue.assert_not_called()
 
@@ -228,7 +238,8 @@ class TestPackageControllerHooksCreate(object):
             'format': 'CSV',
             'url_type': 'upload'
         }
-        factories.Dataset(resources=[resource])
+        factories.Dataset(
+            owner_org=self.owner_org['id'], resources=[resource])
 
         assert_equals(mock_enqueue.call_count, 1)
 
@@ -243,7 +254,8 @@ class TestPackageControllerHooksCreate(object):
             'format': 'CSV',
             'url': 'http://some.data'
         }
-        factories.Dataset(resources=[resource])
+        factories.Dataset(
+            owner_org=self.owner_org['id'], resources=[resource])
 
         assert_equals(mock_enqueue.call_count, 1)
 
@@ -264,7 +276,8 @@ class TestPackageControllerHooksCreate(object):
             'url': 'http://some.doc'
         }
 
-        factories.Dataset(resources=[resource1, resource2])
+        factories.Dataset(
+            owner_org=self.owner_org['id'], resources=[resource1, resource2])
 
         assert_equals(mock_enqueue.call_count, 1)
 
@@ -278,6 +291,7 @@ class TestPackageControllerHooksUpdate(object):
         reset_db()
         if not tables_exist():
             create_tables()
+        self.owner_org = factories.Organization(name='test-org')
 
     @change_config('ckanext.validation.run_on_create_async', False)
     @mock.patch('ckanext.validation.logic.enqueue_job')
@@ -288,7 +302,8 @@ class TestPackageControllerHooksUpdate(object):
             'format': 'CSV',
             'url': 'http://some.data'
         }
-        dataset = factories.Dataset(resources=[resource], id='myid')
+        dataset = factories.Dataset(
+            owner_org=self.owner_org['id'], resources=[resource], id='myid')
 
         mock_enqueue.assert_not_called()
 
@@ -310,7 +325,8 @@ class TestPackageControllerHooksUpdate(object):
             'format': 'CSV',
             'url_type': 'upload'
         }
-        dataset = factories.Dataset(resources=[resource])
+        dataset = factories.Dataset(
+            owner_org=self.owner_org['id'], resources=[resource])
 
         mock_enqueue.assert_not_called()
 
@@ -332,7 +348,8 @@ class TestPackageControllerHooksUpdate(object):
             'format': 'PDF',
             'url': 'http://some.doc'
         }
-        dataset = factories.Dataset(resources=[resource])
+        dataset = factories.Dataset(
+            owner_org=self.owner_org['id'], resources=[resource])
 
         mock_enqueue.assert_not_called()
 
@@ -357,7 +374,8 @@ class TestPackageControllerHooksUpdate(object):
             'url': 'http://some.doc'
         }
 
-        dataset = factories.Dataset(resources=[resource1, resource2])
+        dataset = factories.Dataset(
+            owner_org=self.owner_org['id'], resources=[resource1, resource2])
 
         mock_enqueue.assert_not_called()
 
@@ -380,7 +398,8 @@ class TestPackageControllerHooksUpdate(object):
             'format': 'CSV',
             'url': 'http://some.data'
         }
-        dataset = factories.Dataset(resources=[resource])
+        dataset = factories.Dataset(
+            owner_org=self.owner_org['id'], resources=[resource])
 
         call_action('package_update', {}, **dataset)
 
