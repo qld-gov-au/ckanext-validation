@@ -128,7 +128,7 @@ class TestResourceValidationRun(object):
         resource = {'format': 'CSV', 'url': 'https://some.url'}
 
         dataset = factories.Dataset(
-            owner_org=self.owner_org, resources=[resource])
+            owner_org=self.owner_org['id'], resources=[resource])
 
         timestamp = datetime.datetime.utcnow()
         old_validation = Validation(
