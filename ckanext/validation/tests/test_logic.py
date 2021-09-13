@@ -35,6 +35,8 @@ class TestResourceValidationRun(object):
 
         if not tables_exist():
             create_tables()
+        self.owner_org = factories.Organization(name='test-org')
+        self.test_dataset = factories.Dataset(owner_org=self.owner_org['id'])
 
     def test_resource_validation_run_param_missing(self):
 
@@ -50,7 +52,8 @@ class TestResourceValidationRun(object):
 
     def test_resource_validation_wrong_format(self):
 
-        resource = factories.Resource(format='pdf')
+        resource = factories.Resource(
+            format='pdf', package_id=self.test_dataset['id'])
 
         with assert_raises(t.ValidationError) as e:
 
@@ -60,7 +63,8 @@ class TestResourceValidationRun(object):
 
     def test_resource_validation_no_url_or_upload(self):
 
-        resource = factories.Resource(url='', format='csv')
+        resource = factories.Resource(
+            url='', format='csv', package_id=self.test_dataset['id'])
 
         with assert_raises(t.ValidationError) as e:
 
@@ -71,20 +75,23 @@ class TestResourceValidationRun(object):
     @mock.patch('ckanext.validation.logic.enqueue_job')
     def test_resource_validation_with_url(self, mock_enqueue_job):
 
-        resource = factories.Resource(url='http://example.com', format='csv')
+        resource = factories.Resource(
+            url='http://example.com', format='csv', package_id=self.test_dataset['id'])
 
         call_action('resource_validation_run', resource_id=resource['id'])
 
     @mock.patch('ckanext.validation.logic.enqueue_job')
     def test_resource_validation_with_upload(self, mock_enqueue_job):
 
-        resource = factories.Resource(url='', url_type='upload', format='csv')
+        resource = factories.Resource(
+            url='', url_type='upload', format='csv', package_id=self.test_dataset['id'])
 
         call_action('resource_validation_run', resource_id=resource['id'])
 
     def test_resource_validation_run_starts_job(self):
 
-        resource = factories.Resource(format='csv')
+        resource = factories.Resource(
+            format='csv', package_id=self.test_dataset['id'])
 
         jobs = call_action('job_list')
 
@@ -98,7 +105,8 @@ class TestResourceValidationRun(object):
     def test_resource_validation_creates_validation_object(
             self, mock_enqueue_job):
 
-        resource = factories.Resource(format='csv')
+        resource = factories.Resource(
+            format='csv', package_id=self.test_dataset['id'])
 
         call_action('resource_validation_run', resource_id=resource['id'])
 
@@ -223,6 +231,8 @@ class TestResourceValidationDelete(FunctionalTestBase):
 
         if not tables_exist():
             create_tables()
+        self.owner_org = factories.Organization(name='test-org')
+        self.test_dataset = factories.Dataset(owner_org=self.owner_org['id'])
 
     def test_resource_validation_delete_param_missing(self):
 
@@ -241,7 +251,8 @@ class TestResourceValidationDelete(FunctionalTestBase):
     @change_config('ckanext.validation.run_on_update_async', False)
     def test_resource_validation_delete_removes_object(self):
 
-        resource = factories.Resource(format='csv')
+        resource = factories.Resource(
+            format='csv', package_id=self.test_dataset['id'])
         timestamp = datetime.datetime.utcnow()
         validation = Validation(
             resource_id=resource['id'],
