@@ -37,7 +37,7 @@ class TestValidationJob(object):
         if not tables_exist():
             create_tables()
         self.owner_org = factories.Organization(name='test-org')
-        self.test_dataset = factories.Dataset(private=True, owner_org=self.owner_org['id'])
+        self.test_dataset = factories.Dataset(owner_org=self.owner_org['id'])
         self.test_resource = factories.Resource(
             url='http://example.com/file.csv', format='csv', package_id=self.test_dataset['id'])
 
