@@ -577,7 +577,7 @@ class TestResourceValidationOnUpdate(FunctionalTestBase):
     @mock_uploads
     def test_validation_fails_on_upload(self, mock_open):
 
-        dataset = factories.Dataset(owner_org=self.owner_org, resources=[
+        dataset = factories.Dataset(owner_org=self.owner_org['id'], resources=[
             {
                 'url': 'https://example.com/data.csv'
             }
@@ -608,7 +608,7 @@ class TestResourceValidationOnUpdate(FunctionalTestBase):
     @mock_uploads
     def test_validation_fails_no_validation_object_stored(self, mock_open):
 
-        dataset = factories.Dataset(owner_org=self.owner_org, resources=[
+        dataset = factories.Dataset(owner_org=self.owner_org['id'], resources=[
             {
                 'url': 'https://example.com/data.csv'
             }
@@ -639,7 +639,7 @@ class TestResourceValidationOnUpdate(FunctionalTestBase):
     @mock_uploads
     def test_validation_passes_on_upload(self, mock_open):
 
-        dataset = factories.Dataset(owner_org=self.owner_org, resources=[
+        dataset = factories.Dataset(owner_org=self.owner_org['id'], resources=[
             {
                 'url': 'https://example.com/data.csv'
             }
@@ -668,7 +668,7 @@ class TestResourceValidationOnUpdate(FunctionalTestBase):
                 return_value=VALID_REPORT)
     def test_validation_passes_with_url(self, mock_validate):
 
-        dataset = factories.Dataset(owner_org=self.owner_org, resources=[
+        dataset = factories.Dataset(owner_org=self.owner_org['id'], resources=[
             {
                 'url': 'https://example.com/data.csv'
             }
