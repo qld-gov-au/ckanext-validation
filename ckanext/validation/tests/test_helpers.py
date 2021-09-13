@@ -33,10 +33,15 @@ class TestBadges(object):
 
         reset_db()
 
+    def setUp(self):
+        self.owner_org = factories.Organization(name='test-org')
+        self.test_dataset = factories.Dataset(owner_org=self.owner_org['id'])
+
     def test_get_validation_badge_no_validation(self):
 
         resource = factories.Resource(
             format='CSV',
+            package_id=self.test_dataset['id']
         )
 
         assert_equals(get_validation_badge(resource), '')
@@ -45,6 +50,7 @@ class TestBadges(object):
 
         resource = factories.Resource(
             format='CSV',
+            package_id=self.test_dataset['id'],
             validation_status='success',
             validation_timestamp=datetime.datetime.utcnow()
         )
@@ -61,6 +67,7 @@ class TestBadges(object):
 
         resource = factories.Resource(
             format='CSV',
+            package_id=self.test_dataset['id'],
             validation_status='failure',
             validation_timestamp=datetime.datetime.utcnow()
         )
@@ -77,6 +84,7 @@ class TestBadges(object):
 
         resource = factories.Resource(
             format='CSV',
+            package_id=self.test_dataset['id'],
             validation_status='error',
             validation_timestamp=datetime.datetime.utcnow()
         )
@@ -93,6 +101,7 @@ class TestBadges(object):
 
         resource = factories.Resource(
             format='CSV',
+            package_id=self.test_dataset['id'],
             validation_status='not-sure',
         )
 
