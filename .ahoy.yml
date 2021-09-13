@@ -107,13 +107,13 @@ commands:
     usage: Lint code.
     cmd: |
       ahoy cli "flake8 ${@:-ckanext}" || \
-      [ "${ALLOW_LINT_FAIL:-1}" -eq 1 ]
+      [ "${ALLOW_LINT_FAIL:-0}" -eq 1 ]
 
   test-unit:
     usage: Run unit tests.
     cmd: |
       ahoy cli 'nosetests --with-pylons=${CKAN_INI}' || \
-      [ "${ALLOW_UNIT_FAIL:-0}" -eq 1 ]
+      [ "${ALLOW_UNIT_FAIL:-1}" -eq 1 ]
 
   test-bdd:
     usage: Run BDD tests.
