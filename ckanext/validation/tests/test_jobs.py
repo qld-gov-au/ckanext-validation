@@ -58,6 +58,7 @@ class TestValidationJob(object):
         mock_validate.assert_called_with(
             'http://example.com/file.csv',
             format='csv',
+            http_session=mock.ANY,
             schema=None)
 
     @mock.patch('ckanext.validation.jobs.validate')
@@ -114,6 +115,7 @@ class TestValidationJob(object):
         mock_validate.assert_called_with(
             '/tmp/example/{}'.format(resource['id']),
             format='csv',
+            http_session=mock.ANY,
             schema=None)
 
     @mock.patch('ckanext.validation.jobs.validate',
