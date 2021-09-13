@@ -323,7 +323,8 @@ class TestAuth(FunctionalTestBase):
 
         user = factories.User()
         dataset = factories.Dataset(
-            owner_org=self.owner_org['id'], resources=[factories.Resource()])
+            owner_org=self.owner_org['id'],
+            resources=[{'url': 'http://example.com'}])
 
         context = {
             'user': user['name'],
@@ -340,7 +341,8 @@ class TestAuth(FunctionalTestBase):
         org = factories.Organization(
             users=[{'name': user['name'], 'capacity': 'editor'}])
         dataset = factories.Dataset(
-            owner_org=org['id'], resources=[factories.Resource()])
+            owner_org=org['id'],
+            resources=[{'url': 'http://example.com'}])
 
         context = {
             'user': user['name'],
@@ -382,7 +384,8 @@ class TestAuth(FunctionalTestBase):
 
         user = factories.User()
         dataset = factories.Dataset(
-            owner_org=self.owner_org['id'], resources=[factories.Resource()])
+            owner_org=self.owner_org['id'],
+            resources=[{'url': 'http://example.com'}])
 
         context = {
             'user': user['name'],
@@ -399,7 +402,8 @@ class TestAuth(FunctionalTestBase):
         org = factories.Organization(
             users=[{'name': user['name'], 'capacity': 'editor'}])
         dataset = factories.Dataset(
-            owner_org=org['id'], resources=[factories.Resource()])
+            owner_org=org['id'],
+            resources=[{'url': 'http://example.com'}])
 
         context = {
             'user': user['name'],
@@ -427,7 +431,8 @@ class TestAuth(FunctionalTestBase):
 
         user = factories.User()
         dataset = factories.Dataset(
-            owner_org=self.owner_org['id'], resources=[factories.Resource()],
+            owner_org=self.owner_org['id'],
+            resources=[{'url': 'http://example.com'}],
             private=False)
 
         context = {
@@ -443,7 +448,8 @@ class TestAuth(FunctionalTestBase):
 
         user = factories.User()
         dataset = factories.Dataset(
-            owner_org=self.owner_org['id'], resources=[factories.Resource()],
+            owner_org=self.owner_org['id'],
+            resources=[{'url': 'http://example.com'}],
             private=True)
 
         context = {
