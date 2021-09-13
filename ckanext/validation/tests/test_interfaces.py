@@ -1,11 +1,28 @@
 import mock
 from nose.tools import assert_equals
 
-from ckan import plugins as p
+from ckan import model, plugins as p
 from ckan.tests import helpers, factories
 
 from ckanext.validation.interfaces import IDataValidation
 from ckanext.validation.tests.helpers import VALID_REPORT
+
+
+def _test_org():
+    org_name = 'test-org'
+
+    def load_model_org():
+        orgs = model.Session.query(model.Group)\
+            .filter(model.Group.type == 'organization')\
+            .filter(model.Group.name == org_name).all()
+        if orgs:
+            return orgs[0]
+
+    org = load_model_org()
+    if not org:
+        factories.Organization(name=org_name)
+        org = load_model_org()
+    return org
 
 
 class TestPlugin(p.SingletonPlugin):
@@ -65,7 +82,7 @@ class TestInterfaceSync(BaseTestInterfaces):
         cfg['ckanext.validation.run_on_update_sync'] = True
 
     def setup(self):
-        self.owner_org = factories.Organization(name='test-org')
+        self.owner_org = _test_org()
         self.test_dataset = factories.Dataset(owner_org=self.owner_org['id'])
 
     @helpers.change_config('ckanext.validation.run_on_create_async', False)
@@ -145,7 +162,7 @@ class TestInterfaceAsync(BaseTestInterfaces):
         cfg['ckanext.validation.run_on_update_sync'] = False
 
     def setup(self):
-        self.owner_org = factories.Organization(name='test-org')
+        self.owner_org = _test_org()
         self.test_dataset = factories.Dataset(owner_org=self.owner_org['id'])
 
     @helpers.change_config('ckanext.validation.run_on_create_async', True)
