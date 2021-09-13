@@ -127,7 +127,8 @@ class TestResourceValidationRun(object):
 
         resource = {'format': 'CSV', 'url': 'https://some.url'}
 
-        dataset = factories.Dataset(resources=[resource])
+        dataset = factories.Dataset(
+            owner_org=self.owner_org, resources=[resource])
 
         timestamp = datetime.datetime.utcnow()
         old_validation = Validation(
@@ -597,6 +598,7 @@ class TestResourceValidationOnUpdate(FunctionalTestBase):
                 call_action(
                     'resource_update',
                     id=dataset['resources'][0]['id'],
+                    package_id=dataset['id'],
                     format='CSV',
                     upload=mock_upload
                 )
@@ -628,6 +630,7 @@ class TestResourceValidationOnUpdate(FunctionalTestBase):
                 call_action(
                     'resource_update',
                     id=dataset['resources'][0]['id'],
+                    package_id=dataset['id'],
                     format='CSV',
                     upload=mock_upload
                 )
@@ -657,6 +660,7 @@ class TestResourceValidationOnUpdate(FunctionalTestBase):
             resource = call_action(
                 'resource_update',
                 id=dataset['resources'][0]['id'],
+                package_id=dataset['id'],
                 format='CSV',
                 upload=mock_upload
             )
@@ -677,6 +681,7 @@ class TestResourceValidationOnUpdate(FunctionalTestBase):
         resource = call_action(
             'resource_update',
             id=dataset['resources'][0]['id'],
+            package_id=dataset['id'],
             format='CSV',
             url='https://example.com/some.other.csv',
         )
