@@ -165,6 +165,7 @@ class TestResourceValidationShow(FunctionalTestBase):
 
         if not tables_exist():
             create_tables()
+        self.owner_org = factories.Organization(name='test-org')
 
     def test_resource_validation_show_param_missing(self):
 
@@ -183,7 +184,8 @@ class TestResourceValidationShow(FunctionalTestBase):
 
         resource = {'format': 'CSV', 'url': 'https://some.url'}
 
-        dataset = factories.Dataset(resources=[resource])
+        dataset = factories.Dataset(
+            owner_org=self.owner_org['id'], resources=[resource])
 
         assert_raises(
             t.ObjectNotFound,
@@ -195,7 +197,8 @@ class TestResourceValidationShow(FunctionalTestBase):
 
         resource = {'format': 'CSV', 'url': 'https://some.url'}
 
-        dataset = factories.Dataset(resources=[resource])
+        dataset = factories.Dataset(
+            owner_org=self.owner_org['id'], resources=[resource])
 
         timestamp = datetime.datetime.utcnow()
         validation = Validation(
@@ -285,10 +288,12 @@ class TestAuth(FunctionalTestBase):
 
         if not tables_exist():
             create_tables()
+        self.owner_org = factories.Organization(name='test-org')
+        self.test_dataset = factories.Dataset(owner_org=self.owner_org['id'])
 
     def test_run_anon(self):
 
-        resource = factories.Resource()
+        resource = factories.Resource(package_id=self.test_dataset['id'])
 
         context = {
             'user': None,
@@ -301,7 +306,7 @@ class TestAuth(FunctionalTestBase):
 
     def test_run_sysadmin(self):
 
-        resource = factories.Resource()
+        resource = factories.Resource(package_id=self.test_dataset['id'])
         sysadmin = factories.Sysadmin()
 
         context = {
@@ -316,9 +321,8 @@ class TestAuth(FunctionalTestBase):
     def test_run_non_auth_user(self):
 
         user = factories.User()
-        org = factories.Organization()
         dataset = factories.Dataset(
-            owner_org=org['id'], resources=[factories.Resource()])
+            owner_org=self.test_org['id'], resources=[factories.Resource()])
 
         context = {
             'user': user['name'],
@@ -348,7 +352,7 @@ class TestAuth(FunctionalTestBase):
 
     def test_delete_anon(self):
 
-        resource = factories.Resource()
+        resource = factories.Resource(package_id=self.test_dataset['id'])
 
         context = {
             'user': None,
@@ -361,7 +365,7 @@ class TestAuth(FunctionalTestBase):
 
     def test_delete_sysadmin(self):
 
-        resource = factories.Resource()
+        resource = factories.Resource(package_id=self.test_dataset['id'])
         sysadmin = factories.Sysadmin()
 
         context = {
@@ -376,9 +380,8 @@ class TestAuth(FunctionalTestBase):
     def test_delete_non_auth_user(self):
 
         user = factories.User()
-        org = factories.Organization()
         dataset = factories.Dataset(
-            owner_org=org['id'], resources=[factories.Resource()])
+            owner_org=self.test_org['id'], resources=[factories.Resource()])
 
         context = {
             'user': user['name'],
@@ -408,7 +411,7 @@ class TestAuth(FunctionalTestBase):
 
     def test_show_anon(self):
 
-        resource = factories.Resource()
+        resource = factories.Resource(package_id=self.test_dataset['id'])
 
         context = {
             'user': None,
@@ -422,9 +425,8 @@ class TestAuth(FunctionalTestBase):
     def test_show_anon_public_dataset(self):
 
         user = factories.User()
-        org = factories.Organization()
         dataset = factories.Dataset(
-            owner_org=org['id'], resources=[factories.Resource()],
+            owner_org=self.test_org['id'], resources=[factories.Resource()],
             private=False)
 
         context = {
@@ -439,9 +441,8 @@ class TestAuth(FunctionalTestBase):
     def test_show_anon_private_dataset(self):
 
         user = factories.User()
-        org = factories.Organization()
         dataset = factories.Dataset(
-            owner_org=org['id'], resources=[factories.Resource()],
+            owner_org=self.test_org['id'], resources=[factories.Resource()],
             private=True)
 
         context = {
@@ -466,6 +467,8 @@ class TestResourceValidationOnCreate(FunctionalTestBase):
 
         if not tables_exist():
             create_tables()
+        self.owner_org = factories.Organization(name='test-org')
+        self.test_dataset = factories.Dataset(owner_org=self.owner_org['id'])
 
     @mock_uploads
     def test_validation_fails_on_upload(self, mock_open):
@@ -475,8 +478,6 @@ class TestResourceValidationOnCreate(FunctionalTestBase):
 
         mock_upload = MockFieldStorage(invalid_file, 'invalid.csv')
 
-        dataset = factories.Dataset()
-
         invalid_stream = io.BufferedReader(io.BytesIO(INVALID_CSV))
 
         with mock.patch('io.open', return_value=invalid_stream):
@@ -485,7 +486,7 @@ class TestResourceValidationOnCreate(FunctionalTestBase):
 
                 call_action(
                     'resource_create',
-                    package_id=dataset['id'],
+                    package_id=self.test_dataset['id'],
                     format='CSV',
                     upload=mock_upload
                 )
@@ -502,8 +503,6 @@ class TestResourceValidationOnCreate(FunctionalTestBase):
 
         mock_upload = MockFieldStorage(invalid_file, 'invalid.csv')
 
-        dataset = factories.Dataset()
-
         invalid_stream = io.BufferedReader(io.BytesIO(INVALID_CSV))
 
         validation_count_before = model.Session.query(Validation).count()
@@ -513,7 +512,7 @@ class TestResourceValidationOnCreate(FunctionalTestBase):
             with assert_raises(t.ValidationError):
                 call_action(
                     'resource_create',
-                    package_id=dataset['id'],
+                    package_id=self.test_dataset['id'],
                     format='CSV',
                     upload=mock_upload
                 )
@@ -530,15 +529,13 @@ class TestResourceValidationOnCreate(FunctionalTestBase):
 
         mock_upload = MockFieldStorage(invalid_file, 'invalid.csv')
 
-        dataset = factories.Dataset()
-
         valid_stream = io.BufferedReader(io.BytesIO(VALID_CSV))
 
         with mock.patch('io.open', return_value=valid_stream):
 
             resource = call_action(
                 'resource_create',
-                package_id=dataset['id'],
+                package_id=self.test_dataset['id'],
                 format='CSV',
                 upload=mock_upload
             )
@@ -552,11 +549,9 @@ class TestResourceValidationOnCreate(FunctionalTestBase):
 
         url = 'https://example.com/valid.csv'
 
-        dataset = factories.Dataset()
-
         resource = call_action(
             'resource_create',
-            package_id=dataset['id'],
+            package_id=self.test_dataset['id'],
             format='csv',
             url=url,
         )
@@ -577,11 +572,12 @@ class TestResourceValidationOnUpdate(FunctionalTestBase):
 
         if not tables_exist():
             create_tables()
+        self.owner_org = factories.Organization(name='test-org')
 
     @mock_uploads
     def test_validation_fails_on_upload(self, mock_open):
 
-        dataset = factories.Dataset(resources=[
+        dataset = factories.Dataset(owner_org=self.owner_org, resources=[
             {
                 'url': 'https://example.com/data.csv'
             }
@@ -612,7 +608,7 @@ class TestResourceValidationOnUpdate(FunctionalTestBase):
     @mock_uploads
     def test_validation_fails_no_validation_object_stored(self, mock_open):
 
-        dataset = factories.Dataset(resources=[
+        dataset = factories.Dataset(owner_org=self.owner_org, resources=[
             {
                 'url': 'https://example.com/data.csv'
             }
@@ -643,7 +639,7 @@ class TestResourceValidationOnUpdate(FunctionalTestBase):
     @mock_uploads
     def test_validation_passes_on_upload(self, mock_open):
 
-        dataset = factories.Dataset(resources=[
+        dataset = factories.Dataset(owner_org=self.owner_org, resources=[
             {
                 'url': 'https://example.com/data.csv'
             }
@@ -672,7 +668,7 @@ class TestResourceValidationOnUpdate(FunctionalTestBase):
                 return_value=VALID_REPORT)
     def test_validation_passes_with_url(self, mock_validate):
 
-        dataset = factories.Dataset(resources=[
+        dataset = factories.Dataset(owner_org=self.owner_org, resources=[
             {
                 'url': 'https://example.com/data.csv'
             }
@@ -697,14 +693,14 @@ class TestSchemaFields(FunctionalTestBase):
 
         if not tables_exist():
             create_tables()
+        self.owner_org = factories.Organization(name='test-org')
+        self.test_dataset = factories.Dataset(owner_org=self.owner_org['id'])
 
     def test_schema_field(self):
 
-        dataset = factories.Dataset()
-
         resource = call_action(
             'resource_create',
-            package_id=dataset['id'],
+            package_id=self.test_dataset['id'],
             url='http://example.com/file.csv',
             schema='{"fields":[{"name":"id"}]}'
         )
@@ -718,11 +714,9 @@ class TestSchemaFields(FunctionalTestBase):
 
         url = 'https://example.com/schema.json'
 
-        dataset = factories.Dataset()
-
         resource = call_action(
             'resource_create',
-            package_id=dataset['id'],
+            package_id=self.test_dataset['id'],
             url='http://example.com/file.csv',
             schema=url
         )
@@ -736,11 +730,9 @@ class TestSchemaFields(FunctionalTestBase):
 
         url = 'https://example.com/schema.json'
 
-        dataset = factories.Dataset()
-
         resource = call_action(
             'resource_create',
-            package_id=dataset['id'],
+            package_id=self.test_dataset['id'],
             url='http://example.com/file.csv',
             schema_url=url
         )
@@ -767,11 +759,9 @@ class TestSchemaFields(FunctionalTestBase):
 
         mock_upload = MockFieldStorage(schema_file, 'schema.json')
 
-        dataset = factories.Dataset()
-
         resource = call_action(
             'resource_create',
-            package_id=dataset['id'],
+            package_id=self.test_dataset['id'],
             url='http://example.com/file.csv',
             schema_upload=mock_upload
         )
@@ -790,11 +780,10 @@ class TestValidationOptionsField(FunctionalTestBase):
 
         if not tables_exist():
             create_tables()
+        self.owner_org = factories.Organization(name='test-org')
+        self.test_dataset = factories.Dataset(owner_org=self.owner_org['id'])
 
     def test_validation_options_field(self):
-
-        dataset = factories.Dataset()
-
         validation_options = {
             'delimiter': ';',
             'headers': 2,
@@ -803,7 +792,7 @@ class TestValidationOptionsField(FunctionalTestBase):
 
         resource = call_action(
             'resource_create',
-            package_id=dataset['id'],
+            package_id=self.test_dataset['id'],
             url='http://example.com/file.csv',
             validation_options=validation_options,
         )
@@ -811,9 +800,6 @@ class TestValidationOptionsField(FunctionalTestBase):
         assert_equals(resource['validation_options'], validation_options)
 
     def test_validation_options_field_string(self):
-
-        dataset = factories.Dataset()
-
         validation_options = '''{
             "delimiter": ";",
             "headers": 2,
@@ -822,7 +808,7 @@ class TestValidationOptionsField(FunctionalTestBase):
 
         resource = call_action(
             'resource_create',
-            package_id=dataset['id'],
+            package_id=self.test_dataset['id'],
             url='http://example.com/file.csv',
             validation_options=validation_options,
         )
