@@ -107,7 +107,7 @@ commands:
     usage: Lint code.
     cmd: |
       ahoy cli "flake8 ${@:-ckanext}" || \
-      [ "${ALLOW_LINT_FAIL:-0}" -eq 1 ]
+      [ "${ALLOW_LINT_FAIL:-1}" -eq 1 ]
 
   test-unit:
     usage: Run unit tests.
