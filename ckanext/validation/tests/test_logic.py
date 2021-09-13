@@ -323,7 +323,7 @@ class TestAuth(FunctionalTestBase):
 
         user = factories.User()
         dataset = factories.Dataset(
-            owner_org=self.test_org['id'], resources=[factories.Resource()])
+            owner_org=self.owner_org['id'], resources=[factories.Resource()])
 
         context = {
             'user': user['name'],
@@ -382,7 +382,7 @@ class TestAuth(FunctionalTestBase):
 
         user = factories.User()
         dataset = factories.Dataset(
-            owner_org=self.test_org['id'], resources=[factories.Resource()])
+            owner_org=self.owner_org['id'], resources=[factories.Resource()])
 
         context = {
             'user': user['name'],
@@ -427,7 +427,7 @@ class TestAuth(FunctionalTestBase):
 
         user = factories.User()
         dataset = factories.Dataset(
-            owner_org=self.test_org['id'], resources=[factories.Resource()],
+            owner_org=self.owner_org['id'], resources=[factories.Resource()],
             private=False)
 
         context = {
@@ -443,7 +443,7 @@ class TestAuth(FunctionalTestBase):
 
         user = factories.User()
         dataset = factories.Dataset(
-            owner_org=self.test_org['id'], resources=[factories.Resource()],
+            owner_org=self.owner_org['id'], resources=[factories.Resource()],
             private=True)
 
         context = {
