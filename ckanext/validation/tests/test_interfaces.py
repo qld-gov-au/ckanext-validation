@@ -82,7 +82,7 @@ class TestInterfaceSync(BaseTestInterfaces):
         cfg['ckanext.validation.run_on_update_sync'] = True
 
     def setup(self):
-        super().setup()
+        super(TestInterfaceSync, self).setup()
         self.owner_org = _test_org()
         self.test_dataset = factories.Dataset(owner_org=self.owner_org.id)
 
@@ -163,7 +163,7 @@ class TestInterfaceAsync(BaseTestInterfaces):
         cfg['ckanext.validation.run_on_update_sync'] = False
 
     def setup(self):
-        super().setup()
+        super(TestInterfaceAsync, self).setup()
         self.owner_org = _test_org()
         self.test_dataset = factories.Dataset(owner_org=self.owner_org.id)
 
