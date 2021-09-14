@@ -70,7 +70,7 @@ class TestBadges(object):
             format='CSV',
             package_id=self.test_dataset['id'],
             validation_status='success',
-            validation_timestamp=datetime.datetime.utcnow()
+            validation_timestamp=datetime.datetime.utcnow().isoformat()
         )
 
         out = get_validation_badge(resource)
@@ -87,7 +87,7 @@ class TestBadges(object):
             format='CSV',
             package_id=self.test_dataset['id'],
             validation_status='failure',
-            validation_timestamp=datetime.datetime.utcnow()
+            validation_timestamp=datetime.datetime.utcnow().isoformat()
         )
 
         out = get_validation_badge(resource)
@@ -104,7 +104,7 @@ class TestBadges(object):
             format='CSV',
             package_id=self.test_dataset['id'],
             validation_status='error',
-            validation_timestamp=datetime.datetime.utcnow()
+            validation_timestamp=datetime.datetime.utcnow().isoformat()
         )
 
         out = get_validation_badge(resource)
