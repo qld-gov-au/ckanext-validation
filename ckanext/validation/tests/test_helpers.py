@@ -2,6 +2,7 @@ import datetime
 
 from nose.tools import assert_equals, assert_in
 
+from ckan import model
 from ckan.tests.helpers import reset_db
 from ckan.tests import factories
 
@@ -12,6 +13,23 @@ from ckanext.validation.helpers import (
     validation_extract_report_from_errors,
 )
 from ckanext.validation.model import create_tables, tables_exist
+
+
+def _test_org():
+    org_name = 'test-org'
+
+    def load_model_org():
+        orgs = model.Session.query(model.Group)\
+            .filter(model.Group.type == 'organization')\
+            .filter(model.Group.name == org_name).all()
+        if orgs:
+            return orgs[0]
+
+    org = load_model_org()
+    if not org:
+        factories.Organization(name=org_name)
+        org = load_model_org()
+    return org
 
 
 class TestBadges(object):
@@ -34,8 +52,8 @@ class TestBadges(object):
         reset_db()
 
     def setUp(self):
-        self.owner_org = factories.Organization(name='test-org')
-        self.test_dataset = factories.Dataset(owner_org=self.owner_org['id'])
+        self.owner_org = _test_org()
+        self.test_dataset = factories.Dataset(owner_org=self.owner_org.id)
 
     def test_get_validation_badge_no_validation(self):
 
