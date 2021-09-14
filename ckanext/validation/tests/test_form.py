@@ -1,6 +1,4 @@
 import json
-import io
-import mock
 import datetime
 
 from nose.tools import assert_in, assert_equals
@@ -415,11 +413,7 @@ class TestResourceValidationOnCreateForm(FunctionalTestBase):
 
         upload = ('upload', 'valid.csv', VALID_CSV)
 
-        valid_stream = io.BufferedReader(io.BytesIO(VALID_CSV))
-
-        with mock.patch('io.open', return_value=valid_stream):
-
-            submit_and_follow(app, form, env, 'save', upload_files=[upload])
+        submit_and_follow(app, form, env, 'save', upload_files=[upload])
 
         dataset = call_action('package_show', id=dataset['id'])
 
@@ -436,12 +430,8 @@ class TestResourceValidationOnCreateForm(FunctionalTestBase):
 
         upload = ('upload', 'invalid.csv', INVALID_CSV)
 
-        invalid_stream = io.BufferedReader(io.BytesIO(INVALID_CSV))
-
-        with mock.patch('io.open', return_value=invalid_stream):
-
-            response = webtest_submit(
-                form, 'save', upload_files=[upload], extra_environ=env)
+        response = webtest_submit(
+            form, 'save', upload_files=[upload], extra_environ=env)
 
         assert_in('validation', response.body)
         assert_in('missing-value', response.body)
@@ -477,11 +467,7 @@ class TestResourceValidationOnUpdateForm(FunctionalTestBase):
 
         upload = ('upload', 'valid.csv', VALID_CSV)
 
-        valid_stream = io.BufferedReader(io.BytesIO(VALID_CSV))
-
-        with mock.patch('io.open', return_value=valid_stream):
-
-            submit_and_follow(app, form, env, 'save', upload_files=[upload])
+        submit_and_follow(app, form, env, 'save', upload_files=[upload])
 
         dataset = call_action('package_show', id=dataset['id'])
 
@@ -505,12 +491,8 @@ class TestResourceValidationOnUpdateForm(FunctionalTestBase):
 
         upload = ('upload', 'invalid.csv', INVALID_CSV)
 
-        invalid_stream = io.BufferedReader(io.BytesIO(INVALID_CSV))
-
-        with mock.patch('io.open', return_value=invalid_stream):
-
-            response = webtest_submit(
-                form, 'save', upload_files=[upload], extra_environ=env)
+        response = webtest_submit(
+            form, 'save', upload_files=[upload], extra_environ=env)
 
         assert_in('validation', response.body)
         assert_in('missing-value', response.body)
