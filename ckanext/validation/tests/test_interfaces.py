@@ -83,7 +83,7 @@ class TestInterfaceSync(BaseTestInterfaces):
 
     def setup(self):
         self.owner_org = _test_org()
-        self.test_dataset = factories.Dataset(owner_org=self.owner_org['id'])
+        self.test_dataset = factories.Dataset(owner_org=self.owner_org.id)
 
     @helpers.change_config('ckanext.validation.run_on_create_async', False)
     @helpers.change_config('ckanext.validation.run_on_update_async', False)
@@ -163,7 +163,7 @@ class TestInterfaceAsync(BaseTestInterfaces):
 
     def setup(self):
         self.owner_org = _test_org()
-        self.test_dataset = factories.Dataset(owner_org=self.owner_org['id'])
+        self.test_dataset = factories.Dataset(owner_org=self.owner_org.id)
 
     @helpers.change_config('ckanext.validation.run_on_create_async', True)
     @mock.patch('ckanext.validation.logic.enqueue_job')
