@@ -77,8 +77,7 @@ class TestBadges(object):
 
         assert 'href="/dataset/{}/resource/{}/validation"'.format(
             resource['package_id'], resource['id']) in out
-        assert 'src="/images/badges/data-success-flat.svg"' in out
-        assert 'alt="Valid data"' in out
+        assert 'class="status success"' in out
         assert 'title="{}"'.format(resource['validation_timestamp']) in out
 
     def test_get_validation_badge_failure(self):
@@ -94,8 +93,7 @@ class TestBadges(object):
 
         assert 'href="/dataset/{}/resource/{}/validation"'.format(
             resource['package_id'], resource['id']) in out
-        assert 'src="/images/badges/data-failure-flat.svg"' in out
-        assert 'alt="Invalid data"' in out
+        assert 'class="status failure"' in out
         assert 'title="{}"'.format(resource['validation_timestamp']) in out
 
     def test_get_validation_badge_error(self):
@@ -111,8 +109,7 @@ class TestBadges(object):
 
         assert 'href="/dataset/{}/resource/{}/validation"'.format(
             resource['package_id'], resource['id']) in out
-        assert 'src="/images/badges/data-error-flat.svg"' in out
-        assert 'alt="Error during validation"' in out
+        assert 'class="status error"' in out
         assert 'title="{}"'.format(resource['validation_timestamp']) in out
 
     def test_get_validation_badge_other(self):
@@ -127,8 +124,7 @@ class TestBadges(object):
 
         assert 'href="/dataset/{}/resource/{}/validation"'.format(
             resource['package_id'], resource['id']) in out
-        assert 'src="/images/badges/data-unknown-flat.svg"' in out
-        assert 'alt="Data validation unknown"' in out
+        assert 'class="status unknown"' in out
         assert 'title=""' in out
 
 
