@@ -7,6 +7,8 @@ import six
 
 import ckan.plugins as p
 import ckantoolkit as t
+from ckan.lib.plugins import DefaultTranslation
+
 
 from ckanext.validation import settings
 from ckanext.validation.model import tables_exist
@@ -38,7 +40,7 @@ from ckanext.validation.interfaces import IDataValidation
 log = logging.getLogger(__name__)
 
 
-class ValidationPlugin(p.SingletonPlugin):
+class ValidationPlugin(p.SingletonPlugin, DefaultTranslation):
     p.implements(p.IConfigurer)
     p.implements(p.IActions)
     p.implements(p.IRoutes, inherit=True)
@@ -47,6 +49,7 @@ class ValidationPlugin(p.SingletonPlugin):
     p.implements(p.IPackageController, inherit=True)
     p.implements(p.ITemplateHelpers)
     p.implements(p.IValidators)
+    p.implements(p.ITranslation)
 
     # IConfigurer
 
