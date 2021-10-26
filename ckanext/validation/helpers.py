@@ -1,7 +1,6 @@
 # encoding: utf-8
 import json
 
-from ckan.lib.helpers import url_for_static
 from ckantoolkit import url_for, _, config, asbool, literal
 
 
@@ -20,14 +19,6 @@ def get_validation_badge(resource, in_listing=False):
         'invalid': _('invalid'),
         'error': _('error'),
         'unknown': _('unknown'),
-    }
-
-    messages = {
-        'success': _('Valid data'),
-        'failure': _('Invalid data'),
-        'invalid': _('Invalid data'),
-        'error': _('Error during validation'),
-        'unknown': _('Data validation unknown'),
     }
 
     if resource['validation_status'] in ['success', 'failure', 'error']:
@@ -49,9 +40,7 @@ def get_validation_badge(resource, in_listing=False):
         validation_url=validation_url,
         prefix=_('data'),
         status=status,
-        status_title=statuses[status],
-        alt=messages[status],
-        title=resource.get('validation_timestamp', ''))
+        status_title=statuses[status])
 
 
 def validation_extract_report_from_errors(errors):
