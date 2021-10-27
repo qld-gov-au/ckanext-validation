@@ -161,8 +161,8 @@ report file on the relevant commands.''')
 
             elif not self.options.assume_yes:
 
-                msg = ('\nYou are about to start validation for {0} datasets' +
-                       '.\n Do you want to continue?')
+                msg = ('\nYou are about to start validation for {0} datasets'
+                       + '.\n Do you want to continue?')
 
                 confirm = query_yes_no(msg.format(query['count']))
 

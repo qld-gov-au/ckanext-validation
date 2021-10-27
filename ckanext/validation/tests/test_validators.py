@@ -51,8 +51,8 @@ class TestResourceSchemaValidator(object):
             resource_schema_validator(schema, {})
 
         assert e.exception.error.startswith(
-            'Invalid Table Schema: ' +
-            'Descriptor validation error: \'fields\' is a required property')
+            'Invalid Table Schema: '
+            + 'Descriptor validation error: \'fields\' is a required property')
 
     def test_resource_schema_valid_schema_object(self):
 

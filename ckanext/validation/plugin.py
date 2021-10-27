@@ -140,8 +140,8 @@ to create the database tables:
         if isinstance(schema_upload, cgi.FieldStorage):
             data_dict[u'schema'] = schema_upload.file.read()
         elif schema_url:
-            if (not isinstance(schema_url, six.string_types) or
-                    not schema_url.lower()[:4] == u'http'):
+            if (not isinstance(schema_url, six.string_types)
+                    or not schema_url.lower()[:4] == u'http'):
                 raise t.ValidationError({u'schema_url': 'Must be a valid URL'})
             data_dict[u'schema'] = schema_url
         elif schema_json:
@@ -182,9 +182,9 @@ to create the database tables:
         needs_validation = False
         if ((
             # File uploaded
-            resource.get(u'url_type') == u'upload' or
+            resource.get(u'url_type') == u'upload'
             # URL defined
-            resource.get(u'url')
+            or resource.get(u'url')
         ) and (
             # Make sure format is supported
             resource.get(u'format', u'').lower() in
@@ -214,15 +214,15 @@ to create the database tables:
         needs_validation = False
         if (
             # New file uploaded
-            updated_resource.get(u'upload') or
+            updated_resource.get(u'upload')
             # External URL changed
-            updated_resource.get(u'url') != current_resource.get(u'url') or
+            or updated_resource.get(u'url') != current_resource.get(u'url')
             # Schema changed
-            (updated_resource.get(u'schema') !=
-             current_resource.get(u'schema')) or
+            or (updated_resource.get(u'schema')
+                != current_resource.get(u'schema'))
             # Format changed
-            (updated_resource.get(u'format', u'').lower() !=
-             current_resource.get(u'format', u'').lower())
+            or (updated_resource.get(u'format', u'').lower()
+                != current_resource.get(u'format', u'').lower())
         ) and (
             # Make sure format is supported
             updated_resource.get(u'format', u'').lower() in
