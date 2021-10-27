@@ -78,7 +78,6 @@ class TestBadges(object):
         assert 'href="/dataset/{}/resource/{}/validation"'.format(
             resource['package_id'], resource['id']) in out
         assert 'class="status success"' in out
-        assert 'title="{}"'.format(resource['validation_timestamp']) in out
 
     def test_get_validation_badge_failure(self):
 
@@ -94,7 +93,6 @@ class TestBadges(object):
         assert 'href="/dataset/{}/resource/{}/validation"'.format(
             resource['package_id'], resource['id']) in out
         assert 'class="status failure"' in out
-        assert 'title="{}"'.format(resource['validation_timestamp']) in out
 
     def test_get_validation_badge_error(self):
 
@@ -110,7 +108,6 @@ class TestBadges(object):
         assert 'href="/dataset/{}/resource/{}/validation"'.format(
             resource['package_id'], resource['id']) in out
         assert 'class="status error"' in out
-        assert 'title="{}"'.format(resource['validation_timestamp']) in out
 
     def test_get_validation_badge_other(self):
 
@@ -125,7 +122,6 @@ class TestBadges(object):
         assert 'href="/dataset/{}/resource/{}/validation"'.format(
             resource['package_id'], resource['id']) in out
         assert 'class="status unknown"' in out
-        assert 'title=""' in out
 
 
 class TestExtractReportFromErrors(object):
