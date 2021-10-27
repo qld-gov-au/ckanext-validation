@@ -32,6 +32,14 @@ def _test_org():
     return org
 
 
+def _assert_validation_status(resource, status):
+    out = get_validation_badge(resource)
+
+    assert 'href="/dataset/{}/resource/{}/validation"'.format(
+        resource['package_id'], resource['id']) in out
+    assert 'class="status {}"'.format(status) in out, "'{}' status not found in {}".format(status, out)
+
+
 class TestBadges(object):
 
     @classmethod
@@ -73,11 +81,7 @@ class TestBadges(object):
             validation_timestamp=datetime.datetime.utcnow().isoformat()
         )
 
-        out = get_validation_badge(resource)
-
-        assert 'href="/dataset/{}/resource/{}/validation"'.format(
-            resource['package_id'], resource['id']) in out
-        assert 'class="status success"' in out, "'success' status not found in {}".format(out)
+        _assert_validation_status(resource, 'success')
 
     def test_get_validation_badge_failure(self):
 
@@ -88,11 +92,7 @@ class TestBadges(object):
             validation_timestamp=datetime.datetime.utcnow().isoformat()
         )
 
-        out = get_validation_badge(resource)
-
-        assert 'href="/dataset/{}/resource/{}/validation"'.format(
-            resource['package_id'], resource['id']) in out
-        assert 'class="status failure"' in out, "'failure' status not found in {}".format(out)
+        _assert_validation_status(resource, 'invalid')
 
     def test_get_validation_badge_error(self):
 
@@ -103,11 +103,7 @@ class TestBadges(object):
             validation_timestamp=datetime.datetime.utcnow().isoformat()
         )
 
-        out = get_validation_badge(resource)
-
-        assert 'href="/dataset/{}/resource/{}/validation"'.format(
-            resource['package_id'], resource['id']) in out
-        assert 'class="status error"' in out, "'error' status not found in {}".format(out)
+        _assert_validation_status(resource, 'error')
 
     def test_get_validation_badge_other(self):
 
@@ -117,11 +113,7 @@ class TestBadges(object):
             validation_status='not-sure',
         )
 
-        out = get_validation_badge(resource)
-
-        assert 'href="/dataset/{}/resource/{}/validation"'.format(
-            resource['package_id'], resource['id']) in out
-        assert 'class="status unknown"' in out, "'unknown' status not found in {}".format(out)
+        _assert_validation_status(resource, 'unknown')
 
 
 class TestExtractReportFromErrors(object):
