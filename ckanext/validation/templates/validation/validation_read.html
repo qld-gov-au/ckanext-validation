@@ -1,4 +1,4 @@
-{% resource 'ckanext-validation/main' %}
+{% asset 'ckanext-validation/main-css' %}
 
 {% extends "package/base.html" %}
 
@@ -39,7 +39,9 @@
       </div>
     </section>
 
-   {% resource 'ckanext-validation/report' %}
+   {% asset 'ckanext-validation/goodtables-ui' %}
+   {% asset 'ckanext-validation/validation-report-css' %}
+   {% asset 'ckanext-validation/module-validation-report' %}
 
 {% endblock %}
 
