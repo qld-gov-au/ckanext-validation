@@ -22,7 +22,7 @@ log = logging.getLogger(__name__)
 
 def run_validation_job(resource):
 
-    log.debug(u'Validating resource {}'.format(resource['id']))
+    log.debug(u'Validating resource %s', resource['id'])
 
     try:
         validation = Session.query(Validation).filter(
@@ -37,11 +37,18 @@ def run_validation_job(resource):
     Session.add(validation)
     Session.commit()
 
-    options = resource.get(u'validation_options')
-    if options and isinstance(options, basestring):
+    options = t.config.get(
+        u'ckanext.validation.default_validation_options')
+    if options:
         options = json.loads(options)
-    if not isinstance(options, dict):
+    else:
         options = {}
+
+    resource_options = resource.get(u'validation_options')
+    if resource_options and isinstance(resource_options, basestring):
+        resource_options = json.loads(resource_options)
+    if resource_options:
+        options.update(resource_options)
 
     dataset = t.get_action('package_show')(
         {'ignore_auth': True}, {'id': resource['package_id']})
@@ -112,9 +119,16 @@ def run_validation_job(resource):
 
 def _validate_table(source, _format=u'csv', schema=None, **options):
 
-    report = validate(source, format=_format, schema=schema, **options)
+    http_session = requests.Session()
 
-    log.debug(u'Validating source: {}'.format(source))
+    use_proxy = 'ckan.download_proxy' in t.config
+    if use_proxy:
+        proxy = t.config.get('ckan.download_proxy')
+        log.debug(u'Download resource for validation via proxy: %s', proxy)
+        http_session.proxies.update({'http': proxy, 'https': proxy})
+    report = validate(source, format=_format, schema=schema, http_session=http_session, **options)
+
+    log.debug(u'Validating source: %s', source)
 
     return report
 

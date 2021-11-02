@@ -19,7 +19,8 @@ Data description and validation for CKAN with [Frictionless Data](https://fricti
      * [Operation modes](#operation-modes)
         * [Asynchronous validation](#asynchronous-validation)
         * [Synchronous validation](#synchronous-validation)
-     * [Changes in the schema](#changes-in-the-schema)
+     * [Changes in the metadata schema](#changes-in-the-metadata-schema)
+     * [Extending via interfaces](#extending-via-interfaces)
   * [Action functions](#action-functions)
 	* [resource_validation_run](#resource_validation_run)
 	* [resource_validation_show](#resource_validation_show)
@@ -78,12 +79,17 @@ Once installed, add the `validation` plugin to the `ckan.plugins` configuration 
 
 *Note:* if using CKAN 2.6 or lower and the [asynchronous validation](#asynchronous-validation) also add the `rq` plugin ([see Versions supported and requirements](#versions-supported-and-requirements)) to `ckan.plugins`.
 
+### Adding schema fields to the Resource metadata
 
-The extension requires changes in the [CKAN schema](#changes-in-the-schema). The easisest way to add those is by using ckanext-scheming. Use these two configuration options to link to the dataset schema (replace with your own if you need to customize it) and the required presets:
+The extension requires changes in the CKAN metadata schema. The easisest way to add those is by using ckanext-scheming. Use these two configuration options to link to the dataset schema (replace with your own if you need to customize it) and the required presets:
 
 	scheming.dataset_schemas = ckanext.validation.examples:ckan_default_schema.json
 	scheming.presets = ckanext.scheming:presets.json
     	               ckanext.validation:presets.json
+
+Read more below about to [change the CKAN metadata schema](#changes-in-the-metadata-schema)
+
+### Operation modes
 
 Use the following configuration options to choose the [operation modes](#operation-modes):
 
@@ -92,6 +98,8 @@ Use the following configuration options to choose the [operation modes](#operati
 
 	ckanext.validation.run_on_create_sync = True|False (Defaults to False)
 	ckanext.validation.run_on_update_sync = True|False (Defaults to False)
+
+### Formats to validate
 
 By default validation will be run agaisnt the following formats: `CSV`, `XLSX` and `XLS`. You can modify these formats using the following option:
 
@@ -106,6 +114,12 @@ You can also provide [validation options](#validation-options) that will be used
 Make sure to use indentation if the value spans multiple lines otherwise it won't be parsed.
 
 If you are using a cloud-based storage backend for uploads check [Private datasets](#private-datasets) for other configuration settings that might be relevant.
+
+### Display badges
+
+To prevent the extension from adding the validation badges next to the resources use the following option:
+
+    ckanext.validation.show_badges_in_listings = False
 
 
 ## How it works
@@ -282,9 +296,9 @@ Clicking the link on the error message will bring up a modal window with the val
 Use `ckanext.validation.run_on_create_sync` and `ckanext.validation.run_on_update_sync` to enable this mode (See [Configuration](#configuration)).
 
 
-### Changes in the schema
+### Changes in the metadata schema
 
-The extension requires changes in the default CKAN resource schema to add some fields it requires. It is strongly recommended to use [ckanext-scheming](https://github.com/ckan/ckanext-scheming) to define your CKAN schema. This extension provides all the necessary presets and validators to get up and running just by adding the following fields to the `resource_fields` section of a ckanext-scheming schema:
+The extension requires changes in the default CKAN resource metadata schema to add some fields it requires. It is strongly recommended to use [ckanext-scheming](https://github.com/ckan/ckanext-scheming) to define your CKAN schema. This extension provides all the necessary presets and validators to get up and running just by adding the following fields to the `resource_fields` section of a ckanext-scheming schema:
 
 ```json
     {
@@ -323,6 +337,53 @@ Additionally, two read-only fields are added to resources:
 * `validation_status`: Stores the last validation result for the resource. Can be one of `success`, `failure` or `error`.
 * `validation_timestamp`: Date and time of the last validation run.
 
+
+### Extending via interfaces
+
+The plugin provides the `IDataValidation` interface so other plugins can modify its behaviour.
+
+Currently it only provides the `can_validate()` method, that plugins can use to determine if a specific resource should be validated or not:
+
+```
+class IDataValidation(Interface):
+
+    def can_validate(self, context, data_dict):
+        '''
+        When implemented, this call can be used to control whether the
+        data validation should take place or not on a specific resource.
+
+        Implementations will receive a context object and the data_dict of
+        the resource.
+
+        If it returns False, the validation won't be performed, and if it
+        returns True there will be a validation job started.
+
+        Note that after this methods is called there are further checks
+        performed to ensure the resource has one of the supported formats.
+        This is controlled via the `ckanext.validation.formats` config option.
+
+        Here is an example implementation:
+
+
+        from ckan import plugins as p
+
+        from ckanext.validation.interfaces import IDataValidation
+
+
+        class MyPlugin(p.SingletonPlugin):
+
+            p.implements(IDataValidation, inherit=True)
+
+            def can_validate(self, context, data_dict):
+
+                if data_dict.get('my_custom_field') == 'xx':
+                    return False
+
+                return True
+
+        '''
+        return True
+```
 
 ## Action functions
 
