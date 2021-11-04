@@ -1,8 +1,4 @@
-import sys
 import click
-import pprint
-
-from ckanext.validation.model import create_tables, tables_exist
 
 
 def get_commands():
