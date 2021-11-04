@@ -11,7 +11,7 @@ log = logging.getLogger(__name__)
 validation = Blueprint(u'validation', __name__)
 
 
-def read(resource_id):
+def read(id, resource_id):
     try:
         validation = get_action(u'resource_validation_show')(
             {u'user': c.user},
