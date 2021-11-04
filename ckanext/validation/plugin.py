@@ -34,7 +34,8 @@ from ckanext.validation.utils import (
     get_update_mode_from_config,
 )
 from ckanext.validation.interfaces import IDataValidation
-
+from ckanext.validation.cli import validation
+import ckanext.validation.views as views
 
 log = logging.getLogger(__name__)
 
@@ -42,13 +43,15 @@ log = logging.getLogger(__name__)
 class ValidationPlugin(p.SingletonPlugin, DefaultTranslation):
     p.implements(p.IConfigurer)
     p.implements(p.IActions)
-    p.implements(p.IRoutes, inherit=True)
+    # p.implements(p.IRoutes, inherit=True)
     p.implements(p.IAuthFunctions)
     p.implements(p.IResourceController, inherit=True)
     p.implements(p.IPackageController, inherit=True)
     p.implements(p.ITemplateHelpers)
     p.implements(p.IValidators)
     p.implements(p.ITranslation)
+    p.implements(p.IClick)
+    p.implements(p.IBlueprint)
 
     # IConfigurer
 
@@ -66,18 +69,18 @@ to create the database tables:
         t.add_public_directory(config_, u'public')
         t.add_resource(u'assets', 'ckanext-validation')
 
-    # IRoutes
-
-    def before_map(self, map_):
-
-        controller = u'ckanext.validation.controller:ValidationController'
-
-        map_.connect(
-            u'validation_read',
-            u'/dataset/{id}/resource/{resource_id}/validation',
-            controller=controller, action=u'validation')
-
-        return map_
+    # # IRoutes
+    #
+    # def before_map(self, map_):
+    #
+    #     controller = u'ckanext.validation.controller:ValidationController'
+    #
+    #     map_.connect(
+    #         u'validation_read',
+    #         u'/dataset/{id}/resource/{resource_id}/validation',
+    #         controller=controller, action=u'validation')
+    #
+    #     return map_
 
     # IActions
 
@@ -294,6 +297,16 @@ to create the database tables:
             'resource_schema_validator': resource_schema_validator,
             'validation_options_validator': validation_options_validator,
         }
+
+    # IClick
+
+    def get_commands(self):
+        return [validation]
+
+    # IBlueprint
+
+    def get_blueprint(self):
+        return views.get_blueprints()
 
 
 def _run_async_validation(resource_id):
