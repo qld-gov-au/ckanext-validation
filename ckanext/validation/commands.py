@@ -332,7 +332,6 @@ report file on the relevant commands.''')
                                 else:
                                     outputs['formats_success'][resource['format']] = 1
 
-
                     if len(query['results']) < self._page_size:
                         break
 
@@ -359,27 +358,26 @@ report file on the relevant commands.''')
         outputs['error_counts_output'] = error_counts_output
 
         msg_errors = '''
-Errors breakdown:
-{}
-'''.format(outputs['error_counts_output'])
+                    Errors breakdown:
+                    {}
+                    '''.format(outputs['error_counts_output'])
 
         outputs['msg_errors'] = msg_errors if full else ''
 
         msg = '''
-Done.
-{datasets} datasets with tabular resources
-{tabular_resources} tabular resources
-{resources_success} resources - validation success
-{resources_failure} resources - validation failure
-{resources_error} resources - validation error
-
-Formats breakdown (validation passed):
-{formats_success_output}
-Formats breakdown (validation failed or errored):
-{formats_failure_output}
-{msg_errors}
-CSV Report stored in {output_csv}
-'''.format(**outputs)
-
+            Done.
+            {datasets} datasets with tabular resources
+            {tabular_resources} tabular resources
+            {resources_success} resources - validation success
+            {resources_failure} resources - validation failure
+            {resources_error} resources - validation error
+            
+            Formats breakdown (validation passed):
+            {formats_success_output}
+            Formats breakdown (validation failed or errored):
+            {formats_failure_output}
+            {msg_errors}
+            CSV Report stored in {output_csv}
+            '''.format(**outputs)
 
         log.info(msg)
