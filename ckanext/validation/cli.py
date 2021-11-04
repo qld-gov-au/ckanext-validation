@@ -5,6 +5,10 @@ import pprint
 from ckanext.validation.model import create_tables, tables_exist
 
 
+def get_commands():
+    return [validation]
+
+
 @click.group()
 def validation():
     """Validation management commands.
@@ -14,9 +18,5 @@ def validation():
 
 @validation.command(name='init-db')
 def init_db():
-    if tables_exist():
-        click.echo(pprint.pformat(u'Validation tables already exist'))
-        sys.exit(0)
-
-    create_tables()
-    click.echo(pprint.pformat(u'Validation tables created'))
+    from ckanext.validation.common import init_db
+    init_db()

@@ -8,8 +8,8 @@ from ckan.lib.cli import query_yes_no
 from ckantoolkit import CkanCommand, get_action, config
 
 from ckanext.validation import settings
-from ckanext.validation.model import create_tables, tables_exist
 from ckanext.validation.logic import _search_datasets
+import ckanext.validation.common as common
 
 
 def error(msg):
@@ -123,7 +123,7 @@ report file on the relevant commands.''')
 
         cmd = self.args[0]
         if cmd == 'init-db':
-            self.init_db()
+            common.init_db()
         elif cmd == 'run':
             self.run_validation()
         elif cmd == 'clear':
@@ -135,16 +135,6 @@ report file on the relevant commands.''')
         else:
             self.parser.print_usage()
             sys.exit(1)
-
-    def init_db(self):
-
-        if tables_exist():
-            print(u'Validation tables already exist')
-            sys.exit(0)
-
-        create_tables()
-
-        print(u'Validation tables created')
 
     def run_validation(self):
 
