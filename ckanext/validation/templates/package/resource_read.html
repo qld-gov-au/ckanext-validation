@@ -6,6 +6,8 @@
   {{ h.get_validation_badge(res)|safe }}
   </h1>
 
-  {% asset 'ckanext-validation/main-css' %}
+  {% set type = 'asset' if h.ckan_version().split('.')[1] | int >= 9 else 'resource' %}
+  {% include 'validation/snippets/validation_style_' ~ type ~ '.html' %}
+
 {% endblock %}
 

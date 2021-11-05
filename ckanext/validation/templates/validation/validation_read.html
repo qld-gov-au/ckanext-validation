@@ -1,4 +1,6 @@
-{% asset 'ckanext-validation/main-css' %}
+{% set type = 'asset' if h.ckan_version().split('.')[1] | int >= 9 else 'resource' %}
+
+{% include 'validation/snippets/validation_style_' ~ type ~ '.html' %}
 
 {% extends "package/base.html" %}
 
@@ -43,9 +45,7 @@
       </div>
     </section>
 
-   {% asset 'ckanext-validation/goodtables-ui' %}
-   {% asset 'ckanext-validation/validation-report-css' %}
-   {% asset 'ckanext-validation/module-validation-report' %}
+   {% include 'validation/snippets/validation_report_' ~ type ~ '.html' %}
 
 {% endblock %}
 
