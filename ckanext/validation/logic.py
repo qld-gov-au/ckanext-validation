@@ -119,6 +119,7 @@ def resource_validation_run(context, data_dict):
 
     Session.add(validation)
     Session.commit()
+    Session.flush()
 
     if async_job:
         package_id = resource['package_id']
