@@ -399,7 +399,7 @@ class TestPackageControllerHooksUpdate(object):
 
         mock_enqueue.assert_not_called()
 
-    @mock.patch('ckanext.validation.logic.enqueue_job')
+    @mock.patch('ckantoolkit.enqueue_job')
     def test_validation_does_not_run_when_editing_via_web_form(self, mock_enqueue):
 
         resource = {
