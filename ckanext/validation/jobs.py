@@ -22,6 +22,10 @@ log = logging.getLogger(__name__)
 
 
 def run_validation_job(resource):
+    # handle either a resource dict or just an ID
+    # ID is more efficient, as resource dicts can be very large
+    if isinstance(resource, six.string_types):
+        resource = t.get_action('resource_show')({'ignore_auth': True}, {'id': resource})
 
     log.debug(u'Validating resource %s', resource['id'])
 

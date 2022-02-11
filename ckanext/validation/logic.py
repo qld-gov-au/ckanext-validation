@@ -83,7 +83,8 @@ def resource_validation_run(context, data_dict):
 
     t.check_access(u'resource_validation_run', context, data_dict)
 
-    if not data_dict.get(u'resource_id'):
+    resource_id = data_dict.get(u'resource_id')
+    if not resource_id:
         raise t.ValidationError({u'resource_id': u'Missing value'})
 
     resource = t.get_action(u'resource_show')(
@@ -122,13 +123,13 @@ def resource_validation_run(context, data_dict):
         validation.created = datetime.datetime.utcnow()
         validation.status = u'created'
     else:
-        validation = Validation(resource_id=resource['id'])
+        validation = Validation(resource_id=resource_id)
 
     Session.add(validation)
     Session.commit()
 
     if async_job:
-        enqueue_job(run_validation_job, [resource])
+        enqueue_job(run_validation_job, [resource_id])
     else:
         run_validation_job(resource)
 
