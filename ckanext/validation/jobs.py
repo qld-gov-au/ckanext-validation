@@ -21,7 +21,7 @@ from ckanext.validation.model import Validation
 log = logging.getLogger(__name__)
 
 
-def run_validation_job(resource):
+def run_validation_job(resource=None):
     # handle either a resource dict or just an ID
     # ID is more efficient, as resource dicts can be very large
     if isinstance(resource, six.string_types):
