@@ -845,5 +845,5 @@ class TestPackageUpdate(FunctionalTestBase):
 
     def test_package_patch_with_resources_does_not_set_context_flag(self):
         context = {}
-        call_action('package_patch', context=context, package_id=self.test_dataset['id'], resources=[])
+        call_action('package_patch', context=context, id=self.test_dataset['id'], resources=[])
         assert_not_in('save', context)
