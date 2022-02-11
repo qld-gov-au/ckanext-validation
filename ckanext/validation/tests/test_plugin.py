@@ -63,9 +63,9 @@ class TestResourceControllerHooksUpdate(object):
 
         assert_equals(mock_enqueue.call_count, 1)
 
-        assert_equals(mock_enqueue.call_args[0][0], run_validation_job)
+        assert_equals(mock_enqueue.call_args.kwargs['fn'], run_validation_job)
         assert_equals(
-            mock_enqueue.call_args[0][1][0],
+            mock_enqueue.call_args.kwargs['kwargs']['resource'],
             dataset['resources'][0]['id'])
 
     @change_config('ckanext.validation.run_on_create_async', False)
@@ -83,9 +83,9 @@ class TestResourceControllerHooksUpdate(object):
 
         assert_equals(mock_enqueue.call_count, 1)
 
-        assert_equals(mock_enqueue.call_args[0][0], run_validation_job)
+        assert_equals(mock_enqueue.call_args.kwargs['fn'], run_validation_job)
         assert_equals(
-            mock_enqueue.call_args[0][1][0],
+            mock_enqueue.call_args.kwargs['kwargs']['resource'],
             dataset['resources'][0]['id'])
 
     @change_config('ckanext.validation.run_on_create_async', False)
@@ -116,9 +116,9 @@ class TestResourceControllerHooksUpdate(object):
 
         assert_equals(mock_enqueue.call_count, 1)
 
-        assert_equals(mock_enqueue.call_args[0][0], run_validation_job)
+        assert_equals(mock_enqueue.call_args.kwargs['fn'], run_validation_job)
         assert_equals(
-            mock_enqueue.call_args[0][1][0],
+            mock_enqueue.call_args.kwargs['kwargs']['resource'],
             dataset['resources'][0]['id'])
 
     @change_config('ckanext.validation.run_on_create_async', False)
@@ -132,8 +132,8 @@ class TestResourceControllerHooksUpdate(object):
 
         assert_equals(mock_enqueue.call_count, 1)
 
-        assert_equals(mock_enqueue.call_args[0][0], run_validation_job)
-        assert_equals(mock_enqueue.call_args[0][1][0], resource['id'])
+        assert_equals(mock_enqueue.call_args.kwargs['fn'], run_validation_job)
+        assert_equals(mock_enqueue.call_args.kwargs['kwargs']['resource'], resource['id'])
 
     @change_config('ckanext.validation.run_on_create_async', False)
     @change_config('ckanext.validation.run_on_update_async', False)
@@ -172,8 +172,8 @@ class TestResourceControllerHooksCreate(object):
 
         assert_equals(mock_enqueue.call_count, 1)
 
-        assert_equals(mock_enqueue.call_args[0][0], run_validation_job)
-        assert_equals(mock_enqueue.call_args[0][1][0], resource['id'])
+        assert_equals(mock_enqueue.call_args.kwargs['fn'], run_validation_job)
+        assert_equals(mock_enqueue.call_args.kwargs['kwargs']['resource'], resource['id'])
 
     @mock.patch('ckantoolkit.enqueue_job')
     @change_config('ckanext.validation.run_on_update_async', False)
@@ -183,8 +183,8 @@ class TestResourceControllerHooksCreate(object):
 
         assert_equals(mock_enqueue.call_count, 1)
 
-        assert_equals(mock_enqueue.call_args[0][0], run_validation_job)
-        assert_equals(mock_enqueue.call_args[0][1][0], resource['id'])
+        assert_equals(mock_enqueue.call_args.kwargs['fn'], run_validation_job)
+        assert_equals(mock_enqueue.call_args.kwargs['kwargs']['resource'], resource['id'])
 
     @change_config('ckanext.validation.run_on_create_async', False)
     @change_config('ckanext.validation.run_on_update_async', False)
@@ -238,8 +238,8 @@ class TestPackageControllerHooksCreate(object):
 
         assert_equals(mock_enqueue.call_count, 1)
 
-        assert_equals(mock_enqueue.call_args[0][0], run_validation_job)
-        assert_equals(mock_enqueue.call_args[0][1][0], resource['id'])
+        assert_equals(mock_enqueue.call_args.kwargs['fn'], run_validation_job)
+        assert_equals(mock_enqueue.call_args.kwargs['kwargs']['resource'], resource['id'])
 
     @mock.patch('ckantoolkit.enqueue_job')
     def test_validation_run_with_url(self, mock_enqueue):
@@ -253,8 +253,8 @@ class TestPackageControllerHooksCreate(object):
 
         assert_equals(mock_enqueue.call_count, 1)
 
-        assert_equals(mock_enqueue.call_args[0][0], run_validation_job)
-        assert_equals(mock_enqueue.call_args[0][1][0], resource['id'])
+        assert_equals(mock_enqueue.call_args.kwargs['fn'], run_validation_job)
+        assert_equals(mock_enqueue.call_args.kwargs['kwargs']['resource'], resource['id'])
 
     @mock.patch('ckantoolkit.enqueue_job')
     def test_validation_run_only_supported_formats(self, mock_enqueue):
@@ -275,8 +275,8 @@ class TestPackageControllerHooksCreate(object):
 
         assert_equals(mock_enqueue.call_count, 1)
 
-        assert_equals(mock_enqueue.call_args[0][0], run_validation_job)
-        assert_equals(mock_enqueue.call_args[0][1][0], resource1['id'])
+        assert_equals(mock_enqueue.call_args.kwargs['fn'], run_validation_job)
+        assert_equals(mock_enqueue.call_args.kwargs['kwargs']['resource'], resource1['id'])
 
 
 class TestPackageControllerHooksUpdate(object):
@@ -307,8 +307,8 @@ class TestPackageControllerHooksUpdate(object):
 
         assert_equals(mock_enqueue.call_count, 1)
 
-        assert_equals(mock_enqueue.call_args[0][0], run_validation_job)
-        assert_equals(mock_enqueue.call_args[0][1][0], resource['id'])
+        assert_equals(mock_enqueue.call_args.kwargs['fn'], run_validation_job)
+        assert_equals(mock_enqueue.call_args.kwargs['kwargs']['resource'], resource['id'])
 
     @change_config('ckanext.validation.run_on_create_async', False)
     @mock.patch('ckantoolkit.enqueue_job')
@@ -330,8 +330,8 @@ class TestPackageControllerHooksUpdate(object):
 
         assert_equals(mock_enqueue.call_count, 1)
 
-        assert_equals(mock_enqueue.call_args[0][0], run_validation_job)
-        assert_equals(mock_enqueue.call_args[0][1][0], resource['id'])
+        assert_equals(mock_enqueue.call_args.kwargs['fn'], run_validation_job)
+        assert_equals(mock_enqueue.call_args.kwargs['kwargs']['resource'], resource['id'])
 
     @change_config('ckanext.validation.run_on_create_async', False)
     @mock.patch('ckantoolkit.enqueue_job')
@@ -379,8 +379,8 @@ class TestPackageControllerHooksUpdate(object):
 
         assert_equals(mock_enqueue.call_count, 1)
 
-        assert_equals(mock_enqueue.call_args[0][0], run_validation_job)
-        assert_equals(mock_enqueue.call_args[0][1][0], resource1['id'])
+        assert_equals(mock_enqueue.call_args.kwargs['fn'], run_validation_job)
+        assert_equals(mock_enqueue.call_args.kwargs['kwargs']['resource'], resource1['id'])
 
     @change_config('ckanext.validation.run_on_create_async', False)
     @change_config('ckanext.validation.run_on_update_async', False)
