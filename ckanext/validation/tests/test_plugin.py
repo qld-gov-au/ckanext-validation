@@ -398,3 +398,18 @@ class TestPackageControllerHooksUpdate(object):
         call_action('package_update', {}, **dataset)
 
         mock_enqueue.assert_not_called()
+
+    @mock.patch('ckanext.validation.logic.enqueue_job')
+    def test_validation_does_not_run_when_editing_via_web_form(self, mock_enqueue):
+
+        resource = {
+            'id': 'test-resource-id',
+            'format': 'CSV',
+            'url': 'http://some.data'
+        }
+        dataset = factories.Dataset(
+            owner_org=self.owner_org['id'], resources=[resource])
+
+        call_action('package_update', context={'save': True}, **dataset)
+
+        mock_enqueue.assert_not_called()
