@@ -47,7 +47,7 @@ def run_validation_job(resource=None):
     validation.status = u'running'
     Session.add(validation)
     Session.commit()
-    Session.flush() # Flush so other transactions are not waiting
+    Session.flush()  # Flush so other transactions are not waiting
 
     options = t.config.get(
         u'ckanext.validation.default_validation_options')
@@ -118,7 +118,7 @@ def run_validation_job(resource=None):
 
     Session.add(validation)
     Session.commit()
-    Session.flush() # Flush so other transactions are not waiting
+    Session.flush()  # Flush so other transactions are not waiting
 
     # Store result status in resource
     t.get_action('resource_patch')(
