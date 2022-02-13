@@ -21,13 +21,23 @@ from ckanext.validation.model import Validation
 log = logging.getLogger(__name__)
 
 
-def run_validation_job(resource):
+def run_validation_job(resource=None):
+    # handle either a resource dict or just an ID
+    # ID is more efficient, as resource dicts can be very large
+    if isinstance(resource, six.string_types):
+        resource = t.get_action('resource_show')({'ignore_auth': True}, {'id': resource})
 
     log.debug(u'Validating resource %s', resource['id'])
 
     try:
         validation = Session.query(Validation).filter(
             Validation.resource_id == resource['id']).one()
+        if (validation.status == u'running'
+                and validation.created >= (datetime.datetime.utcnow() - (5 * 60))
+                and validation.finished is None):
+            # exit if validation job is still running, no point starting on another
+            # worker if already in-progress in last 5 min, this should remove dead locks
+            return
     except NoResultFound:
         validation = None
 
@@ -37,6 +47,7 @@ def run_validation_job(resource):
     validation.status = u'running'
     Session.add(validation)
     Session.commit()
+    Session.flush()  # Flush so other transactions are not waiting
 
     options = t.config.get(
         u'ckanext.validation.default_validation_options')
@@ -107,6 +118,7 @@ def run_validation_job(resource):
 
     Session.add(validation)
     Session.commit()
+    Session.flush()  # Flush so other transactions are not waiting
 
     # Store result status in resource
     t.get_action('resource_patch')(
@@ -125,7 +137,7 @@ def _validate_table(source, _format=u'csv', schema=None, **options):
     use_proxy = 'ckan.download_proxy' in t.config
     if use_proxy:
         proxy = t.config.get('ckan.download_proxy')
-        log.debug("Download resource for validation via proxy: %s", proxy)
+        log.debug(u'Download resource for validation via proxy: %s', proxy)
         http_session.proxies.update({'http': proxy, 'https': proxy})
     report = validate(source, format=_format, schema=schema, http_session=http_session, **options)
 

@@ -19,6 +19,7 @@ from ckanext.validation.logic import (
     auth_resource_validation_delete, auth_resource_validation_run_batch,
     resource_create as custom_resource_create,
     resource_update as custom_resource_update,
+    package_patch
 )
 from ckanext.validation.helpers import (
     get_validation_badge,
@@ -88,6 +89,7 @@ to create the database tables:
             u'resource_validation_show': resource_validation_show,
             u'resource_validation_delete': resource_validation_delete,
             u'resource_validation_run_batch': resource_validation_run_batch,
+            u'package_patch': package_patch
         }
 
         if get_create_mode_from_config() == u'sync':
@@ -244,17 +246,18 @@ to create the database tables:
                 and not get_create_mode_from_config() == u'async'):
             return
 
-        if context.get('_validation_performed'):
+        if context.pop('_validation_performed', None):
             # Ugly, but needed to avoid circular loops caused by the
             # validation job calling resource_patch (which calls
             # package_update)
-            del context['_validation_performed']
             return
 
         if is_dataset:
             package_id = data_dict.get('id')
-            if package_id in self.packages_to_skip:
-                del self.packages_to_skip[package_id]
+            if self.packages_to_skip.pop(package_id, None) or context.get('save', False):
+                # Either we're updating an individual resource,
+                # or we're updating the package metadata via the web form;
+                # in both cases, we don't need to validate every resource.
                 return
 
             for resource in data_dict.get(u'resources', []):

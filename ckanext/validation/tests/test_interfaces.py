@@ -168,7 +168,7 @@ class TestInterfaceAsync(BaseTestInterfaces):
         self.test_dataset = factories.Dataset(owner_org=self.owner_org.id)
 
     @helpers.change_config('ckanext.validation.run_on_create_async', True)
-    @mock.patch('ckanext.validation.logic.enqueue_job')
+    @mock.patch('ckantoolkit.enqueue_job')
     def test_can_validate_called_on_create_async(self, mock_validation):
 
         helpers.call_action(
@@ -182,7 +182,7 @@ class TestInterfaceAsync(BaseTestInterfaces):
         assert mock_validation.called
 
     @helpers.change_config('ckanext.validation.run_on_create_async', True)
-    @mock.patch('ckanext.validation.logic.enqueue_job')
+    @mock.patch('ckantoolkit.enqueue_job')
     def test_can_validate_called_on_create_async_no_validation(self, mock_validation):
 
         helpers.call_action(
@@ -198,7 +198,7 @@ class TestInterfaceAsync(BaseTestInterfaces):
 
     @helpers.change_config('ckanext.validation.run_on_create_async', False)
     @helpers.change_config('ckanext.validation.run_on_update_async', True)
-    @mock.patch('ckanext.validation.logic.enqueue_job')
+    @mock.patch('ckantoolkit.enqueue_job')
     def test_can_validate_called_on_update_async(self, mock_validation):
 
         resource = factories.Resource(package_id=self.test_dataset['id'])
@@ -215,7 +215,7 @@ class TestInterfaceAsync(BaseTestInterfaces):
 
     @helpers.change_config('ckanext.validation.run_on_create_async', False)
     @helpers.change_config('ckanext.validation.run_on_update_async', True)
-    @mock.patch('ckanext.validation.logic.enqueue_job')
+    @mock.patch('ckantoolkit.enqueue_job')
     def test_can_validate_called_on_update_async_no_validation(self, mock_validation):
 
         resource = factories.Resource(package_id=self.test_dataset['id'])
