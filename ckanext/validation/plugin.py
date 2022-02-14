@@ -40,11 +40,15 @@ from ckanext.validation.interfaces import IDataValidation
 
 log = logging.getLogger(__name__)
 
+if p.toolkit.check_ckan_version("2.9"):
+    from .plugin_mixins.flask_plugin import MixinPlugin
+else:
+    from .plugin_mixins.pylons_plugin import MixinPlugin
 
-class ValidationPlugin(p.SingletonPlugin, DefaultTranslation):
+
+class ValidationPlugin(MixinPlugin, p.SingletonPlugin, DefaultTranslation):
     p.implements(p.IConfigurer)
     p.implements(p.IActions)
-    p.implements(p.IRoutes, inherit=True)
     p.implements(p.IAuthFunctions)
     p.implements(p.IResourceController, inherit=True)
     p.implements(p.IPackageController, inherit=True)
@@ -67,19 +71,6 @@ to create the database tables:
         t.add_template_directory(config_, u'templates')
         t.add_public_directory(config_, u'public')
         t.add_resource(u'fanstatic', 'ckanext-validation')
-
-    # IRoutes
-
-    def before_map(self, map_):
-
-        controller = u'ckanext.validation.controller:ValidationController'
-
-        map_.connect(
-            u'validation_read',
-            u'/dataset/{id}/resource/{resource_id}/validation',
-            controller=controller, action=u'validation')
-
-        return map_
 
     # IActions
 
