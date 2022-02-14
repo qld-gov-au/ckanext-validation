@@ -11,13 +11,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ckan-version: [2.8.8]
+        ckan-version: [2.8.8, 2.9.4]
 
     name: Continuous Integration build on CKAN ${{ matrix.ckan-version }}
     runs-on: ubuntu-latest
     container: integratedexperts/ci-builder
     env:
-      CKAN_REPO: qld-gov-au/ckan
+      CKAN_REPO: ckan/ckan
       CKAN_VERSION: ${{ matrix.ckan-version }}
 
     steps:
