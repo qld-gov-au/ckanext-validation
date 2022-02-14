@@ -1,12 +1,10 @@
 import datetime
 
-from nose.tools import assert_equals, assert_in
+from nose.tools import assert_equals, assert_in, with_setup
 
 from ckan import model
 from ckan.tests.helpers import reset_db
-from ckan.tests import factories
-
-from ckantoolkit import config
+from ckan.tests import factories, helpers
 
 from ckanext.validation.helpers import (
     get_validation_badge,
@@ -40,29 +38,18 @@ def _assert_validation_status(resource, status):
     assert 'class="status {}"'.format(status) in out, "'{}' status not found in {}".format(status, out)
 
 
+def _setup_function(self):
+    reset_db()
+    if not tables_exist():
+        create_tables()
+    self.owner_org = _test_org()
+    self.test_dataset = factories.Dataset(owner_org=self.owner_org.id)
+
+
+@with_setup(_setup_function)
 class TestBadges(object):
 
-    @classmethod
-    def setup_class(cls):
-        cls._original_config = dict(config)
-        config['ckanext.validation.run_on_create_sync'] = False
-
-        reset_db()
-        if not tables_exist():
-            create_tables()
-
-    @classmethod
-    def teardown_class(cls):
-
-        config.clear()
-        config.update(cls._original_config)
-
-        reset_db()
-
-    def setUp(self):
-        self.owner_org = _test_org()
-        self.test_dataset = factories.Dataset(owner_org=self.owner_org.id)
-
+    @helpers.change_config('ckanext.validation.run_on_create_sync', False)
     def test_get_validation_badge_no_validation(self):
 
         resource = factories.Resource(
@@ -72,6 +59,7 @@ class TestBadges(object):
 
         assert_equals(get_validation_badge(resource), '')
 
+    @helpers.change_config('ckanext.validation.run_on_create_sync', False)
     def test_get_validation_badge_success(self):
 
         resource = factories.Resource(
@@ -83,6 +71,7 @@ class TestBadges(object):
 
         _assert_validation_status(resource, 'success')
 
+    @helpers.change_config('ckanext.validation.run_on_create_sync', False)
     def test_get_validation_badge_failure(self):
 
         resource = factories.Resource(
@@ -94,6 +83,7 @@ class TestBadges(object):
 
         _assert_validation_status(resource, 'invalid')
 
+    @helpers.change_config('ckanext.validation.run_on_create_sync', False)
     def test_get_validation_badge_error(self):
 
         resource = factories.Resource(
@@ -105,6 +95,7 @@ class TestBadges(object):
 
         _assert_validation_status(resource, 'error')
 
+    @helpers.change_config('ckanext.validation.run_on_create_sync', False)
     def test_get_validation_badge_other(self):
 
         resource = factories.Resource(
