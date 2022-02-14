@@ -3,7 +3,7 @@ import StringIO
 import io
 import json
 
-from nose.tools import assert_raises, assert_equals
+from nose.tools import assert_raises, assert_equals, assert_true, assert_not_in
 import mock
 
 from ckan import model
@@ -72,7 +72,7 @@ class TestResourceValidationRun(object):
 
         assert 'Resource must have a valid URL' in str(e.exception)
 
-    @mock.patch('ckanext.validation.logic.enqueue_job')
+    @mock.patch('ckantoolkit.enqueue_job')
     def test_resource_validation_with_url(self, mock_enqueue_job):
 
         resource = factories.Resource(
@@ -80,7 +80,7 @@ class TestResourceValidationRun(object):
 
         call_action('resource_validation_run', resource_id=resource['id'])
 
-    @mock.patch('ckanext.validation.logic.enqueue_job')
+    @mock.patch('ckantoolkit.enqueue_job')
     def test_resource_validation_with_upload(self, mock_enqueue_job):
 
         resource = factories.Resource(
@@ -101,7 +101,7 @@ class TestResourceValidationRun(object):
 
         assert len(jobs_after) == len(jobs) + 1
 
-    @mock.patch('ckanext.validation.logic.enqueue_job')
+    @mock.patch('ckantoolkit.enqueue_job')
     def test_resource_validation_creates_validation_object(
             self, mock_enqueue_job):
 
@@ -121,7 +121,7 @@ class TestResourceValidationRun(object):
         assert_equals(validation.error, None)
 
     @change_config('ckanext.validation.run_on_create_async', False)
-    @mock.patch('ckanext.validation.logic.enqueue_job')
+    @mock.patch('ckantoolkit.enqueue_job')
     def test_resource_validation_resets_existing_validation_object(
             self, mock_enqueue_job):
 
@@ -826,3 +826,24 @@ class TestValidationOptionsField(FunctionalTestBase):
 
         assert_equals(resource['validation_options'],
                       json.loads(validation_options))
+
+
+class TestPackageUpdate(FunctionalTestBase):
+
+    def setup(self):
+        super(TestPackageUpdate, self).setup()
+
+        if not tables_exist():
+            create_tables()
+        self.owner_org = factories.Organization(name='test-org')
+        self.test_dataset = factories.Dataset(owner_org=self.owner_org['id'])
+
+    def test_package_patch_without_resources_sets_context_flag(self):
+        context = {}
+        call_action('package_patch', context=context, id=self.test_dataset['id'])
+        assert_true(context.get('save', False))
+
+    def test_package_patch_with_resources_does_not_set_context_flag(self):
+        context = {}
+        call_action('package_patch', context=context, id=self.test_dataset['id'], resources=[])
+        assert_not_in('save', context)
