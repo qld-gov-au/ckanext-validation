@@ -61,9 +61,12 @@ class ValidationPlugin(MixinPlugin, p.SingletonPlugin, DefaultTranslation):
     def update_config(self, config_):
         if not tables_exist():
             log.critical(u'''
-The validation extension requires a database setup. Please run the following
-to create the database tables:
+The validation extension requires a database setup.
+Validation pages will not be enabled.
+Please run the following to create the database tables:
     paster --plugin=ckanext-validation validation init-db
+OR
+    ckan validation init-db
 ''')
         else:
             log.debug(u'Validation tables exist')

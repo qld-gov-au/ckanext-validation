@@ -10,7 +10,7 @@ def validation():
     pass
 
 
-@validation.command()
+@validation.command(name="init-db")
 def init_db():
     ''' Initialize database tables.
     '''
