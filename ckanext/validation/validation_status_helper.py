@@ -65,8 +65,8 @@ class ValidationStatusHelper:
     def createValidationJob(self, session=None, resource_id=None):
         # type: (object, Session, str) -> model.Validation
         '''
-        If validation object not exit:
-            create record in state created with created timestaup of now
+        If validation object not exist:
+            create record in state created with created timestamp of now
 
         If in state 'created' or 'running' and created time stamp within last hour:
             raise exception ValidationJobAlreadyEnqueued
@@ -87,9 +87,9 @@ class ValidationStatusHelper:
         if validationRecord is not None:
             status = validationRecord.status
 
-            if (status == StatusTypes.running or status == StatusTypes.created) and self.getHoursSince(validationRecord.created) < 1:
+            if status in (StatusTypes.running, StatusTypes.created) and self.getHoursSince(validationRecord.created) < 1:
                 error_message = "Validation Job already in pending state: {} on resource: {} created on (gmt): {}"\
-                    .format(validationRecord.status, resource_id, validationRecord.create.isoDateTime())
+                    .format(validationRecord.status, resource_id, validationRecord.created.isoformat())
                 log.error(error_message)
                 raise ValidationJobAlreadyEnqueued(error_message)
 
@@ -134,7 +134,7 @@ class ValidationStatusHelper:
         validationRecord.status = status
         validationRecord.report = report
         validationRecord.error = error
-        if status == StatusTypes.success or status == StatusTypes.failure or status == StatusTypes.error:
+        if status in (StatusTypes.success, StatusTypes.failure, StatusTypes.error):
             validationRecord.finished = datetime.datetime.utcnow()
 
         Session.add(validationRecord)
