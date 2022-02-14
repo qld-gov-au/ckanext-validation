@@ -26,12 +26,15 @@ def run_validation_job(resource=None):
         resource = t.get_action('resource_show')({'ignore_auth': True}, {'id': resource})
 
     log.debug(u'Validating resource %s', resource['id'])
-
+    session = Session
     try:
-        ValidationStatusHelper().updateValidationJobStatus(Session, resource['id'], StatusTypes.running)
-    except (ValidationJobAlreadyRunning, ValidationJobDoesNotExist) as e:
+        ValidationStatusHelper().updateValidationJobStatus(session, resource['id'], StatusTypes.running)
+    except ValidationJobAlreadyRunning as e:
         log.error("Won't run enqueued job %s as job is already running or in invalid state: %s", resource['id'], e)
         return
+    except ValidationJobDoesNotExist:
+        ValidationStatusHelper().createValidationJob(session, resource['id'])
+        ValidationStatusHelper().updateValidationJobStatus(session, resource['id'], StatusTypes.running)
 
     options = t.config.get(
         u'ckanext.validation.default_validation_options')
@@ -94,11 +97,11 @@ def run_validation_job(resource=None):
 
     if report['table-count'] > 0:
         status = StatusTypes.success if report[u'valid'] else StatusTypes.failure
-        validationRecord = ValidationStatusHelper().updateValidationJobStatus(Session, resource['id'], status, report, None)
+        validationRecord = ValidationStatusHelper().updateValidationJobStatus(session, resource['id'], status, report, None)
     else:
         status = StatusTypes.error
         error_payload = {'message': '\n'.join(report['warnings']) or u'No tables found'}
-        validationRecord = ValidationStatusHelper().updateValidationJobStatus(Session, resource['id'], status, None, error_payload)
+        validationRecord = ValidationStatusHelper().updateValidationJobStatus(session, resource['id'], status, None, error_payload)
 
     # Store result status in resource
     t.get_action('resource_patch')(

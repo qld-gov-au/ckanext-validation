@@ -96,15 +96,18 @@ def resource_validation_run(context, data_dict):
 
     # Check if there was an existing validation for the resource
     try:
-        ValidationStatusHelper().createValidationJob(context['model'].Session, data_dict['resource_id'])
+        session = context['model'].Session
+        ValidationStatusHelper().createValidationJob(session, data_dict['resource_id'])
     except ValidationJobAlreadyEnqueued:
+        log.error("resource_validation_run: ValidationJobAlreadyEnqueued %s", data_dict['resource_id'])
         return
 
     if async_job:
         package_id = resource['package_id']
         enqueue_validation_job(package_id, resource_id)
     else:
-        run_validation_job(resource)
+        # run_validation_job(resource_id)  # Plan is to only pass resource_id, but tests need to be fixed for this
+        run_validation_job(data_dict)
 
 
 def enqueue_validation_job(package_id, resource_id):
@@ -155,8 +158,8 @@ def resource_validation_show(context, data_dict):
 
     if not data_dict.get(u'resource_id'):
         raise t.ValidationError({u'resource_id': u'Missing value'})
-
-    validation = ValidationStatusHelper().getValidationJob(context['model'].Session, data_dict['resource_id'])
+    session = context['model'].Session
+    validation = ValidationStatusHelper().getValidationJob(session, data_dict['resource_id'])
 
     if not validation:
         raise t.ObjectNotFound(
@@ -183,7 +186,6 @@ def resource_validation_delete(context, data_dict):
         raise t.ValidationError({u'resource_id': u'Missing value'})
 
     session = context['model'].Session
-
     validation = ValidationStatusHelper().getValidationJob(session, data_dict['resource_id'])
 
     if not validation:
