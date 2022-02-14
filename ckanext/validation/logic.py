@@ -1,21 +1,18 @@
 # encoding: utf-8
 
-import datetime
 import logging
 import json
 import six
-
-from sqlalchemy.orm.exc import NoResultFound
 
 import ckan.plugins as plugins
 import ckan.lib.uploader as uploader
 
 import ckantoolkit as t
 
-from ckanext.validation.model import Validation
 from ckanext.validation.interfaces import IDataValidation
 from ckanext.validation.jobs import run_validation_job
 from ckanext.validation import settings
+from ckanext.validation.validation_status_helper import (ValidationStatusHelper, ValidationJobAlreadyEnqueued)
 from ckanext.validation.utils import (
     get_create_mode_from_config,
     get_update_mode_from_config,
@@ -98,28 +95,10 @@ def resource_validation_run(context, data_dict):
             {u'url': u'Resource must have a valid URL or an uploaded file'})
 
     # Check if there was an existing validation for the resource
-
-    Session = context['model'].Session
-
     try:
-        validation = Session.query(Validation).filter(
-            Validation.resource_id == data_dict['resource_id']).one()
-    except NoResultFound:
-        validation = None
-
-    if validation:
-        # Reset values
-        validation.finished = None
-        validation.report = None
-        validation.error = None
-        validation.created = datetime.datetime.utcnow()
-        validation.status = u'created'
-    else:
-        validation = Validation(resource_id=resource_id)
-
-    Session.add(validation)
-    Session.commit()
-    Session.flush()
+        ValidationStatusHelper().createValidationJob(context['model'].Session, data_dict['resource_id'])
+    except ValidationJobAlreadyEnqueued:
+        return
 
     if async_job:
         package_id = resource['package_id']
@@ -177,13 +156,7 @@ def resource_validation_show(context, data_dict):
     if not data_dict.get(u'resource_id'):
         raise t.ValidationError({u'resource_id': u'Missing value'})
 
-    Session = context['model'].Session
-
-    try:
-        validation = Session.query(Validation).filter(
-            Validation.resource_id == data_dict['resource_id']).one()
-    except NoResultFound:
-        validation = None
+    validation = ValidationStatusHelper().getValidationJob(context['model'].Session, data_dict['resource_id'])
 
     if not validation:
         raise t.ObjectNotFound(
@@ -209,20 +182,15 @@ def resource_validation_delete(context, data_dict):
     if not data_dict.get(u'resource_id'):
         raise t.ValidationError({u'resource_id': u'Missing value'})
 
-    Session = context['model'].Session
+    session = context['model'].Session
 
-    try:
-        validation = Session.query(Validation).filter(
-            Validation.resource_id == data_dict['resource_id']).one()
-    except NoResultFound:
-        validation = None
+    validation = ValidationStatusHelper().getValidationJob(session, data_dict['resource_id'])
 
     if not validation:
         raise t.ObjectNotFound(
             'No validation report exists for this resource')
 
-    Session.delete(validation)
-    Session.commit()
+    ValidationStatusHelper().deleteValidationJob(session, validation)
 
 
 def resource_validation_run_batch(context, data_dict):
@@ -693,8 +661,11 @@ def _run_sync_validation(resource_id, local_upload=False, new_resource=True):
 @t.chained_action
 def package_patch(original_action, context, data_dict):
     ''' Detect whether resources have been replaced, and if not,
-    place a flag in the context accordingly.
+    place a flag in the context accordingly if save flag is not set
+
+    Note: controllers add default context where save is in request params
+        'save': 'save' in request.params
     '''
-    if 'resources' not in data_dict:
+    if 'save' not in context and 'resources' not in data_dict:
         context['save'] = True
     original_action(context, data_dict)

@@ -1,13 +1,11 @@
 # encoding: utf-8
 
 import logging
-import datetime
 import json
 import re
 import six
 
 import requests
-from sqlalchemy.orm.exc import NoResultFound
 from goodtables import validate
 
 from ckan.model import Session
@@ -15,8 +13,8 @@ import ckan.lib.uploader as uploader
 
 import ckantoolkit as t
 
-from ckanext.validation.model import Validation
-
+from ckanext.validation.validation_status_helper import (ValidationStatusHelper, ValidationJobDoesNotExist,
+                                                         ValidationJobAlreadyRunning, StatusTypes)
 
 log = logging.getLogger(__name__)
 
@@ -30,24 +28,10 @@ def run_validation_job(resource=None):
     log.debug(u'Validating resource %s', resource['id'])
 
     try:
-        validation = Session.query(Validation).filter(
-            Validation.resource_id == resource['id']).one()
-        if (validation.status == u'running'
-                and validation.created >= (datetime.datetime.utcnow() - (5 * 60))
-                and validation.finished is None):
-            # exit if validation job is still running, no point starting on another
-            # worker if already in-progress in last 5 min, this should remove dead locks
-            return
-    except NoResultFound:
-        validation = None
-
-    if not validation:
-        validation = Validation(resource_id=resource['id'])
-
-    validation.status = u'running'
-    Session.add(validation)
-    Session.commit()
-    Session.flush()  # Flush so other transactions are not waiting
+        ValidationStatusHelper().updateValidationJobStatus(Session, resource['id'], StatusTypes.running)
+    except (ValidationJobAlreadyRunning, ValidationJobDoesNotExist) as e:
+        log.error("Won't run enqueued job %s as job is already running or in invalid state: %s", resource['id'], e)
+        return
 
     options = t.config.get(
         u'ckanext.validation.default_validation_options')
@@ -100,6 +84,7 @@ def run_validation_job(resource=None):
 
     report = _validate_table(source, _format=_format, schema=schema, **options)
 
+    validationRecord = None
     # Hide uploaded files
     for table in report.get('tables', []):
         if table['source'].startswith('/'):
@@ -108,17 +93,12 @@ def run_validation_job(resource=None):
         report['warnings'][index] = re.sub(r'Table ".*"', 'Table', warning)
 
     if report['table-count'] > 0:
-        validation.status = u'success' if report[u'valid'] else u'failure'
-        validation.report = report
+        status = StatusTypes.success if report[u'valid'] else StatusTypes.failure
+        validationRecord = ValidationStatusHelper().updateValidationJobStatus(Session, resource['id'], status, report, None)
     else:
-        validation.status = u'error'
-        validation.error = {
-            'message': '\n'.join(report['warnings']) or u'No tables found'}
-    validation.finished = datetime.datetime.utcnow()
-
-    Session.add(validation)
-    Session.commit()
-    Session.flush()  # Flush so other transactions are not waiting
+        status = StatusTypes.error
+        error_payload = {'message': '\n'.join(report['warnings']) or u'No tables found'}
+        validationRecord = ValidationStatusHelper().updateValidationJobStatus(Session, resource['id'], status, None, error_payload)
 
     # Store result status in resource
     t.get_action('resource_patch')(
@@ -126,8 +106,8 @@ def run_validation_job(resource=None):
          'user': t.get_action('get_site_user')({'ignore_auth': True})['name'],
          '_validation_performed': True},
         {'id': resource['id'],
-         'validation_status': validation.status,
-         'validation_timestamp': validation.finished.isoformat()})
+         'validation_status': validationRecord.status,
+         'validation_timestamp': validationRecord.finished.isoformat()})
 
 
 def _validate_table(source, _format=u'csv', schema=None, **options):
