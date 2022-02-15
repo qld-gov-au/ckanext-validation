@@ -1,5 +1,5 @@
 import mock
-from nose.tools import assert_equals
+from nose.tools import assert_equals, with_setup
 
 from ckan import model, plugins as p
 from ckan.tests import helpers, factories
@@ -25,6 +25,13 @@ def _test_org():
     return org
 
 
+def _setup_function(self):
+    helpers.reset_db()
+    self.owner_org = factories.Organization(name='test-org')
+    self.test_dataset = factories.Dataset(owner_org=self.owner_org['id'])
+
+
+@with_setup(_setup_function)
 class TestPlugin(p.SingletonPlugin):
 
     p.implements(IDataValidation, inherit=True)
@@ -57,26 +64,16 @@ class BaseTestInterfaces():
 
     @classmethod
     def teardown_class(cls):
-
-        super(BaseTestInterfaces, cls).teardown_class()
-
         if p.plugin_loaded('test_validation_plugin'):
             p.unload('test_validation_plugin')
 
     def setup(self):
-
-        super(BaseTestInterfaces, self).setup()
-
         for plugin in p.PluginImplementations(IDataValidation):
             return plugin.reset_counter()
 
 
+@with_setup(_setup_function)
 class TestInterfaceSync(BaseTestInterfaces):
-
-    def setup(self):
-        super(TestInterfaceSync, self).setup()
-        self.owner_org = _test_org()
-        self.test_dataset = factories.Dataset(owner_org=self.owner_org.id)
 
     @mock.patch('ckanext.validation.jobs.validate', return_value=VALID_REPORT)
     def test_can_validate_called_on_create_sync(self, mock_validation):
@@ -137,12 +134,8 @@ class TestInterfaceSync(BaseTestInterfaces):
         assert not mock_validation.called
 
 
+@with_setup(_setup_function)
 class TestInterfaceAsync(BaseTestInterfaces):
-
-    def setup(self):
-        super(TestInterfaceAsync, self).setup()
-        self.owner_org = _test_org()
-        self.test_dataset = factories.Dataset(owner_org=self.owner_org.id)
 
     @helpers.change_config('ckanext.validation.run_on_create_sync', False)
     @helpers.change_config('ckanext.validation.run_on_update_sync', False)
