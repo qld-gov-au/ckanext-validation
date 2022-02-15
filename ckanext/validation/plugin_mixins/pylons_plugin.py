@@ -10,7 +10,7 @@ class MixinPlugin(p.SingletonPlugin):
 
     def before_map(self, map_):
 
-        controller = u'ckanext.validation.controllers.pylons_controller:ValidationController'
+        controller = u'ckanext.validation.controller:ValidationController'
 
         map_.connect(
             u'validation_read',

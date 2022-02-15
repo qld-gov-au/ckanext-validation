@@ -1,8 +1,9 @@
 # encoding: utf-8
 
-import logging
 import cgi
 import json
+import logging
+import os
 import six
 
 import ckan.plugins as p
@@ -37,10 +38,10 @@ from ckanext.validation.utils import (
 )
 from ckanext.validation.interfaces import IDataValidation
 
-
 log = logging.getLogger(__name__)
 
-if p.toolkit.check_ckan_version("2.9"):
+
+if t.check_ckan_version(min_version='2.9.0'):
     from .plugin_mixins.flask_plugin import MixinPlugin
 else:
     from .plugin_mixins.pylons_plugin import MixinPlugin
@@ -54,13 +55,21 @@ class ValidationPlugin(MixinPlugin, p.SingletonPlugin, DefaultTranslation):
     p.implements(p.IPackageController, inherit=True)
     p.implements(p.ITemplateHelpers)
     p.implements(p.IValidators)
-    p.implements(p.ITranslation)
+    p.implements(p.ITranslation, inherit=True)
+
+    # ITranslation
+    def i18n_directory(self):
+        u'''Change the directory of the .mo translation files'''
+        return os.path.join(
+            os.path.dirname(__file__),
+            'i18n'
+        )
 
     # IConfigurer
 
     def update_config(self, config_):
         if not tables_exist():
-            if toolkit.check_ckan_version('2.9'):
+            if t.check_ckan_version('2.9'):
                 init_command = 'ckan validation init-db'
             else:
                 init_command = 'paster --plugin=ckanext-validation validation init-db'

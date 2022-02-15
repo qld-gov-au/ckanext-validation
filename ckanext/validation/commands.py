@@ -4,7 +4,7 @@ import sys
 
 from ckantoolkit import CkanCommand
 
-from .cli import commands
+from ckanext.validation import common
 
 
 class Validation(CkanCommand):
@@ -105,18 +105,18 @@ report file on the relevant commands.''')
 
         cmd = self.args[0]
         if cmd == 'init-db':
-            commands.init_db()
+            common.init_db()
         elif cmd == 'run':
-            commands.run_validation(
+            common.run_validation(
                 resource_ids=self.options.resource_id,
                 dataset_ids=self.options.dataset_id,
                 search_params=self.options.search_params,
                 assume_yes=self.options.assume_yes
             )
         elif cmd == 'report':
-            commands.report(self.options.output_file)
+            common.report(self.options.output_file)
         elif cmd == 'report-full':
-            commands.report(self.options.output_file, full=True)
+            common.report(self.options.output_file, full=True)
         else:
             self.parser.print_usage()
             sys.exit(1)

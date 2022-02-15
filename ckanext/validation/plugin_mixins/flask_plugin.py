@@ -2,20 +2,19 @@
 
 import ckan.plugins as p
 
-from ckanext.validation.controllers import blueprints
-from ckanext.validation.cli import click_cli
+from ckanext.validation import cli, views
 
 
 class MixinPlugin(p.SingletonPlugin):
-    p.implements(p.IBlueprint)
     p.implements(p.IClick)
-
-    # IBlueprint
-
-    def get_blueprint(self):
-        return blueprints.get_blueprints()
+    p.implements(p.IBlueprint)
 
     # IClick
 
     def get_commands(self):
-        return click_cli.get_commands()
+        return cli.get_commands()
+
+    # IBlueprint
+
+    def get_blueprint(self):
+        return views.get_blueprints()

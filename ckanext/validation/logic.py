@@ -89,7 +89,7 @@ def resource_validation_run(context, data_dict):
     if not resource.get(u'format', u'').lower() in settings.SUPPORTED_FORMATS:
         raise t.ValidationError(
             {u'format': u'Unsupported resource format.'
-             + u'Must be one of {}'.format(
+             u'Must be one of {}'.format(
                  u','.join(settings.SUPPORTED_FORMATS))})
 
     # Ensure there is a URL or file upload
