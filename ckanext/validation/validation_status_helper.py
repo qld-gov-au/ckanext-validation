@@ -62,7 +62,7 @@ class ValidationStatusHelper:
         session.commit()
         session.flush()
 
-    def createValidationJob(self, session=None, resource_id=None):
+    def createValidationJob(self, session=None, resource_id=None, validationRecord=None):
         # type: (object, Session, str) -> model.Validation
         '''
         If validation object not exist:
@@ -82,16 +82,16 @@ class ValidationStatusHelper:
 
         '''
         log.debug("createValidationJob: %s", resource_id)
-        validationRecord = self.getValidationJob(session, resource_id)
+        if validationRecord is None:
+            validationRecord = self.getValidationJob(session, resource_id)
 
-        # if validationRecord is not None:
-        #     status = validationRecord.status
-        #
-        #     if status in (StatusTypes.running, StatusTypes.created) and self.getHoursSince(validationRecord.created) < 1:
-        #         error_message = "Validation Job already in pending state: {} on resource: {} created on (gmt): {}"\
-        #             .format(validationRecord.status, resource_id, validationRecord.created.isoformat())
-        #         log.error(error_message)
-        #         raise ValidationJobAlreadyEnqueued(error_message)
+        if validationRecord is not None:
+            status = validationRecord.status
+            if status in (StatusTypes.running, StatusTypes.created) and self.getHoursSince(validationRecord.created) < 1:
+                error_message = "Validation Job already in pending state: {} on resource: {} created on (gmt): {}"\
+                    .format(validationRecord.status, resource_id, validationRecord.created.isoformat())
+                log.error(error_message)
+                raise ValidationJobAlreadyEnqueued(error_message)
 
         if validationRecord is None:
             validationRecord = model.Validation(resource_id=resource_id)
@@ -107,7 +107,7 @@ class ValidationStatusHelper:
         session.flush()
         return validationRecord
 
-    def updateValidationJobStatus(self, session=None, resource_id=None, status=None, report=None, error=None):
+    def updateValidationJobStatus(self, session=None, resource_id=None, status=None, report=None, error=None, validationRecord=None):
         # type: (object, Session, str, str, object, object) -> model.Validation
         """
         If report or error is attached, update finished to be now
@@ -120,7 +120,8 @@ class ValidationStatusHelper:
         :return:
         """
         log.debug("updateValidationJobStatus: %s status: %s", resource_id, status)
-        validationRecord = self.getValidationJob(session, resource_id)
+        if validationRecord is None:
+            validationRecord = self.getValidationJob(session, resource_id)
 
         if validationRecord is None:
             log.error("record not found to update statues: %s", resource_id)

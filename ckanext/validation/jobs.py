@@ -20,6 +20,7 @@ log = logging.getLogger(__name__)
 
 
 def run_validation_job(resource=None):
+    vsh = ValidationStatusHelper()
     # handle either a resource dict or just an ID
     # ID is more efficient, as resource dicts can be very large
     if isinstance(resource, six.string_types):
@@ -30,14 +31,16 @@ def run_validation_job(resource=None):
     else:
         log.debug(u'Validating resource dict: %s', resource)
     session = Session
+    db_record = None
     try:
-        ValidationStatusHelper().updateValidationJobStatus(session, resource['id'], StatusTypes.running)
+        db_record = vsh.updateValidationJobStatus(session, resource['id'], StatusTypes.running)
     except ValidationJobAlreadyRunning as e:
         log.error("Won't run enqueued job %s as job is already running or in invalid state: %s", resource['id'], e)
         return
     except ValidationJobDoesNotExist:
-        ValidationStatusHelper().createValidationJob(session, resource['id'])
-        ValidationStatusHelper().updateValidationJobStatus(session, resource['id'], StatusTypes.running)
+        db_record = vsh.createValidationJob(session, resource['id'])
+        db_record = vsh.updateValidationJobStatus(session=session, resource_id=resource['id'],
+                                                  status=StatusTypes.running, validationRecord=db_record)
 
     options = t.config.get(
         u'ckanext.validation.default_validation_options')
@@ -90,7 +93,6 @@ def run_validation_job(resource=None):
 
     report = _validate_table(source, _format=_format, schema=schema, **options)
 
-    validationRecord = None
     # Hide uploaded files
     for table in report.get('tables', []):
         if table['source'].startswith('/'):
@@ -100,11 +102,11 @@ def run_validation_job(resource=None):
 
     if report['table-count'] > 0:
         status = StatusTypes.success if report[u'valid'] else StatusTypes.failure
-        validationRecord = ValidationStatusHelper().updateValidationJobStatus(session, resource['id'], status, report, None)
+        db_record = vsh.updateValidationJobStatus(session, resource['id'], status, report, None, db_record)
     else:
         status = StatusTypes.error
         error_payload = {'message': '\n'.join(report['warnings']) or u'No tables found'}
-        validationRecord = ValidationStatusHelper().updateValidationJobStatus(session, resource['id'], status, None, error_payload)
+        db_record = vsh.updateValidationJobStatus(session, resource['id'], status, None, error_payload, db_record)
 
     # Store result status in resource
     t.get_action('resource_patch')(
@@ -112,8 +114,8 @@ def run_validation_job(resource=None):
          'user': t.get_action('get_site_user')({'ignore_auth': True})['name'],
          '_validation_performed': True},
         {'id': resource['id'],
-         'validation_status': validationRecord.status,
-         'validation_timestamp': validationRecord.finished.isoformat()})
+         'validation_status': db_record.status,
+         'validation_timestamp': db_record.finished.isoformat()})
 
 
 def _validate_table(source, _format=u'csv', schema=None, **options):
