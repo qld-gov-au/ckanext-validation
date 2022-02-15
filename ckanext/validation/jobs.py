@@ -25,7 +25,11 @@ def run_validation_job(resource=None):
     if isinstance(resource, six.string_types):
         resource = t.get_action('resource_show')({'ignore_auth': True}, {'id': resource})
 
-    log.debug(u'Validating resource %s', resource['id'])
+    if 'id' in resource:
+        log.debug(u'Validating resource: %s', resource[u'id'])
+    else:
+        log.debug(u'Validating resource dict: %s', resource)
+    
     session = Session
     try:
         ValidationStatusHelper().updateValidationJobStatus(session, resource['id'], StatusTypes.running)
