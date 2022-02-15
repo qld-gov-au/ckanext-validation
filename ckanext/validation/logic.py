@@ -104,17 +104,17 @@ def resource_validation_run(context, data_dict):
 
     if async_job:
         package_id = resource['package_id']
-        enqueue_validation_job(package_id, resource_id)
+        enqueue_validation_job(package_id, resource_id, resource)
     else:
         # run_validation_job(resource_id)  # Plan is to only pass resource_id, but tests need to be fixed for this
         run_validation_job(data_dict)
 
 
-def enqueue_validation_job(package_id, resource_id):
+def enqueue_validation_job(package_id, resource_id, resource=None):
     enqueue_args = {
         'fn': run_validation_job,
         'title': "run_validation_job: package_id: {} resource: {}".format(package_id, resource_id),
-        'kwargs': {'resource': resource_id},
+        'kwargs': {'resource': resource},
     }
     if t.check_ckan_version('2.8'):
         ttl = 24 * 60 * 60  # 24 hour ttl.
