@@ -3,12 +3,12 @@ import StringIO
 import io
 import json
 
-from nose.tools import assert_raises, assert_equals, assert_true, assert_not_in
+from nose.tools import assert_raises, assert_equals, assert_true, assert_not_in, with_setup
 import mock
 
 from ckan import model
 from ckan.tests.helpers import (
-    call_action, call_auth, change_config, reset_db, FunctionalTestBase
+    call_action, call_auth, change_config, reset_db
 )
 from ckan.tests import factories
 
@@ -24,19 +24,16 @@ from ckanext.validation.tests.helpers import (
 Session = model.Session
 
 
+def _setup_function(self):
+    reset_db()
+    if not tables_exist():
+        create_tables()
+    self.owner_org = factories.Organization(name='test-org')
+    self.test_dataset = factories.Dataset(owner_org=self.owner_org['id'])
+
+
+@with_setup(_setup_function)
 class TestResourceValidationRun(object):
-
-    def setup(self):
-
-        # We don't use FunctionalTestBase here as we need to change the config
-        # in individual tests
-
-        reset_db()
-
-        if not tables_exist():
-            create_tables()
-        self.owner_org = factories.Organization(name='test-org')
-        self.test_dataset = factories.Dataset(owner_org=self.owner_org['id'])
 
     def test_resource_validation_run_param_missing(self):
 
@@ -158,24 +155,15 @@ class TestResourceValidationRun(object):
         assert_equals(validation.error, None)
 
 
-class TestResourceValidationShow(FunctionalTestBase):
-
-    def setup(self):
-
-        super(TestResourceValidationShow, self).setup()
-
-        if not tables_exist():
-            create_tables()
-        self.owner_org = factories.Organization(name='test-org')
+@with_setup(_setup_function)
+class TestResourceValidationShow(object):
 
     def test_resource_validation_show_param_missing(self):
-
         assert_raises(
             t.ValidationError,
             call_action, 'resource_validation_show')
 
     def test_resource_validation_show_not_exists(self):
-
         assert_raises(
             t.ObjectNotFound,
             call_action, 'resource_validation_show', resource_id='not_exists')
@@ -227,25 +215,15 @@ class TestResourceValidationShow(FunctionalTestBase):
             validation_show['finished'], validation.finished.isoformat())
 
 
-class TestResourceValidationDelete(FunctionalTestBase):
-
-    def setup(self):
-
-        super(TestResourceValidationDelete, self).setup()
-
-        if not tables_exist():
-            create_tables()
-        self.owner_org = factories.Organization(name='test-org')
-        self.test_dataset = factories.Dataset(owner_org=self.owner_org['id'])
+@with_setup(_setup_function)
+class TestResourceValidationDelete():
 
     def test_resource_validation_delete_param_missing(self):
-
         assert_raises(
             t.ValidationError,
             call_action, 'resource_validation_delete')
 
     def test_resource_validation_delete_not_exists(self):
-
         assert_raises(
             t.ObjectNotFound,
             call_action, 'resource_validation_delete',
@@ -281,16 +259,8 @@ class TestResourceValidationDelete(FunctionalTestBase):
         assert_equals(count_after, 0)
 
 
-class TestAuth(FunctionalTestBase):
-
-    def setup(self):
-
-        super(TestAuth, self).setup()
-
-        if not tables_exist():
-            create_tables()
-        self.owner_org = factories.Organization(name='test-org')
-        self.test_dataset = factories.Dataset(owner_org=self.owner_org['id'])
+@with_setup(_setup_function)
+class TestAuth(object):
 
     def test_run_anon(self):
 
@@ -462,20 +432,8 @@ class TestAuth(FunctionalTestBase):
                       resource_id=dataset['resources'][0]['id'])
 
 
-class TestResourceValidationOnCreate(FunctionalTestBase):
-
-    @classmethod
-    def _apply_config_changes(cls, cfg):
-        cfg['ckanext.validation.run_on_create_sync'] = True
-
-    def setup(self):
-
-        super(TestResourceValidationOnCreate, self).setup()
-
-        if not tables_exist():
-            create_tables()
-        self.owner_org = factories.Organization(name='test-org')
-        self.test_dataset = factories.Dataset(owner_org=self.owner_org['id'])
+@with_setup(_setup_function)
+class TestResourceValidationOnCreate(object):
 
     @mock_uploads
     def test_validation_fails_on_upload(self, mock_open):
@@ -567,19 +525,8 @@ class TestResourceValidationOnCreate(FunctionalTestBase):
         assert 'validation_timestamp' in resource
 
 
-class TestResourceValidationOnUpdate(FunctionalTestBase):
-
-    @classmethod
-    def _apply_config_changes(cls, cfg):
-        cfg['ckanext.validation.run_on_update_sync'] = True
-
-    def setup(self):
-
-        super(TestResourceValidationOnUpdate, self).setup()
-
-        if not tables_exist():
-            create_tables()
-        self.owner_org = factories.Organization(name='test-org')
+@with_setup(_setup_function)
+class TestResourceValidationOnUpdate(object):
 
     @mock_uploads
     def test_validation_fails_on_upload(self, mock_open):
@@ -696,16 +643,8 @@ class TestResourceValidationOnUpdate(FunctionalTestBase):
         assert 'validation_timestamp' in resource
 
 
-class TestSchemaFields(FunctionalTestBase):
-
-    def setup(self):
-
-        super(TestSchemaFields, self).setup()
-
-        if not tables_exist():
-            create_tables()
-        self.owner_org = factories.Organization(name='test-org')
-        self.test_dataset = factories.Dataset(owner_org=self.owner_org['id'])
+@with_setup(_setup_function)
+class TestSchemaFields(object):
 
     def test_schema_field(self):
 
@@ -783,16 +722,8 @@ class TestSchemaFields(FunctionalTestBase):
         assert 'schema_url' not in resource
 
 
-class TestValidationOptionsField(FunctionalTestBase):
-
-    def setup(self):
-
-        super(TestValidationOptionsField, self).setup()
-
-        if not tables_exist():
-            create_tables()
-        self.owner_org = factories.Organization(name='test-org')
-        self.test_dataset = factories.Dataset(owner_org=self.owner_org['id'])
+@with_setup(_setup_function)
+class TestValidationOptionsField(object):
 
     def test_validation_options_field(self):
         validation_options = {
@@ -828,15 +759,8 @@ class TestValidationOptionsField(FunctionalTestBase):
                       json.loads(validation_options))
 
 
-class TestPackageUpdate(FunctionalTestBase):
-
-    def setup(self):
-        super(TestPackageUpdate, self).setup()
-
-        if not tables_exist():
-            create_tables()
-        self.owner_org = factories.Organization(name='test-org')
-        self.test_dataset = factories.Dataset(owner_org=self.owner_org['id'])
+@with_setup(_setup_function)
+class TestPackageUpdate(object):
 
     def test_package_patch_without_resources_sets_context_flag(self):
         context = {}
