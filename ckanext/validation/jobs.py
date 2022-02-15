@@ -29,7 +29,6 @@ def run_validation_job(resource=None):
         log.debug(u'Validating resource: %s', resource[u'id'])
     else:
         log.debug(u'Validating resource dict: %s', resource)
-    
     session = Session
     try:
         ValidationStatusHelper().updateValidationJobStatus(session, resource['id'], StatusTypes.running)
