@@ -88,10 +88,10 @@ class ValidationStatusHelper:
         if validationRecord is not None:
             status = validationRecord.status
             if status in (StatusTypes.running, StatusTypes.created) and self.getHoursSince(validationRecord.created) < 1:
-                error_message = "Validation Job already in pending state: {} on resource: {} created on (gmt): {}"\
-                    .format(validationRecord.status, resource_id, validationRecord.created.isoformat())
+                error_message = "Validation Job already in pending state: {} on resource: {} created on (gmt): {} data: {}"\
+                    .format(validationRecord.status, resource_id, validationRecord.created.isoformat(), validationRecord)
                 log.error(error_message)
-                raise ValidationJobAlreadyEnqueued(error_message)
+                # raise ValidationJobAlreadyEnqueued(error_message)
 
         if validationRecord is None:
             validationRecord = model.Validation(resource_id=resource_id)
