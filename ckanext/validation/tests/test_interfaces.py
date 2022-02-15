@@ -31,7 +31,6 @@ def _setup_function(self):
     self.test_dataset = factories.Dataset(owner_org=self.owner_org['id'])
 
 
-@with_setup(_setup_function)
 class TestPlugin(p.SingletonPlugin):
 
     p.implements(IDataValidation, inherit=True)
