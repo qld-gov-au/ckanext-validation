@@ -75,6 +75,10 @@ class BaseTestInterfaces():
 @with_setup(_setup_function)
 class TestInterfaceSync(BaseTestInterfaces):
 
+    @helpers.change_config('ckanext.validation.run_on_create_sync', True)
+    @helpers.change_config('ckanext.validation.run_on_update_sync', True)
+    @helpers.change_config('ckanext.validation.run_on_create_async', False)
+    @helpers.change_config('ckanext.validation.run_on_update_async', False)
     @mock.patch('ckanext.validation.jobs.validate', return_value=VALID_REPORT)
     def test_can_validate_called_on_create_sync(self, mock_validation):
 
@@ -88,6 +92,10 @@ class TestInterfaceSync(BaseTestInterfaces):
 
         assert mock_validation.called
 
+    @helpers.change_config('ckanext.validation.run_on_create_sync', True)
+    @helpers.change_config('ckanext.validation.run_on_update_sync', True)
+    @helpers.change_config('ckanext.validation.run_on_create_async', False)
+    @helpers.change_config('ckanext.validation.run_on_update_async', False)
     @mock.patch('ckanext.validation.jobs.validate')
     def test_can_validate_called_on_create_sync_no_validation(self, mock_validation):
 
@@ -102,6 +110,10 @@ class TestInterfaceSync(BaseTestInterfaces):
 
         assert not mock_validation.called
 
+    @helpers.change_config('ckanext.validation.run_on_create_sync', True)
+    @helpers.change_config('ckanext.validation.run_on_update_sync', True)
+    @helpers.change_config('ckanext.validation.run_on_create_async', False)
+    @helpers.change_config('ckanext.validation.run_on_update_async', False)
     @mock.patch('ckanext.validation.jobs.validate', return_value=VALID_REPORT)
     def test_can_validate_called_on_update_sync(self, mock_validation):
 
@@ -117,6 +129,10 @@ class TestInterfaceSync(BaseTestInterfaces):
 
         assert mock_validation.called
 
+    @helpers.change_config('ckanext.validation.run_on_create_sync', True)
+    @helpers.change_config('ckanext.validation.run_on_update_sync', True)
+    @helpers.change_config('ckanext.validation.run_on_create_async', False)
+    @helpers.change_config('ckanext.validation.run_on_update_async', False)
     @mock.patch('ckanext.validation.jobs.validate')
     def test_can_validate_called_on_update_sync_no_validation(self, mock_validation):
 
@@ -137,9 +153,6 @@ class TestInterfaceSync(BaseTestInterfaces):
 @with_setup(_setup_function)
 class TestInterfaceAsync(BaseTestInterfaces):
 
-    @helpers.change_config('ckanext.validation.run_on_create_sync', False)
-    @helpers.change_config('ckanext.validation.run_on_update_sync', False)
-    @helpers.change_config('ckanext.validation.run_on_create_async', True)
     @mock.patch('ckantoolkit.enqueue_job')
     def test_can_validate_called_on_create_async(self, mock_validation):
 
@@ -153,9 +166,6 @@ class TestInterfaceAsync(BaseTestInterfaces):
 
         assert mock_validation.called
 
-    @helpers.change_config('ckanext.validation.run_on_create_sync', False)
-    @helpers.change_config('ckanext.validation.run_on_update_sync', False)
-    @helpers.change_config('ckanext.validation.run_on_create_async', True)
     @mock.patch('ckantoolkit.enqueue_job')
     def test_can_validate_called_on_create_async_no_validation(self, mock_validation):
 
@@ -170,9 +180,6 @@ class TestInterfaceAsync(BaseTestInterfaces):
 
         assert not mock_validation.called
 
-    @helpers.change_config('ckanext.validation.run_on_create_sync', False)
-    @helpers.change_config('ckanext.validation.run_on_update_sync', False)
-    @helpers.change_config('ckanext.validation.run_on_update_async', True)
     @mock.patch('ckantoolkit.enqueue_job')
     def test_can_validate_called_on_update_async(self, mock_validation):
 
@@ -188,9 +195,6 @@ class TestInterfaceAsync(BaseTestInterfaces):
 
         assert mock_validation.called
 
-    @helpers.change_config('ckanext.validation.run_on_create_sync', False)
-    @helpers.change_config('ckanext.validation.run_on_update_sync', False)
-    @helpers.change_config('ckanext.validation.run_on_update_async', True)
     @mock.patch('ckantoolkit.enqueue_job')
     def test_can_validate_called_on_update_async_no_validation(self, mock_validation):
 
