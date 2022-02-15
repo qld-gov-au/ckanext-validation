@@ -26,6 +26,7 @@ def _test_org():
 
 
 def _setup_function(self):
+    super(self.__class__, self).setup()
     helpers.reset_db()
     self.owner_org = factories.Organization(name='test-org')
     self.test_dataset = factories.Dataset(owner_org=self.owner_org['id'])
