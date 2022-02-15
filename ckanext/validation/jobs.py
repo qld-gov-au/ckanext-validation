@@ -24,10 +24,11 @@ def run_validation_job(resource=None):
     # handle either a resource dict or just an ID
     # ID is more efficient, as resource dicts can be very large
     if isinstance(resource, six.string_types):
+        log.debug(u'run_validation_job: calling resource_show: %s', resource)
         resource = t.get_action('resource_show')({'ignore_auth': True}, {'id': resource})
 
     if 'id' in resource:
-        log.debug(u'Validating resource: %s', resource[u'id'])
+        log.debug(u'Validating resource: %s', resource['id'])
     else:
         log.debug(u'Validating resource dict: %s', resource)
     session = Session

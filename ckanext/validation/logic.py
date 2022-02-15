@@ -107,7 +107,7 @@ def resource_validation_run(context, data_dict):
         enqueue_validation_job(package_id, resource_id)
     else:
         # run_validation_job(resource_id)  # Plan is to only pass resource_id, but tests need to be fixed for this
-        run_validation_job(data_dict)
+        run_validation_job(resource)
 
 
 def enqueue_validation_job(package_id, resource_id):
