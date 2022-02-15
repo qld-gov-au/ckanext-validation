@@ -43,13 +43,13 @@ def _setup_function(self):
     self.owner_org = factories.Organization(name='test-org')
 
 
-def submit_and_follow(app, form, extra_environ, name):
+def submit_and_follow(app, form, extra_environ, name, **kwargs):
     if check_ckan_version('2.9'):
         response = webtest_submit(form, name, extra_environ=extra_environ)
-        return app.get(response.location)
+        return app.get(response.location, **kwargs)
     else:
         from ckantoolkit.tests.helpers import submit_and_follow as _submit_and_follow
-        return _submit_and_follow(app, form, extra_environ, name)
+        return _submit_and_follow(app, form, extra_environ, name, **kwargs)
 
 
 def webtest_submit(form, name, **kwargs):
