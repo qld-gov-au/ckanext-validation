@@ -6,11 +6,9 @@ import unittest
 
 from nose.tools import assert_in, assert_equals, with_setup
 
+from ckantoolkit import check_ckan_version
 from ckantoolkit.tests import factories, helpers
-from ckantoolkit.tests.helpers import (
-    submit_and_follow, webtest_submit, call_action,
-    reset_db
-)
+from ckantoolkit.tests.helpers import call_action, reset_db
 
 from ckanext.validation.model import create_tables, tables_exist
 from ckanext.validation.tests.helpers import (
@@ -43,6 +41,25 @@ def _setup_function(self):
     if not tables_exist():
         create_tables()
     self.owner_org = factories.Organization(name='test-org')
+
+
+def submit_and_follow(app, form, extra_environ, name):
+    if check_ckan_version('2.9'):
+        response = webtest_submit(form, name, extra_environ=extra_environ)
+        return app.get(response.location)
+    else:
+        from ckantoolkit.tests.helpers import submit_and_follow as _submit_and_follow
+        return _submit_and_follow(app, form, extra_environ, name)
+
+
+def webtest_submit(form, name, **kwargs):
+    if check_ckan_version('2.9'):
+        form_action = form.pop('action')
+        app = helpers._get_test_app()
+        return app.post(form_action, json.dumps(form), **kwargs)
+    else:
+        from ckantoolkit.tests.helpers import webtest_submit as _submit
+        return _submit(form, name, **kwargs)
 
 
 @with_setup(_setup_function)
