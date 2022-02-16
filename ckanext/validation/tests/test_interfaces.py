@@ -67,9 +67,9 @@ class BaseTestInterfaces(object):
             p.unload('test_validation_plugin')
 
 
-@with_setup(_setup_function)
 class TestInterfaceSync(BaseTestInterfaces):
 
+    @with_setup(_setup_function)
     @helpers.change_config('ckanext.validation.run_on_create_sync', True)
     @helpers.change_config('ckanext.validation.run_on_update_sync', True)
     @helpers.change_config('ckanext.validation.run_on_create_async', False)
@@ -87,6 +87,7 @@ class TestInterfaceSync(BaseTestInterfaces):
 
         assert mock_validation.called
 
+    @with_setup(_setup_function)
     @helpers.change_config('ckanext.validation.run_on_create_sync', True)
     @helpers.change_config('ckanext.validation.run_on_update_sync', True)
     @helpers.change_config('ckanext.validation.run_on_create_async', False)
@@ -105,6 +106,7 @@ class TestInterfaceSync(BaseTestInterfaces):
 
         assert not mock_validation.called
 
+    @with_setup(_setup_function)
     @helpers.change_config('ckanext.validation.run_on_create_sync', True)
     @helpers.change_config('ckanext.validation.run_on_update_sync', True)
     @helpers.change_config('ckanext.validation.run_on_create_async', False)
@@ -124,6 +126,7 @@ class TestInterfaceSync(BaseTestInterfaces):
 
         assert mock_validation.called
 
+    @with_setup(_setup_function)
     @helpers.change_config('ckanext.validation.run_on_create_sync', True)
     @helpers.change_config('ckanext.validation.run_on_update_sync', True)
     @helpers.change_config('ckanext.validation.run_on_create_async', False)
