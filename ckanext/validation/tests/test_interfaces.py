@@ -25,7 +25,7 @@ def _test_org():
     return org
 
 
-def _setup_function(self):
+def _setup_function(self, *args, **kwargs):
     self.setup()
     helpers.reset_db()
     self.owner_org = factories.Organization(name='test-org')
