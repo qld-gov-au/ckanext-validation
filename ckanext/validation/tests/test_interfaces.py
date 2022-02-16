@@ -55,7 +55,7 @@ def _get_plugin_calls():
         return plugin.calls
 
 
-class BaseTestInterfaces():
+class BaseTestInterfaces(object):
 
     @classmethod
     def setup_class(cls):
