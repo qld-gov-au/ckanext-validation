@@ -67,7 +67,7 @@ class BaseTestInterfaces():
         if p.plugin_loaded('test_validation_plugin'):
             p.unload('test_validation_plugin')
 
-    def setup(self):
+    def setup(self, *args, **kwargs):
         for plugin in p.PluginImplementations(IDataValidation):
             return plugin.reset_counter()
 
