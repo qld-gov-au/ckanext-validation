@@ -498,6 +498,7 @@ def resource_create(context, data_dict):
     # Custom code starts
 
     if get_create_mode_from_config() == u'sync':
+        log.warn("Running synchronous after_create validation")
 
         run_validation = True
 
@@ -615,6 +616,7 @@ def resource_update(context, data_dict):
     # Custom code starts
 
     if get_update_mode_from_config() == u'sync':
+        log.warn("Running synchronous after_update validation")
 
         run_validation = True
         for plugin in plugins.PluginImplementations(IDataValidation):

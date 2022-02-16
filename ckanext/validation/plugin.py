@@ -101,6 +101,7 @@ Please run the following to create the database tables:
         if get_update_mode_from_config() == u'sync':
             new_actions[u'resource_update'] = custom_resource_update
 
+        log.warn("Custom actions: %s", new_actions)
         return new_actions
 
     # IAuthFunctions
@@ -166,6 +167,7 @@ Please run the following to create the database tables:
         is_dataset = self._data_dict_is_dataset(data_dict)
 
         if not get_create_mode_from_config() == u'async':
+            log.warn("Skipping after_create validation since we're not in 'async' mode")
             return
 
         if is_dataset:
@@ -248,6 +250,7 @@ Please run the following to create the database tables:
         # package_update
         if (not get_update_mode_from_config() == u'async'
                 and not get_create_mode_from_config() == u'async'):
+            log.warn("Skipping after_update validation since we're not in 'async' mode")
             return
 
         if context.pop('_validation_performed', None):
