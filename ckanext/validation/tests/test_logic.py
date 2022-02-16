@@ -435,6 +435,7 @@ class TestAuth(object):
 @with_setup(_setup_function)
 class TestResourceValidationOnCreate(object):
 
+    @change_config('ckanext.validation.run_on_create_sync', True)
     @mock_uploads
     def test_validation_fails_on_upload(self, mock_open):
 
@@ -460,6 +461,7 @@ class TestResourceValidationOnCreate(object):
         assert 'missing-value' in str(e.exception)
         assert 'Row 2 has a missing value in column 4' in str(e.exception)
 
+    @change_config('ckanext.validation.run_on_create_sync', True)
     @mock_uploads
     def test_validation_fails_no_validation_object_stored(self, mock_open):
 
@@ -486,6 +488,7 @@ class TestResourceValidationOnCreate(object):
 
         assert_equals(validation_count_after, validation_count_before)
 
+    @change_config('ckanext.validation.run_on_create_sync', True)
     @mock_uploads
     def test_validation_passes_on_upload(self, mock_open):
 
@@ -508,6 +511,7 @@ class TestResourceValidationOnCreate(object):
         assert_equals(resource['validation_status'], 'success')
         assert 'validation_timestamp' in resource
 
+    @change_config('ckanext.validation.run_on_create_sync', True)
     @mock.patch('ckanext.validation.jobs.validate',
                 return_value=VALID_REPORT)
     def test_validation_passes_with_url(self, mock_validate):
@@ -528,6 +532,7 @@ class TestResourceValidationOnCreate(object):
 @with_setup(_setup_function)
 class TestResourceValidationOnUpdate(object):
 
+    @change_config('ckanext.validation.run_on_update_sync', True)
     @mock_uploads
     def test_validation_fails_on_upload(self, mock_open):
 
@@ -560,6 +565,7 @@ class TestResourceValidationOnUpdate(object):
         assert 'missing-value' in str(e.exception)
         assert 'Row 2 has a missing value in column 4' in str(e.exception)
 
+    @change_config('ckanext.validation.run_on_update_sync', True)
     @mock_uploads
     def test_validation_fails_no_validation_object_stored(self, mock_open):
 
@@ -592,6 +598,7 @@ class TestResourceValidationOnUpdate(object):
 
         assert_equals(validation_count_after, 0)
 
+    @change_config('ckanext.validation.run_on_update_sync', True)
     @mock_uploads
     def test_validation_passes_on_upload(self, mock_open):
 
@@ -621,6 +628,7 @@ class TestResourceValidationOnUpdate(object):
         assert_equals(resource['validation_status'], 'success')
         assert 'validation_timestamp' in resource
 
+    @change_config('ckanext.validation.run_on_update_sync', True)
     @mock.patch('ckanext.validation.jobs.validate',
                 return_value=VALID_REPORT)
     def test_validation_passes_with_url(self, mock_validate):
