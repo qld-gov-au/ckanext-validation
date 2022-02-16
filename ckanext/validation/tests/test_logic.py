@@ -467,6 +467,7 @@ class TestResourceValidationOnCreate(FunctionalTestBase):
     @classmethod
     def _apply_config_changes(cls, cfg):
         cfg['ckanext.validation.run_on_create_sync'] = True
+        cfg['ckanext.validation.run_on_update_sync'] = True
 
     def setup(self):
 
@@ -572,6 +573,7 @@ class TestResourceValidationOnUpdate(FunctionalTestBase):
     @classmethod
     def _apply_config_changes(cls, cfg):
         cfg['ckanext.validation.run_on_update_sync'] = True
+        cfg['ckanext.validation.run_on_create_sync'] = True
 
     def setup(self):
 
