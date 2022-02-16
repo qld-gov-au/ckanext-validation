@@ -38,7 +38,8 @@ class TestValidationJob(object):
             create_tables()
         self.owner_org = factories.Organization(name='test-org')
         self.test_dataset = factories.Dataset(owner_org=self.owner_org['id'])
-        self.test_resource = factories.Resource(
+        self.test_resource = call_action(
+            'resource_create',
             url='http://example.com/file.csv', format='csv', package_id=self.test_dataset['id'])
 
     @change_config('ckanext.validation.run_on_create_async', False)
@@ -153,9 +154,11 @@ class TestValidationJob(object):
                        return_value=mock_get_resource_uploader({}))
     def test_job_run_uploaded_file_replaces_paths(
             self, mock_uploader, mock_validate):
-        resource = factories.Resource(
+        resource = call_action(
+            'resource_create',
             url='__upload', url_type='upload', format='csv',
-            package_id=self.test_dataset['id'])
+            package_id=self.test_dataset['id']
+        )
 
         run_validation_job(resource)
 
@@ -189,8 +192,10 @@ class TestValidationJob(object):
 
         mock_upload = MockFieldStorage(invalid_file, 'invalid.csv')
 
-        resource = factories.Resource(
-            format='csv', upload=mock_upload, package_id=self.test_dataset['id'])
+        resource = call_action(
+            'resource_create',
+            format='csv', upload=mock_upload, package_id=self.test_dataset['id']
+        )
 
         invalid_stream = io.BufferedReader(io.BytesIO(invalid_csv))
 
@@ -230,7 +235,8 @@ a,b,c
 
         mock_upload = MockFieldStorage(invalid_file, 'invalid.csv')
 
-        resource = factories.Resource(
+        resource = call_action(
+            'resource_create',
             format='csv',
             package_id=self.test_dataset['id'],
             upload=mock_upload,
@@ -268,7 +274,8 @@ a;b;c
 
         mock_upload = MockFieldStorage(invalid_file, 'invalid.csv')
 
-        resource = factories.Resource(
+        resource = call_action(
+            'resource_create',
             format='csv',
             package_id=self.test_dataset['id'],
             upload=mock_upload,
