@@ -525,8 +525,8 @@ class TestResourceValidationFieldsPersisted(FunctionalTestBase):
 
     @classmethod
     def _apply_config_changes(cls, cfg):
-        cfg['ckanext.validation.run_on_create_sync'] = True
-        cfg['ckanext.validation.run_on_update_sync'] = True
+        cfg['ckanext.validation.run_on_create_sync'] = False
+        cfg['ckanext.validation.run_on_update_sync'] = False
 
     def setup(self):
         reset_db()
