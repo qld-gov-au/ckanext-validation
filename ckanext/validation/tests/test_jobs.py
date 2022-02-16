@@ -245,7 +245,7 @@ a,b,c
         validation = Session.query(Validation).filter(
             Validation.resource_id == resource['id']).one()
 
-        assert_equals(validation.report['valid'], True)
+        assert validation.report['valid'] is True
 
     @mock_uploads
     def test_job_pass_validation_options_string(self, mock_open):
@@ -283,4 +283,4 @@ a;b;c
         validation = Session.query(Validation).filter(
             Validation.resource_id == resource['id']).one()
 
-        assert_equals(validation.report['valid'], True)
+        assert validation.report['valid'] is True
