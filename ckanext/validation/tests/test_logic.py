@@ -88,6 +88,8 @@ class TestResourceValidationRun(object):
 
         call_action('resource_validation_run', resource_id=resource['id'])
 
+    @change_config('ckanext.validation.run_on_create_sync', False)
+    @change_config('ckanext.validation.run_on_update_sync', False)
     def test_resource_validation_run_starts_job(self):
 
         resource = factories.Resource(
