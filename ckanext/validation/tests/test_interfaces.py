@@ -29,6 +29,8 @@ def _setup_function(self, *args, **kwargs):
     helpers.reset_db()
     self.owner_org = factories.Organization(name='test-org')
     self.test_dataset = factories.Dataset(owner_org=self.owner_org['id'])
+    if not p.plugin_loaded('test_validation_plugin'):
+        p.load('test_validation_plugin')
     for plugin in p.PluginImplementations(IDataValidation):
         return plugin.reset_counter()
 
@@ -57,11 +59,6 @@ def _get_plugin_calls():
 
 
 class BaseTestInterfaces(object):
-
-    @classmethod
-    def setup_class(cls):
-        if not p.plugin_loaded('test_validation_plugin'):
-            p.load('test_validation_plugin')
 
     @classmethod
     def teardown_class(cls):
