@@ -67,6 +67,7 @@ class BaseTestInterfaces(object):
             p.unload('test_validation_plugin')
 
 
+@with_setup(_setup_function)
 class TestInterfaceSync(BaseTestInterfaces):
 
     @helpers.change_config('ckanext.validation.run_on_create_sync', True)
@@ -74,7 +75,6 @@ class TestInterfaceSync(BaseTestInterfaces):
     @helpers.change_config('ckanext.validation.run_on_create_async', False)
     @helpers.change_config('ckanext.validation.run_on_update_async', False)
     @mock.patch('ckanext.validation.jobs.validate', return_value=VALID_REPORT)
-    @with_setup(_setup_function)
     def test_can_validate_called_on_create_sync(self, mock_validation):
 
         helpers.call_action(
@@ -92,7 +92,6 @@ class TestInterfaceSync(BaseTestInterfaces):
     @helpers.change_config('ckanext.validation.run_on_create_async', False)
     @helpers.change_config('ckanext.validation.run_on_update_async', False)
     @mock.patch('ckanext.validation.jobs.validate')
-    @with_setup(_setup_function)
     def test_can_validate_called_on_create_sync_no_validation(self, mock_validation):
 
         helpers.call_action(
@@ -111,7 +110,6 @@ class TestInterfaceSync(BaseTestInterfaces):
     @helpers.change_config('ckanext.validation.run_on_create_async', False)
     @helpers.change_config('ckanext.validation.run_on_update_async', False)
     @mock.patch('ckanext.validation.jobs.validate', return_value=VALID_REPORT)
-    @with_setup(_setup_function)
     def test_can_validate_called_on_update_sync(self, mock_validation):
 
         resource = factories.Resource(package_id=self.test_dataset['id'])
@@ -131,7 +129,6 @@ class TestInterfaceSync(BaseTestInterfaces):
     @helpers.change_config('ckanext.validation.run_on_create_async', False)
     @helpers.change_config('ckanext.validation.run_on_update_async', False)
     @mock.patch('ckanext.validation.jobs.validate')
-    @with_setup(_setup_function)
     def test_can_validate_called_on_update_sync_no_validation(self, mock_validation):
 
         resource = factories.Resource(package_id=self.test_dataset['id'])
