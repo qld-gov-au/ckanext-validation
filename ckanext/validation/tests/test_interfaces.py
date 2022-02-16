@@ -27,6 +27,7 @@ def _test_org():
 
 def _setup_function(self, *args, **kwargs):
     helpers.reset_db()
+    helpers._get_test_app().reset()
     self.owner_org = factories.Organization(name='test-org')
     self.test_dataset = factories.Dataset(owner_org=self.owner_org['id'])
     if not p.plugin_loaded('test_validation_plugin'):
