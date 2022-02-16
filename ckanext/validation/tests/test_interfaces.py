@@ -26,10 +26,11 @@ def _test_org():
 
 
 def _setup_function(self, *args, **kwargs):
-    self.setup()
     helpers.reset_db()
     self.owner_org = factories.Organization(name='test-org')
     self.test_dataset = factories.Dataset(owner_org=self.owner_org['id'])
+    for plugin in p.PluginImplementations(IDataValidation):
+        return plugin.reset_counter()
 
 
 class TestPlugin(p.SingletonPlugin):
@@ -66,10 +67,6 @@ class BaseTestInterfaces(object):
     def teardown_class(cls):
         if p.plugin_loaded('test_validation_plugin'):
             p.unload('test_validation_plugin')
-
-    def setup(self, *args, **kwargs):
-        for plugin in p.PluginImplementations(IDataValidation):
-            return plugin.reset_counter()
 
 
 @with_setup(_setup_function)
