@@ -502,7 +502,7 @@ def resource_create(original_action, context, data_dict):
 
     # Custom code starts
 
-    log.warn("Running synchronous after_create validation")
+    log.warn("Running synchronous after_create validation on resource: %s", data_dict)
 
     run_validation = True
 
@@ -624,7 +624,7 @@ def resource_update(original_action, context, data_dict):
 
     # Custom code starts
 
-    log.warn("Running synchronous after_update validation")
+    log.warn("Running synchronous after_update validation on resource: %s", data_dict)
 
     run_validation = True
     for plugin in plugins.PluginImplementations(IDataValidation):
