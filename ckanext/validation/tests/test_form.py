@@ -413,6 +413,7 @@ class TestResourceValidationOnCreateForm(object):
 
     @mock_uploads
     @helpers.change_config('ckanext.validation.run_on_create_sync', True)
+    @helpers.change_config('ckanext.validation.run_on_update_sync', True)
     def test_resource_form_create_valid(self, mock_open):
         dataset = factories.Dataset(owner_org=self.owner_org['id'])
 
@@ -435,6 +436,7 @@ class TestResourceValidationOnCreateForm(object):
 
     @mock_uploads
     @helpers.change_config('ckanext.validation.run_on_create_sync', True)
+    @helpers.change_config('ckanext.validation.run_on_update_sync', True)
     def test_resource_form_create_invalid(self, mock_open):
         dataset = factories.Dataset(owner_org=self.owner_org['id'])
 
@@ -461,6 +463,7 @@ class TestResourceValidationOnUpdateForm(object):
 
     @mock_uploads
     @helpers.change_config('ckanext.validation.run_on_update_sync', True)
+    @helpers.change_config('ckanext.validation.run_on_create_sync', True)
     def test_resource_form_update_valid(self, mock_open):
 
         dataset = factories.Dataset(
@@ -491,6 +494,7 @@ class TestResourceValidationOnUpdateForm(object):
     @unittest.skip("TODO debug this later")
     @mock_uploads
     @helpers.change_config('ckanext.validation.run_on_update_sync', True)
+    @helpers.change_config('ckanext.validation.run_on_create_sync', True)
     def test_resource_form_update_invalid(self, mock_open):
 
         dataset = factories.Dataset(
@@ -522,6 +526,7 @@ class TestResourceValidationOnUpdateForm(object):
 @with_setup(_setup_function)
 class TestResourceValidationFieldsPersisted(object):
 
+    @helpers.change_config('ckanext.validation.run_on_create_sync', False)
     @helpers.change_config('ckanext.validation.run_on_update_sync', False)
     def test_resource_form_fields_are_persisted(self):
 

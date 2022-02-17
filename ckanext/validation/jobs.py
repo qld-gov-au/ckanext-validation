@@ -1,13 +1,11 @@
 # encoding: utf-8
 
 import logging
-import datetime
 import json
 import re
 import six
 
 import requests
-from sqlalchemy.orm.exc import NoResultFound
 from goodtables import validate
 
 from ckan.model import Session
@@ -15,39 +13,35 @@ import ckan.lib.uploader as uploader
 
 import ckantoolkit as t
 
-from ckanext.validation.model import Validation
-
+from ckanext.validation.validation_status_helper import (ValidationStatusHelper, ValidationJobDoesNotExist,
+                                                         ValidationJobAlreadyRunning, StatusTypes)
 
 log = logging.getLogger(__name__)
 
 
 def run_validation_job(resource=None):
+    vsh = ValidationStatusHelper()
     # handle either a resource dict or just an ID
     # ID is more efficient, as resource dicts can be very large
     if isinstance(resource, six.string_types):
+        log.debug(u'run_validation_job: calling resource_show: %s', resource)
         resource = t.get_action('resource_show')({'ignore_auth': True}, {'id': resource})
 
-    log.warn(u'Validating resource %s', resource)
-
+    if 'id' in resource:
+        log.warn(u'Validating resource: %s', resource)
+    else:
+        log.debug(u'Validating resource dict: %s', resource)
+    session = Session
+    db_record = None
     try:
-        validation = Session.query(Validation).filter(
-            Validation.resource_id == resource['id']).one()
-        if (validation.status == u'running'
-                and validation.created >= (datetime.datetime.utcnow() - (5 * 60))
-                and validation.finished is None):
-            # exit if validation job is still running, no point starting on another
-            # worker if already in-progress in last 5 min, this should remove dead locks
-            return
-    except NoResultFound:
-        validation = None
-
-    if not validation:
-        validation = Validation(resource_id=resource['id'])
-
-    validation.status = u'running'
-    Session.add(validation)
-    Session.commit()
-    Session.flush()  # Flush so other transactions are not waiting
+        db_record = vsh.updateValidationJobStatus(session, resource['id'], StatusTypes.running)
+    except ValidationJobAlreadyRunning as e:
+        log.error("Won't run enqueued job %s as job is already running or in invalid state: %s", resource['id'], e)
+        return
+    except ValidationJobDoesNotExist:
+        db_record = vsh.createValidationJob(session, resource['id'])
+        db_record = vsh.updateValidationJobStatus(session=session, resource_id=resource['id'],
+                                                  status=StatusTypes.running, validationRecord=db_record)
 
     options = t.config.get(
         u'ckanext.validation.default_validation_options')
@@ -108,17 +102,12 @@ def run_validation_job(resource=None):
         report['warnings'][index] = re.sub(r'Table ".*"', 'Table', warning)
 
     if report['table-count'] > 0:
-        validation.status = u'success' if report[u'valid'] else u'failure'
-        validation.report = report
+        status = StatusTypes.success if report[u'valid'] else StatusTypes.failure
+        db_record = vsh.updateValidationJobStatus(session, resource['id'], status, report, None, db_record)
     else:
-        validation.status = u'error'
-        validation.error = {
-            'message': '\n'.join(report['warnings']) or u'No tables found'}
-    validation.finished = datetime.datetime.utcnow()
-
-    Session.add(validation)
-    Session.commit()
-    Session.flush()  # Flush so other transactions are not waiting
+        status = StatusTypes.error
+        error_payload = {'message': '\n'.join(report['warnings']) or u'No tables found'}
+        db_record = vsh.updateValidationJobStatus(session, resource['id'], status, None, error_payload, db_record)
 
     # Store result status in resource
     t.get_action('resource_patch')(
@@ -126,8 +115,8 @@ def run_validation_job(resource=None):
          'user': t.get_action('get_site_user')({'ignore_auth': True})['name'],
          '_validation_performed': True},
         {'id': resource['id'],
-         'validation_status': validation.status,
-         'validation_timestamp': validation.finished.isoformat()})
+         'validation_status': db_record.status,
+         'validation_timestamp': db_record.finished.isoformat()})
 
 
 def _validate_table(source, _format=u'csv', schema=None, **options):
