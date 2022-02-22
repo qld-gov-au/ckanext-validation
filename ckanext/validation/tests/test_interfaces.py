@@ -147,6 +147,7 @@ class TestInterfaceSync(BaseTestInterfaces):
 @with_setup(_setup_function)
 class TestInterfaceAsync(BaseTestInterfaces):
 
+    @helpers.change_config('ckanext.validation.run_on_create_async', True)
     @mock.patch('ckantoolkit.enqueue_job')
     def test_can_validate_called_on_create_async(self, mock_validation):
 
@@ -160,6 +161,7 @@ class TestInterfaceAsync(BaseTestInterfaces):
 
         assert mock_validation.called
 
+    @helpers.change_config('ckanext.validation.run_on_create_async', True)
     @mock.patch('ckantoolkit.enqueue_job')
     def test_can_validate_called_on_create_async_no_validation(self, mock_validation):
 
@@ -174,6 +176,8 @@ class TestInterfaceAsync(BaseTestInterfaces):
 
         assert not mock_validation.called
 
+    @helpers.change_config('ckanext.validation.run_on_create_async', False)
+    @helpers.change_config('ckanext.validation.run_on_update_async', True)
     @mock.patch('ckantoolkit.enqueue_job')
     def test_can_validate_called_on_update_async(self, mock_validation):
 

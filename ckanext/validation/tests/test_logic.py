@@ -92,7 +92,8 @@ class TestResourceValidationRun(object):
 
         jobs = call_action('job_list')
 
-        call_action('resource_validation_run', resource_id=resource['id'])
+        # ensure we are in async mode
+        call_action('resource_validation_run', {u'resource_id': resource['id'], u'async': True})
 
         jobs_after = call_action('job_list')
 

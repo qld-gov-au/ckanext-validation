@@ -26,10 +26,20 @@ class Validation(Base):
 
     id = Column(Unicode, primary_key=True, default=make_uuid)
     resource_id = Column(Unicode)
+    #  status can be one of these values:
+    #     created: Job created and put onto queue
+    #     running: Job picked up by worker and being processed
+    #     success: Validation Successful and report attached
+    #     failure: Validation Failed and report attached
+    #     error: Validation Job could not create validation report
     status = Column(Unicode, default=u'created')
+    # created is when job was added
     created = Column(DateTime, default=datetime.datetime.utcnow)
+    # finished is when report was generated, is None when new or restarted
     finished = Column(DateTime)
+    # json object of report, can be None
     report = Column(JSON)
+    # json object of error, can be None
     error = Column(JSON)
 
 
