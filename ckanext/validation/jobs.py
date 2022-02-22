@@ -16,7 +16,6 @@ import ckantoolkit as t
 from ckanext.validation.validation_status_helper import (ValidationStatusHelper, ValidationJobDoesNotExist,
                                                          ValidationJobAlreadyRunning, StatusTypes)
 
-
 log = logging.getLogger(__name__)
 
 
