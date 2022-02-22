@@ -421,7 +421,6 @@ def resource_create(original_action, context, data_dict):
 
     '''
     if get_create_mode_from_config() != u'sync':
-        log.warn("Skipping synchronous after_create validation as mode %s is not 'sync'", get_create_mode_from_config())
         return original_action(context, data_dict)
 
     model = context['model']
@@ -473,7 +472,7 @@ def resource_create(original_action, context, data_dict):
 
     # Custom code starts
 
-    log.warn("Running synchronous after_create validation on resource: %s", data_dict)
+    log.debug("Running synchronous after_create validation on resource: %s", data_dict)
 
     run_validation = True
 
@@ -529,7 +528,6 @@ def resource_update(original_action, context, data_dict):
 
     '''
     if get_update_mode_from_config() != u'sync':
-        log.warn("Skipping synchronous after_update validation as mode %s is not 'sync'", get_update_mode_from_config())
         return original_action(context, data_dict)
 
     model = context['model']
@@ -595,7 +593,7 @@ def resource_update(original_action, context, data_dict):
 
     # Custom code starts
 
-    log.warn("Running synchronous after_update validation on resource: %s", data_dict)
+    log.debug("Running synchronous after_update validation on resource: %s", data_dict)
 
     run_validation = True
     for plugin in plugins.PluginImplementations(IDataValidation):
