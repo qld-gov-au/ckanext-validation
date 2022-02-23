@@ -12,7 +12,7 @@ def go_to_home(context):
 
 @step(u'I should see text containing quotes `{text}`')
 def should_see_backquoted(context, text):
-    should_see(text)
+    should_see(context, text)
 
 
 @step(u'I log in')
