@@ -1,7 +1,7 @@
 Feature: Resource validation
 
     Scenario: As an editor, I can create a resource with an uploaded validation schema
-        Given "Publisher" as the persona
+        Given "Sysadmin" as the persona
         When I visit "/dataset/new_resource/warandpeace"
         And I press the element with xpath "//form[@id='resource-edit']//a[string() = 'Link']"
         And I fill in "name" with "Test resource"
