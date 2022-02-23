@@ -13,4 +13,6 @@ Feature: Resource validation
         Then I should see "Test resource"
         When I click the link with text that contains "Test resource"
         And I click the link with text that contains "Manage"
-        Then I should see "{\"fields\":"
+        Then I should see "\"fields\": ["
+        And I should see "\"name\": \"field1\""
+        And I should see "\"name\": \"field2\""
