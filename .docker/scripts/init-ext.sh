@@ -9,6 +9,9 @@ if [ "$VENV_DIR" != "" ]; then
 fi
 pip install -r "requirements.txt"
 pip install -r "dev-requirements.txt"
+if [ "$CKAN_VERSION" = "2.8.8" ]; then
+    pip install -r "dev-requirements-2.8.txt"
+fi
 python setup.py develop
 installed_name=$(grep '^\s*name=' setup.py |sed "s|[^']*'\([-a-zA-Z0-9]*\)'.*|\1|")
 

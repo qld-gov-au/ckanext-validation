@@ -1,19 +1,74 @@
 # encoding: utf-8
 
-import sys
-import logging
 import csv
+import logging
+import six
+import sys
 
-from ckan.lib.cli import query_yes_no
-from ckantoolkit import get_action, config
+from ckantoolkit import (c, NotAuthorized,
+                         ObjectNotFound, abort, _,
+                         render, get_action, config,
+                         check_ckan_version)
 
 from ckanext.validation import settings
-from ckanext.validation.model import create_tables, tables_exist
 from ckanext.validation.logic import _search_datasets
+from ckanext.validation.model import create_tables, tables_exist
+
 
 log = logging.getLogger(__name__)
 
-_page_size = 100
+###############################################################################
+#                                  Controller                                 #
+###############################################################################
+
+
+def validation(resource_id, id=None):
+    try:
+        validation = get_action(u'resource_validation_show')(
+            {u'user': c.user},
+            {u'resource_id': resource_id})
+
+        resource = get_action(u'resource_show')(
+            {u'user': c.user},
+            {u'id': resource_id})
+
+        package_id = resource[u'package_id']
+        if id and id != package_id:
+            raise ObjectNotFound("Resource {} not found in package {}".format(resource_id, id))
+
+        dataset = get_action(u'package_show')(
+            {u'user': c.user},
+            {u'id': id or resource[u'package_id']})
+
+        # Needed for core resource templates
+        c.package = c.pkg_dict = dataset
+        c.resource = resource
+
+        return render(u'validation/validation_read.html', extra_vars={
+            u'validation': validation,
+            u'resource': resource,
+            u'pkg_dict': dataset,
+            u'dataset': dataset,
+        })
+
+    except NotAuthorized:
+        return abort(403, _(u'Unauthorized to read this validation report'))
+    except ObjectNotFound:
+        return abort(404, _(u'No validation report exists for this resource'))
+
+
+###############################################################################
+#                                     CLI                                     #
+###############################################################################
+
+
+def user_confirm(msg):
+    if check_ckan_version(min_version='2.9'):
+        import click
+        return click.confirm(msg)
+    else:
+        from ckan.lib.cli import query_yes_no
+        return query_yes_no(msg) == 'yes'
 
 
 def error(msg):
@@ -27,23 +82,22 @@ def error(msg):
 
 
 def init_db():
-
     if tables_exist():
         print(u'Validation tables already exist')
         sys.exit(0)
-
     create_tables()
-
     print(u'Validation tables created')
 
 
-def run_validation(resource_ids, dataset_ids, search_params=None, assume_yes=False):
+def run_validation(assume_yes, resource_ids, dataset_ids, search_params):
+
     if resource_ids:
         for resource_id in resource_ids:
             resource = get_action('resource_show')({}, {'id': resource_id})
             _run_validation_on_resource(
                 resource['id'], resource['package_id'])
     else:
+
         query = _search_datasets()
 
         if query['count'] == 0:
@@ -51,9 +105,9 @@ def run_validation(resource_ids, dataset_ids, search_params=None, assume_yes=Fal
 
         elif not assume_yes:
             msg = ('\nYou are about to start validation for {0} datasets'
-                   + '.\n Do you want to continue?')
+                   '.\n Do you want to continue?')
 
-            if query_yes_no(msg.format(query['count'])) == 'no':
+            if not user_confirm(msg.format(query['count'])):
                 error('Command aborted by user')
 
         result = get_action('resource_validation_run_batch')(
@@ -65,6 +119,7 @@ def run_validation(resource_ids, dataset_ids, search_params=None, assume_yes=Fal
 
 
 def _run_validation_on_resource(resource_id, dataset_id):
+
     get_action(u'resource_validation_run')(
         {u'ignore_auth': True},
         {u'resource_id': resource_id,
@@ -95,6 +150,7 @@ def _process_row(dataset, resource, writer):
 
 
 def _process_row_full(dataset, resource, writer):
+
     limit_per_error_type = 10
 
     error_counts = {}
@@ -135,9 +191,12 @@ def _process_row_full(dataset, resource, writer):
     return error_counts
 
 
-def report(output_file, full=False):
-    if output_file == 'validation_errors_report.csv' and full:
-        output_file = 'validation_errors_report_full.csv'
+def report(output_csv, full=False):
+
+    _page_size = 100
+
+    if output_csv == 'validation_errors_report.csv' and full:
+        output_csv = 'validation_errors_report_full.csv'
 
     outputs = {
         'tabular_resources': 0,
@@ -150,7 +209,7 @@ def report(output_file, full=False):
     }
     error_counts = {}
 
-    with open(output_file, 'w') as fw:
+    with open(output_csv, 'w') as fw:
         if full:
             fieldnames = [
                 'dataset', 'resource_id', 'format', 'url',
@@ -193,7 +252,7 @@ def report(output_file, full=False):
                                 row_counts = _process_row_full(dataset, resource, writer)
                                 if not row_counts:
                                     continue
-                                for code, count in row_counts.iteritems():
+                                for code, count in six.iteritems(row_counts):
                                     if code not in error_counts:
                                         error_counts[code] = count
                                     else:
@@ -219,44 +278,44 @@ def report(output_file, full=False):
                 break
 
     outputs['datasets'] = query['count']
-    outputs['output_csv'] = output_file
+    outputs['output_csv'] = output_csv
 
     outputs['formats_success_output'] = ''
-    for count, code in sorted([(v, k) for k, v in outputs['formats_success'].iteritems()], reverse=True):
+    for count, code in sorted([(v, k) for k, v in six.iteritems(outputs['formats_success'])], reverse=True):
         outputs['formats_success_output'] += '* {}: {}\n'.format(code, count)
 
     outputs['formats_failure_output'] = ''
-    for count, code in sorted([(v, k) for k, v in outputs['formats_failure'].iteritems()], reverse=True):
+    for count, code in sorted([(v, k) for k, v in six.iteritems(outputs['formats_failure'])], reverse=True):
         outputs['formats_failure_output'] += '* {}: {}\n'.format(code, count)
 
     error_counts_output = ''
     if full:
-        for count, code in sorted([(v, k) for k, v in error_counts.iteritems()], reverse=True):
+        for count, code in sorted([(v, k) for k, v in six.iteritems(error_counts)], reverse=True):
             error_counts_output += '* {}: {}\n'.format(code, count)
 
     outputs['error_counts_output'] = error_counts_output
 
     msg_errors = '''
-Errors breakdown:
-{}
-'''.format(outputs['error_counts_output'])
+        Errors breakdown:
+        {}
+        '''.format(outputs['error_counts_output'])
 
     outputs['msg_errors'] = msg_errors if full else ''
 
     msg = '''
-Done.
-{datasets} datasets with tabular resources
-{tabular_resources} tabular resources
-{resources_success} resources - validation success
-{resources_failure} resources - validation failure
-{resources_error} resources - validation error
+        Done.
+        {datasets} datasets with tabular resources
+        {tabular_resources} tabular resources
+        {resources_success} resources - validation success
+        {resources_failure} resources - validation failure
+        {resources_error} resources - validation error
 
-Formats breakdown (validation passed):
-{formats_success_output}
-Formats breakdown (validation failed or errored):
-{formats_failure_output}
-{msg_errors}
-CSV Report stored in {output_csv}
-'''.format(**outputs)
+        Formats breakdown (validation passed):
+        {formats_success_output}
+        Formats breakdown (validation failed or errored):
+        {formats_failure_output}
+        {msg_errors}
+        CSV Report stored in {output_csv}
+        '''.format(**outputs)
 
     log.info(msg)

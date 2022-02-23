@@ -4,13 +4,11 @@ import mock
 import datetime
 import unittest
 
-from nose.tools import assert_in, assert_equals
+from nose.tools import assert_in, assert_equals, with_setup
 
-from ckantoolkit.tests import factories
-from ckantoolkit.tests.helpers import (
-    FunctionalTestBase, submit_and_follow, webtest_submit, call_action,
-    reset_db
-)
+from ckantoolkit import check_ckan_version
+from ckantoolkit.tests import factories, helpers
+from ckantoolkit.tests.helpers import call_action, reset_db
 
 from ckanext.validation.model import create_tables, tables_exist
 from ckanext.validation.tests.helpers import (
@@ -38,18 +36,39 @@ def _get_resource_update_page_as_sysadmin(app, id, resource_id):
     return env, response
 
 
-class TestResourceSchemaForm(FunctionalTestBase):
+def _setup_function(self):
+    reset_db()
+    if not tables_exist():
+        create_tables()
+    self.owner_org = factories.Organization(name='test-org')
 
-    def setup(self):
-        reset_db()
-        if not tables_exist():
-            create_tables()
-        self.owner_org = factories.Organization(name='test-org')
+
+def submit_and_follow(app, form, extra_environ, name, **kwargs):
+    if check_ckan_version('2.9'):
+        response = webtest_submit(form, name, extra_environ=extra_environ)
+        return app.get(response.location, **kwargs)
+    else:
+        from ckantoolkit.tests.helpers import submit_and_follow as _submit_and_follow
+        return _submit_and_follow(app, form, extra_environ, name, **kwargs)
+
+
+def webtest_submit(form, name, **kwargs):
+    if check_ckan_version('2.9'):
+        form_action = form.pop('action')
+        app = helpers._get_test_app()
+        return app.post(form_action, json.dumps(form), **kwargs)
+    else:
+        from ckantoolkit.tests.helpers import webtest_submit as _submit
+        return _submit(form, name, **kwargs)
+
+
+@with_setup(_setup_function)
+class TestResourceSchemaForm(object):
 
     def test_resource_form_includes_json_fields(self):
         dataset = factories.Dataset(owner_org=self.owner_org['id'])
 
-        app = self._get_test_app()
+        app = helpers._get_test_app()
         env, response = _get_resource_new_page_as_sysadmin(app, dataset['id'])
         form = response.forms['resource-edit']
         assert_in('schema', form.fields)
@@ -60,7 +79,7 @@ class TestResourceSchemaForm(FunctionalTestBase):
     def test_resource_form_create(self):
         dataset = factories.Dataset(owner_org=self.owner_org['id'])
 
-        app = self._get_test_app()
+        app = helpers._get_test_app()
         env, response = _get_resource_new_page_as_sysadmin(app, dataset['id'])
         form = response.forms['resource-edit']
 
@@ -84,7 +103,7 @@ class TestResourceSchemaForm(FunctionalTestBase):
     def test_resource_form_create_json(self):
         dataset = factories.Dataset(owner_org=self.owner_org['id'])
 
-        app = self._get_test_app()
+        app = helpers._get_test_app()
         env, response = _get_resource_new_page_as_sysadmin(app, dataset['id'])
         form = response.forms['resource-edit']
 
@@ -109,7 +128,7 @@ class TestResourceSchemaForm(FunctionalTestBase):
     def test_resource_form_create_upload(self, mock_open):
         dataset = factories.Dataset(owner_org=self.owner_org['id'])
 
-        app = self._get_test_app()
+        app = helpers._get_test_app()
         env, response = _get_resource_new_page_as_sysadmin(app, dataset['id'])
         form = response.forms['resource-edit']
 
@@ -134,7 +153,7 @@ class TestResourceSchemaForm(FunctionalTestBase):
     def test_resource_form_create_url(self):
         dataset = factories.Dataset(owner_org=self.owner_org['id'])
 
-        app = self._get_test_app()
+        app = helpers._get_test_app()
         env, response = _get_resource_new_page_as_sysadmin(app, dataset['id'])
         form = response.forms['resource-edit']
 
@@ -164,7 +183,7 @@ class TestResourceSchemaForm(FunctionalTestBase):
             }]
         )
 
-        app = self._get_test_app()
+        app = helpers._get_test_app()
         env, response = _get_resource_update_page_as_sysadmin(
             app, dataset['id'], dataset['resources'][0]['id'])
         form = response.forms['resource-edit']
@@ -208,7 +227,7 @@ class TestResourceSchemaForm(FunctionalTestBase):
             }]
         )
 
-        app = self._get_test_app()
+        app = helpers._get_test_app()
         env, response = _get_resource_update_page_as_sysadmin(
             app, dataset['id'], dataset['resources'][0]['id'])
         form = response.forms['resource-edit']
@@ -249,7 +268,7 @@ class TestResourceSchemaForm(FunctionalTestBase):
             }]
         )
 
-        app = self._get_test_app()
+        app = helpers._get_test_app()
         env, response = _get_resource_update_page_as_sysadmin(
             app, dataset['id'], dataset['resources'][0]['id'])
         form = response.forms['resource-edit']
@@ -282,7 +301,7 @@ class TestResourceSchemaForm(FunctionalTestBase):
             }]
         )
 
-        app = self._get_test_app()
+        app = helpers._get_test_app()
         env, response = _get_resource_update_page_as_sysadmin(
             app, dataset['id'], dataset['resources'][0]['id'])
         form = response.forms['resource-edit']
@@ -311,18 +330,13 @@ class TestResourceSchemaForm(FunctionalTestBase):
         assert_equals(dataset['resources'][0]['schema'], value)
 
 
-class TestResourceValidationOptionsForm(FunctionalTestBase):
-
-    def setup(self):
-        reset_db()
-        if not tables_exist():
-            create_tables()
-        self.owner_org = factories.Organization(name='test-org')
+@with_setup(_setup_function)
+class TestResourceValidationOptionsForm(object):
 
     def test_resource_form_includes_json_fields(self):
         dataset = factories.Dataset(owner_org=self.owner_org['id'])
 
-        app = self._get_test_app()
+        app = helpers._get_test_app()
         env, response = _get_resource_new_page_as_sysadmin(app, dataset['id'])
         form = response.forms['resource-edit']
         assert_in('validation_options', form.fields)
@@ -331,7 +345,7 @@ class TestResourceValidationOptionsForm(FunctionalTestBase):
     def test_resource_form_create(self):
         dataset = factories.Dataset(owner_org=self.owner_org['id'])
 
-        app = self._get_test_app()
+        app = helpers._get_test_app()
         env, response = _get_resource_new_page_as_sysadmin(app, dataset['id'])
         form = response.forms['resource-edit']
 
@@ -366,7 +380,7 @@ class TestResourceValidationOptionsForm(FunctionalTestBase):
             }]
         )
 
-        app = self._get_test_app()
+        app = helpers._get_test_app()
         env, response = _get_resource_update_page_as_sysadmin(
             app, dataset['id'], dataset['resources'][0]['id'])
         form = response.forms['resource-edit']
@@ -394,24 +408,16 @@ class TestResourceValidationOptionsForm(FunctionalTestBase):
         assert_equals(dataset['resources'][0]['validation_options'], value)
 
 
-class TestResourceValidationOnCreateForm(FunctionalTestBase):
-
-    @classmethod
-    def _apply_config_changes(cls, cfg):
-        cfg['ckanext.validation.run_on_create_sync'] = True
-        cfg['ckanext.validation.run_on_update_sync'] = True
-
-    def setup(self):
-        reset_db()
-        if not tables_exist():
-            create_tables()
-        self.owner_org = factories.Organization(name='test-org')
+@with_setup(_setup_function)
+class TestResourceValidationOnCreateForm(object):
 
     @mock_uploads
+    @helpers.change_config('ckanext.validation.run_on_create_sync', True)
+    @helpers.change_config('ckanext.validation.run_on_update_sync', True)
     def test_resource_form_create_valid(self, mock_open):
         dataset = factories.Dataset(owner_org=self.owner_org['id'])
 
-        app = self._get_test_app()
+        app = helpers._get_test_app()
         env, response = _get_resource_new_page_as_sysadmin(app, dataset['id'])
         form = response.forms['resource-edit']
 
@@ -429,10 +435,12 @@ class TestResourceValidationOnCreateForm(FunctionalTestBase):
         assert 'validation_timestamp' in dataset['resources'][0]
 
     @mock_uploads
+    @helpers.change_config('ckanext.validation.run_on_create_sync', True)
+    @helpers.change_config('ckanext.validation.run_on_update_sync', True)
     def test_resource_form_create_invalid(self, mock_open):
         dataset = factories.Dataset(owner_org=self.owner_org['id'])
 
-        app = self._get_test_app()
+        app = helpers._get_test_app()
         env, response = _get_resource_new_page_as_sysadmin(app, dataset['id'])
         form = response.forms['resource-edit']
 
@@ -450,20 +458,12 @@ class TestResourceValidationOnCreateForm(FunctionalTestBase):
         assert_in('Row 2 has a missing value in column 4', response.body)
 
 
-class TestResourceValidationOnUpdateForm(FunctionalTestBase):
-
-    @classmethod
-    def _apply_config_changes(cls, cfg):
-        cfg['ckanext.validation.run_on_update_sync'] = True
-        cfg['ckanext.validation.run_on_create_sync'] = True
-
-    def setup(self):
-        reset_db()
-        if not tables_exist():
-            create_tables()
-        self.owner_org = factories.Organization(name='test-org')
+@with_setup(_setup_function)
+class TestResourceValidationOnUpdateForm(object):
 
     @mock_uploads
+    @helpers.change_config('ckanext.validation.run_on_update_sync', True)
+    @helpers.change_config('ckanext.validation.run_on_create_sync', True)
     def test_resource_form_update_valid(self, mock_open):
 
         dataset = factories.Dataset(
@@ -473,7 +473,7 @@ class TestResourceValidationOnUpdateForm(FunctionalTestBase):
             }]
         )
 
-        app = self._get_test_app()
+        app = helpers._get_test_app()
         env, response = _get_resource_update_page_as_sysadmin(
             app, dataset['id'], dataset['resources'][0]['id'])
         form = response.forms['resource-edit']
@@ -493,6 +493,8 @@ class TestResourceValidationOnUpdateForm(FunctionalTestBase):
 
     @unittest.skip("TODO debug this later")
     @mock_uploads
+    @helpers.change_config('ckanext.validation.run_on_update_sync', True)
+    @helpers.change_config('ckanext.validation.run_on_create_sync', True)
     def test_resource_form_update_invalid(self, mock_open):
 
         dataset = factories.Dataset(
@@ -502,7 +504,7 @@ class TestResourceValidationOnUpdateForm(FunctionalTestBase):
             }]
         )
 
-        app = self._get_test_app()
+        app = helpers._get_test_app()
         env, response = _get_resource_update_page_as_sysadmin(
             app, dataset['id'], dataset['resources'][0]['id'])
         form = response.forms['resource-edit']
@@ -521,19 +523,11 @@ class TestResourceValidationOnUpdateForm(FunctionalTestBase):
         assert_in('Row 2 has a missing value in column 4', response.body)
 
 
-class TestResourceValidationFieldsPersisted(FunctionalTestBase):
+@with_setup(_setup_function)
+class TestResourceValidationFieldsPersisted(object):
 
-    @classmethod
-    def _apply_config_changes(cls, cfg):
-        cfg['ckanext.validation.run_on_create_sync'] = False
-        cfg['ckanext.validation.run_on_update_sync'] = False
-
-    def setup(self):
-        reset_db()
-        if not tables_exist():
-            create_tables()
-        self.owner_org = factories.Organization(name='test-org')
-
+    @helpers.change_config('ckanext.validation.run_on_create_sync', False)
+    @helpers.change_config('ckanext.validation.run_on_update_sync', False)
     def test_resource_form_fields_are_persisted(self):
 
         dataset = factories.Dataset(
@@ -545,7 +539,7 @@ class TestResourceValidationFieldsPersisted(FunctionalTestBase):
             }]
         )
 
-        app = self._get_test_app()
+        app = helpers._get_test_app()
         env, response = _get_resource_update_page_as_sysadmin(
             app, dataset['id'], dataset['resources'][0]['id'])
         form = response.forms['resource-edit']

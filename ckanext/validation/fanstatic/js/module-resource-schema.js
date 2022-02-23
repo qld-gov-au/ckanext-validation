@@ -57,8 +57,10 @@ this.ckan.module('resource-schema', function($) {
       this.label_url = $('label', this.field_url);
 
       this.field_upload_input.on('change', this._onInputChange);
-      this.field_url_input.on('blur', this._onURLBlur);
-      this.field_json_input.on('blur', this._onJSONBlur);
+      this.field_url_input.focus()
+        .on('blur', this._onURLBlur);
+      this.field_json_input.focus()
+        .on('blur', this._onJSONBlur);
 
       // Button to set upload a schema file
       this.button_upload = $('<a href="javascript:;" class="btn btn-default">' +

@@ -1,5 +1,5 @@
 import mock
-from nose.tools import assert_equals
+from nose.tools import assert_equals, with_setup
 
 from ckan import model, plugins as p
 from ckan.tests import helpers, factories
@@ -25,6 +25,16 @@ def _test_org():
     return org
 
 
+def _setup_function(self, *args, **kwargs):
+    helpers.reset_db()
+    self.owner_org = factories.Organization(name='test-org')
+    self.test_dataset = factories.Dataset(owner_org=self.owner_org['id'])
+    if not p.plugin_loaded('test_validation_plugin'):
+        p.load('test_validation_plugin')
+    for plugin in p.PluginImplementations(IDataValidation):
+        return plugin.reset_counter()
+
+
 class TestPlugin(p.SingletonPlugin):
 
     p.implements(IDataValidation, inherit=True)
@@ -48,48 +58,22 @@ def _get_plugin_calls():
         return plugin.calls
 
 
-class BaseTestInterfaces(helpers.FunctionalTestBase):
-
-    @classmethod
-    def setup_class(cls):
-
-        super(BaseTestInterfaces, cls).setup_class()
-
-        if not p.plugin_loaded('test_validation_plugin'):
-            p.load('test_validation_plugin')
+class BaseTestInterfaces(object):
 
     @classmethod
     def teardown_class(cls):
-
-        super(BaseTestInterfaces, cls).teardown_class()
-
         if p.plugin_loaded('test_validation_plugin'):
             p.unload('test_validation_plugin')
 
-    def setup(self):
 
-        super(BaseTestInterfaces, self).setup()
-
-        for plugin in p.PluginImplementations(IDataValidation):
-            return plugin.reset_counter()
-
-
+@with_setup(_setup_function)
 class TestInterfaceSync(BaseTestInterfaces):
 
-    @classmethod
-    def _apply_config_changes(cls, cfg):
-        cfg['ckanext.validation.run_on_create_sync'] = True
-        cfg['ckanext.validation.run_on_update_sync'] = True
-
-    def setup(self):
-        super(TestInterfaceSync, self).setup()
-        self.owner_org = _test_org()
-        self.test_dataset = factories.Dataset(owner_org=self.owner_org.id)
-
+    @helpers.change_config('ckanext.validation.run_on_create_sync', True)
+    @helpers.change_config('ckanext.validation.run_on_update_sync', True)
     @helpers.change_config('ckanext.validation.run_on_create_async', False)
     @helpers.change_config('ckanext.validation.run_on_update_async', False)
-    @mock.patch('ckanext.validation.jobs.validate',
-                return_value=VALID_REPORT)
+    @mock.patch('ckanext.validation.jobs.validate', return_value=VALID_REPORT)
     def test_can_validate_called_on_create_sync(self, mock_validation):
 
         helpers.call_action(
@@ -102,6 +86,8 @@ class TestInterfaceSync(BaseTestInterfaces):
 
         assert mock_validation.called
 
+    @helpers.change_config('ckanext.validation.run_on_create_sync', True)
+    @helpers.change_config('ckanext.validation.run_on_update_sync', True)
     @helpers.change_config('ckanext.validation.run_on_create_async', False)
     @helpers.change_config('ckanext.validation.run_on_update_async', False)
     @mock.patch('ckanext.validation.jobs.validate')
@@ -118,10 +104,11 @@ class TestInterfaceSync(BaseTestInterfaces):
 
         assert not mock_validation.called
 
+    @helpers.change_config('ckanext.validation.run_on_create_sync', True)
+    @helpers.change_config('ckanext.validation.run_on_update_sync', True)
     @helpers.change_config('ckanext.validation.run_on_create_async', False)
     @helpers.change_config('ckanext.validation.run_on_update_async', False)
-    @mock.patch('ckanext.validation.jobs.validate',
-                return_value=VALID_REPORT)
+    @mock.patch('ckanext.validation.jobs.validate', return_value=VALID_REPORT)
     def test_can_validate_called_on_update_sync(self, mock_validation):
 
         resource = factories.Resource(package_id=self.test_dataset['id'])
@@ -136,6 +123,8 @@ class TestInterfaceSync(BaseTestInterfaces):
 
         assert mock_validation.called
 
+    @helpers.change_config('ckanext.validation.run_on_create_sync', True)
+    @helpers.change_config('ckanext.validation.run_on_update_sync', True)
     @helpers.change_config('ckanext.validation.run_on_create_async', False)
     @helpers.change_config('ckanext.validation.run_on_update_async', False)
     @mock.patch('ckanext.validation.jobs.validate')
@@ -155,17 +144,8 @@ class TestInterfaceSync(BaseTestInterfaces):
         assert not mock_validation.called
 
 
+@with_setup(_setup_function)
 class TestInterfaceAsync(BaseTestInterfaces):
-
-    @classmethod
-    def _apply_config_changes(cls, cfg):
-        cfg['ckanext.validation.run_on_create_sync'] = False
-        cfg['ckanext.validation.run_on_update_sync'] = False
-
-    def setup(self):
-        super(TestInterfaceAsync, self).setup()
-        self.owner_org = _test_org()
-        self.test_dataset = factories.Dataset(owner_org=self.owner_org.id)
 
     @helpers.change_config('ckanext.validation.run_on_create_async', True)
     @mock.patch('ckantoolkit.enqueue_job')
@@ -213,8 +193,6 @@ class TestInterfaceAsync(BaseTestInterfaces):
 
         assert mock_validation.called
 
-    @helpers.change_config('ckanext.validation.run_on_create_async', False)
-    @helpers.change_config('ckanext.validation.run_on_update_async', True)
     @mock.patch('ckantoolkit.enqueue_job')
     def test_can_validate_called_on_update_async_no_validation(self, mock_validation):
 

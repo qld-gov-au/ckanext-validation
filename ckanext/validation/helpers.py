@@ -1,7 +1,8 @@
 # encoding: utf-8
 import json
 
-from ckantoolkit import url_for, _, config, asbool, literal
+from ckantoolkit import url_for, _, config, asbool,\
+    literal, check_ckan_version
 
 
 def get_validation_badge(resource, in_listing=False):
@@ -28,19 +29,25 @@ def get_validation_badge(resource, in_listing=False):
     else:
         status = 'unknown'
 
+    if check_ckan_version(min_version='2.9.0'):
+        action = 'validation.read'
+    else:
+        action = 'validation_read'
+
     validation_url = url_for(
-        'validation_read',
+        action,
         id=resource['package_id'],
         resource_id=resource['id'])
 
     return u'''
-<a href="{validation_url}" class="validation-badge">
+<a href="{validation_url}" class="validation-badge" title="{title}">
     <span class="prefix">{prefix}</span><span class="status {status}">{status_title}</span>
 </a>'''.format(
         validation_url=validation_url,
         prefix=_('data'),
         status=status,
-        status_title=statuses[status])
+        status_title=statuses[status],
+        title=resource.get('validation_timestamp', ''))
 
 
 def validation_extract_report_from_errors(errors):
