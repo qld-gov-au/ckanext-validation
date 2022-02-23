@@ -1,12 +1,18 @@
 from behave import step
 from behaving.personas.steps import *  # noqa: F401, F403
 from behaving.web.steps import *  # noqa: F401, F403
+from behaving.web.steps.basic import should_see
 from behaving.web.steps.url import when_i_visit_url
 
 
 @step(u'I go to homepage')
 def go_to_home(context):
     when_i_visit_url(context, '/')
+
+
+@step(u'I should see text containing quotes `{text}`')
+def should_see_backquoted(context, text):
+    should_see(text)
 
 
 @step(u'I log in')
