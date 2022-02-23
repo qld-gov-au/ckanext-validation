@@ -1,0 +1,12 @@
+Feature: Resource validation
+
+    Scenario: As an editor, I can create a resource with an uploaded validation schema
+        Given "Publisher" as the persona
+        When I visit "/dataset/new_resource/warandpeace"
+        And I press the element with xpath "//form[@id='resource-edit']//a[string() = 'Link']"
+        And I fill in "name" with "Test resource"
+        And I fill in "url" with "https://example.com"
+        And I fill in "description" with "Testing validation schema"
+        And I attach the file "blank_schema.json" to "schema_upload"
+        And I press the element with xpath "//button[contains(string(), 'Add')]"
+        Then I should see "Test resource"
