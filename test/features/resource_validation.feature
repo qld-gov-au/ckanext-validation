@@ -11,5 +11,6 @@ Feature: Resource validation
         And I attach the file "test_schema.json" to "schema_upload"
         And I press the element with xpath "//button[contains(string(), 'Add')]"
         Then I should see "Test resource"
-        When I press the element with xpath "//a[contains(string(), 'Manage')]"
+        When I click the link with text that contains "Test resource"
+        And I click the link with text that contains "Manage"
         Then I should see "{\"fields\":"
