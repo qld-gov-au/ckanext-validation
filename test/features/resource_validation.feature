@@ -56,3 +56,18 @@ Feature: Resource validation
         And I click the link with text that contains "Manage"
         Then I should see text containing quotes `"headers": 3`
         And I should see text containing quotes `"delimiter": ","`
+
+
+    Scenario: As an editor, I can upload a valid CSV and see a success status
+        Given "TestOrgEditor" as the persona
+        When I log in
+        And I visit "/dataset/new_resource/warandpeace"
+        And I fill in "name" with "Test validation success"
+        And I attach the file "valid.csv" to "upload"
+        And I fill in "description" with "Testing validation success"
+        And I press the element with xpath "//button[contains(@class, 'btn-primary')]"
+        Then I should see "Test validation success"
+        When I wait for 5 seconds
+        And I click the link with text that contains "Test validation success"
+        Then I should see "Validation status"
+        And I should see "success"
