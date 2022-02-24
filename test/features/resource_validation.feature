@@ -45,7 +45,7 @@ Feature: Resource validation
 
         When I click the link with text that contains "Test validation options"
         And I click the link with text that contains "Manage"
-        Then I should see text containing quotes `{"headers": 3}`
+        Then I should see text containing quotes `"headers": 3`
 
         When I click the link with text that contains "Test validation options"
         And I click the link with text that contains "Manage"
@@ -54,4 +54,5 @@ Feature: Resource validation
         Then I should see "Test validation options"
         When I click the link with text that contains "Test validation options"
         And I click the link with text that contains "Manage"
-        Then I should see text containing quotes `{"headers": 3, "delimiter": ","}`
+        Then I should see text containing quotes `"headers": 3`
+        And I should see text containing quotes `"delimiter": ","`
