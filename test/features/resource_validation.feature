@@ -72,6 +72,7 @@ Feature: Resource validation
         Then I should see "Validation status"
         And I should see "success"
         And I should not see "failure"
+        And I should see a validation timestamp
 
 
     Scenario: As an editor, I can create a resource with an invalid CSV and see a failure status
@@ -88,6 +89,7 @@ Feature: Resource validation
         Then I should see "Validation status"
         And I should see "failure"
         And I should not see "success"
+        And I should see a validation timestamp
 
 
     Scenario: As an editor, I can update a resource with a valid CSV and see a success status
@@ -109,6 +111,7 @@ Feature: Resource validation
         Then I should see "Validation status"
         And I should see "success"
         And I should not see "failure"
+        And I should see a validation timestamp
 
 
     Scenario: As an editor, I can update a resource with an invalid CSV and see a failure status
@@ -130,3 +133,4 @@ Feature: Resource validation
         Then I should see "Validation status"
         And I should see "failure"
         And I should not see "success"
+        And I should see a validation timestamp

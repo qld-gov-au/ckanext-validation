@@ -107,3 +107,11 @@ def go_to_group_including_users(context, group_id, including):
 @step(u'I view the "{organisation_id}" organisation API "{including}" users')
 def go_to_organisation_including_users(context, organisation_id, including):
     when_i_visit_url(context, r'/api/3/action/organization_show?id={}&include_users={}'.format(organisation_id, including in ['with', 'including']))
+
+
+@step(u'I should see a validation timestamp')
+def should_see_validation_timestamp(context):
+    context.execute_steps("""
+        I should see "Validation timestamp"
+        And I should see an element with xpath "//th[contains(string(), 'Validation timestamp')]/../td[contains(string(), '-') and contains(string(), 'T') and contains(string(), ':') and contains(string(), '.')]"
+    """)
