@@ -88,3 +88,45 @@ Feature: Resource validation
         Then I should see "Validation status"
         And I should see "failure"
         And I should not see "success"
+
+
+    Scenario: As an editor, I can update a resource with a valid CSV and see a success status
+        Given "TestOrgEditor" as the persona
+        When I log in
+        And I visit "/dataset/new_resource/warandpeace"
+        And I fill in "name" with "Test valid CSV update"
+        And I attach the file "invalid.csv" to "upload"
+        And I fill in "description" with "Testing validation that should pass on update"
+        And I press the element with xpath "//button[contains(@class, 'btn-primary')]"
+        Then I should see "Test valid CSV update"
+        Then I click the link with text that contains "Test valid CSV update"
+        And I click the link with text that contains "Manage"
+        And I attach the file "valid.csv" to "upload"
+        And I press the element with xpath "//button[contains(@class, 'btn-primary')]"
+
+        When I wait for 5 seconds
+        And I click the link with text that contains "Test valid CSV update"
+        Then I should see "Validation status"
+        And I should see "success"
+        And I should not see "failure"
+
+
+    Scenario: As an editor, I can update a resource with an invalid CSV and see a failure status
+        Given "TestOrgEditor" as the persona
+        When I log in
+        And I visit "/dataset/new_resource/warandpeace"
+        And I fill in "name" with "Test invalid CSV update"
+        And I attach the file "valid.csv" to "upload"
+        And I fill in "description" with "Testing validation that should fail on update"
+        And I press the element with xpath "//button[contains(@class, 'btn-primary')]"
+        Then I should see "Test invalid CSV update"
+        Then I click the link with text that contains "Test invalid CSV update"
+        And I click the link with text that contains "Manage"
+        And I attach the file "invalid.csv" to "upload"
+        And I press the element with xpath "//button[contains(@class, 'btn-primary')]"
+
+        When I wait for 5 seconds
+        And I click the link with text that contains "Test invalid CSV update"
+        Then I should see "Validation status"
+        And I should see "failure"
+        And I should not see "success"
