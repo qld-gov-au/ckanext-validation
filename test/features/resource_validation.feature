@@ -39,7 +39,7 @@ Feature: Resource validation
         And I attach the file "test.csv" to "upload"
         And I fill in "description" with "Testing validation options"
         And I attach the file "test_schema.json" to "schema_upload"
-        And I fill in "validation_options" with "{\"headers\": 3}"
+        And I fill in "validation_options" with "{"headers": 3}"
         And I press the element with xpath "//button[contains(@class, 'btn-primary')]"
         Then I should see "Test validation options"
 
@@ -49,7 +49,7 @@ Feature: Resource validation
 
         When I click the link with text that contains "Test validation options"
         And I click the link with text that contains "Manage"
-        And I fill in "validation_options" with "{\"headers\": 3, \"delimiter\": \",\"}"
+        And I fill in "validation_options" with "{"headers": 3, "delimiter": ","}"
         And I press the element with xpath "//button[contains(@class, 'btn-primary')]"
         Then I should see "Test validation options"
         When I click the link with text that contains "Test validation options"
