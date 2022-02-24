@@ -112,6 +112,6 @@ def go_to_organisation_including_users(context, organisation_id, including):
 @step(u'I should see a validation timestamp')
 def should_see_validation_timestamp(context):
     context.execute_steps(u"""
-        I should see "Validation timestamp"
+        Then I should see "Validation timestamp"
         And I should see an element with xpath "//th[contains(string(), 'Validation timestamp')]/../td[contains(string(), '-') and contains(string(), 'T') and contains(string(), ':') and contains(string(), '.')]"
     """)
