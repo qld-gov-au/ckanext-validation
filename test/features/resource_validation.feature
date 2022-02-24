@@ -4,7 +4,6 @@ Feature: Resource validation
         Given "TestOrgEditor" as the persona
         When I log in
         And I visit "/dataset/new_resource/warandpeace"
-        And I press the element with xpath "//form[@id='resource-edit']//a[string() = 'Upload']"
         And I fill in "name" with "Test validation schema"
         And I attach the file "test.csv" to "upload"
         And I fill in "description" with "Testing validation schema"
@@ -36,7 +35,6 @@ Feature: Resource validation
         Given "TestOrgEditor" as the persona
         When I log in
         And I visit "/dataset/new_resource/warandpeace"
-        And I press the element with xpath "//form[@id='resource-edit']//a[string() = 'Upload']"
         And I fill in "name" with "Test validation options"
         And I attach the file "test.csv" to "upload"
         And I fill in "description" with "Testing validation options"
