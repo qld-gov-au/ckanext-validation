@@ -9,7 +9,7 @@ Feature: Resource validation
         And I attach the file "test.csv" to "upload"
         And I fill in "description" with "Testing validation schema"
         And I attach the file "test_schema.json" to "schema_upload"
-        And I press the element with xpath "//button[contains(string(), 'Add')]"
+        And I press the element with xpath "//button[contains(@class, 'btn-primary')]"
         Then I should see "Test resource"
 
         When I click the link with text that contains "Test resource"
@@ -21,7 +21,7 @@ Feature: Resource validation
         When I click the link with text that contains "Test resource"
         And I click the link with text that contains "Manage"
         And I attach the file "test_schema2.json" to "schema_upload"
-        And I press the element with xpath "//button[contains(string(), 'Update resource')]"
+        And I press the element with xpath "//button[contains(@class, 'btn-primary')]"
         Then I should see "Test resource"
         When I click the link with text that contains "Test resource"
         And I click the link with text that contains "Manage"
