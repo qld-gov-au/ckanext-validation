@@ -26,18 +26,6 @@ else:
     EDIT_RESOURCE_URL = '/dataset/{}/resource_edit/{}'
 
 
-def _log_in_as_sysadmin(app):
-    admin_pass = "RandomPassword123"
-    sysadmin = factories.Sysadmin(password=admin_pass)
-
-    # get the form
-    _post(app, "/login_generic?came_from=/user/logged_in", {
-        "save": "",
-        "login": sysadmin["name"],
-        "password": admin_pass,
-    })
-
-
 def _post(app, url, data, upload=None):
     args = []
     if check_ckan_version('2.9'):
@@ -51,7 +39,14 @@ def _post(app, url, data, upload=None):
             'extra_environ': {'REMOTE_USER': user['name'].encode('ascii')}
         }
     else:
-        _log_in_as_sysadmin(app)
+        admin_pass = "RandomPassword123"
+        sysadmin = factories.Sysadmin(password=admin_pass)
+        app.post("/login_generic?came_from=/user/logged_in", params={
+            "save": "",
+            "login": sysadmin["name"],
+            "password": admin_pass,
+        })
+
         args.append(url)
         kwargs = {
             'params': data,
