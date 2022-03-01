@@ -7,6 +7,7 @@ from pyfakefs import fake_filesystem
 
 import ckan.lib.uploader
 from ckan.tests.helpers import change_config
+from ckantoolkit import check_ckan_version
 
 
 INVALID_CSV = '''a,b,c,d
@@ -140,11 +141,14 @@ def mock_uploads(func):
     return wrapper
 
 
-class MockFieldStorage(cgi.FieldStorage):
+if check_ckan_version('2.9'):
+    from werkzeug.datastructures import FileStorage as MockFieldStorage
+else:
+    class MockFieldStorage(cgi.FieldStorage):
 
-    def __init__(self, fp, filename):
+        def __init__(self, fp, filename):
 
-        self.file = fp
-        self.filename = filename
-        self.name = 'upload'
-        self.list = None
+            self.file = fp
+            self.filename = filename
+            self.name = 'upload'
+            self.list = None

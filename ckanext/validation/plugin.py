@@ -1,6 +1,5 @@
 # encoding: utf-8
 
-import cgi
 import json
 import logging
 import os
@@ -9,6 +8,7 @@ import six
 import ckan.plugins as p
 import ckantoolkit as t
 from ckan.lib.plugins import DefaultTranslation
+from ckan.lib.uploader import ALLOWED_UPLOAD_TYPES, _get_underlying_file
 
 
 from ckanext.validation import settings
@@ -137,15 +137,20 @@ Please run the following to create the database tables:
         schema_upload = data_dict.pop(u'schema_upload', None)
         schema_url = data_dict.pop(u'schema_url', None)
         schema_json = data_dict.pop(u'schema_json', None)
+        log.debug("Populating schema; schema_upload is [%s], schema_url is [%s], schema_json is [%s]",
+                  schema_upload, schema_url, schema_json)
 
-        if isinstance(schema_upload, cgi.FieldStorage):
-            data_dict[u'schema'] = schema_upload.file.read()
+        if isinstance(schema_upload, ALLOWED_UPLOAD_TYPES):
+            log.debug("Populating schema from schema_upload")
+            data_dict[u'schema'] = _get_underlying_file(schema_upload).read()
         elif schema_url:
             if (not isinstance(schema_url, six.string_types)
                     or not schema_url.lower()[:4] == u'http'):
                 raise t.ValidationError({u'schema_url': 'Must be a valid URL'})
+            log.debug("Populating schema from schema_url")
             data_dict[u'schema'] = schema_url
         elif schema_json:
+            log.debug("Populating schema from schema_json")
             data_dict[u'schema'] = schema_json
 
         return data_dict
