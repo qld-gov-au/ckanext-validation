@@ -458,6 +458,7 @@ class TestResourceValidationOnCreate(object):
                     'resource_create',
                     package_id=self.test_dataset['id'],
                     format='CSV',
+                    url_type='upload',
                     upload=mock_upload
                 )
 
@@ -486,6 +487,7 @@ class TestResourceValidationOnCreate(object):
                     'resource_create',
                     package_id=self.test_dataset['id'],
                     format='CSV',
+                    url_type='upload',
                     upload=mock_upload
                 )
 
@@ -511,6 +513,7 @@ class TestResourceValidationOnCreate(object):
                 'resource_create',
                 package_id=self.test_dataset['id'],
                 format='CSV',
+                url_type='upload',
                 upload=mock_upload
             )
 
@@ -566,6 +569,7 @@ class TestResourceValidationOnUpdate(object):
                     id=dataset['resources'][0]['id'],
                     package_id=dataset['id'],
                     format='CSV',
+                    url_type='upload',
                     upload=mock_upload
                 )
 
@@ -600,6 +604,7 @@ class TestResourceValidationOnUpdate(object):
                     id=dataset['resources'][0]['id'],
                     package_id=dataset['id'],
                     format='CSV',
+                    url_type='upload',
                     upload=mock_upload
                 )
 
@@ -632,6 +637,7 @@ class TestResourceValidationOnUpdate(object):
                 id=dataset['resources'][0]['id'],
                 package_id=dataset['id'],
                 format='CSV',
+                url_type='upload',
                 upload=mock_upload
             )
 

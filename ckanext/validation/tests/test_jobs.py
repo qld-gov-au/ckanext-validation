@@ -194,7 +194,7 @@ class TestValidationJob(object):
 
         resource = call_action(
             'resource_create',
-            format='csv', upload=mock_upload, package_id=self.test_dataset['id']
+            format='csv', url_type='upload', upload=mock_upload, package_id=self.test_dataset['id']
         )
 
         invalid_stream = io.BufferedReader(io.BytesIO(invalid_csv))
