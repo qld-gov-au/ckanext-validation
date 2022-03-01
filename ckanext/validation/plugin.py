@@ -138,7 +138,7 @@ Please run the following to create the database tables:
         schema_url = data_dict.pop(u'schema_url', None)
         schema_json = data_dict.pop(u'schema_json', None)
         log.debug("Populating schema; schema_upload is [%s], schema_url is [%s], schema_json is [%s]",
-                 schema_upload, schema_url, schema_json)
+                  schema_upload, schema_url, schema_json)
 
         if isinstance(schema_upload, ALLOWED_UPLOAD_TYPES):
             log.debug("Populating schema from schema_upload")
