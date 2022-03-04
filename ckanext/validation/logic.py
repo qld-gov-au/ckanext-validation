@@ -1,21 +1,18 @@
 # encoding: utf-8
 
-import datetime
 import logging
 import json
 import six
-
-from sqlalchemy.orm.exc import NoResultFound
 
 import ckan.plugins as plugins
 import ckan.lib.uploader as uploader
 
 import ckantoolkit as t
 
-from ckanext.validation.model import Validation
 from ckanext.validation.interfaces import IDataValidation
 from ckanext.validation.jobs import run_validation_job
 from ckanext.validation import settings
+from ckanext.validation.validation_status_helper import (ValidationStatusHelper, ValidationJobAlreadyEnqueued)
 from ckanext.validation.utils import (
     get_create_mode_from_config,
     get_update_mode_from_config,
@@ -24,14 +21,6 @@ from ckanext.validation.utils import (
 
 
 log = logging.getLogger(__name__)
-
-
-def enqueue_job(*args, **kwargs):
-    try:
-        return t.enqueue_job(*args, **kwargs)
-    except AttributeError:
-        from ckanext.rq.jobs import enqueue as enqueue_job_legacy
-        return enqueue_job_legacy(*args, **kwargs)
 
 
 # Auth
@@ -83,7 +72,8 @@ def resource_validation_run(context, data_dict):
 
     t.check_access(u'resource_validation_run', context, data_dict)
 
-    if not data_dict.get(u'resource_id'):
+    resource_id = data_dict.get(u'resource_id')
+    if not resource_id:
         raise t.ValidationError({u'resource_id': u'Missing value'})
 
     resource = t.get_action(u'resource_show')(
@@ -95,7 +85,7 @@ def resource_validation_run(context, data_dict):
     # Ensure format is supported
     if not resource.get(u'format', u'').lower() in settings.SUPPORTED_FORMATS:
         raise t.ValidationError(
-            {u'format': u'Unsupported resource format.' +
+            {u'format': u'Unsupported resource format.'
              u'Must be one of {}'.format(
                  u','.join(settings.SUPPORTED_FORMATS))})
 
@@ -105,32 +95,40 @@ def resource_validation_run(context, data_dict):
             {u'url': u'Resource must have a valid URL or an uploaded file'})
 
     # Check if there was an existing validation for the resource
-
-    Session = context['model'].Session
-
     try:
-        validation = Session.query(Validation).filter(
-            Validation.resource_id == data_dict['resource_id']).one()
-    except NoResultFound:
-        validation = None
-
-    if validation:
-        # Reset values
-        validation.finished = None
-        validation.report = None
-        validation.error = None
-        validation.created = datetime.datetime.utcnow()
-        validation.status = u'created'
-    else:
-        validation = Validation(resource_id=resource['id'])
-
-    Session.add(validation)
-    Session.commit()
+        session = context['model'].Session
+        ValidationStatusHelper().createValidationJob(session, data_dict['resource_id'])
+    except ValidationJobAlreadyEnqueued:
+        log.error("resource_validation_run: ValidationJobAlreadyEnqueued %s", data_dict['resource_id'])
+        return
 
     if async_job:
-        enqueue_job(run_validation_job, [resource])
+        package_id = resource['package_id']
+        enqueue_validation_job(package_id, resource_id)
     else:
+        # run_validation_job(resource_id)  # Plan is to only pass resource_id, but tests need to be fixed for this
         run_validation_job(resource)
+
+
+def enqueue_validation_job(package_id, resource_id):
+    enqueue_args = {
+        'fn': run_validation_job,
+        'title': "run_validation_job: package_id: {} resource: {}".format(package_id, resource_id),
+        'kwargs': {'resource': resource_id},
+    }
+    if t.check_ckan_version('2.8'):
+        ttl = 24 * 60 * 60  # 24 hour ttl.
+        rq_kwargs = {
+            'ttl': ttl
+        }
+        if t.check_ckan_version('2.9'):
+            rq_kwargs['failure_ttl'] = ttl
+        enqueue_args['rq_kwargs'] = rq_kwargs
+    # Optional variable, if not set, default queue is used
+    queue = t.config.get('ckanext.validation.queue', None)
+    if queue:
+        enqueue_args['queue'] = queue
+    t.enqueue_job(**enqueue_args)
 
 
 @t.side_effect_free
@@ -161,13 +159,8 @@ def resource_validation_show(context, data_dict):
     if not data_dict.get(u'resource_id'):
         raise t.ValidationError({u'resource_id': u'Missing value'})
 
-    Session = context['model'].Session
-
-    try:
-        validation = Session.query(Validation).filter(
-            Validation.resource_id == data_dict['resource_id']).one()
-    except NoResultFound:
-        validation = None
+    session = context['model'].Session
+    validation = ValidationStatusHelper().getValidationJob(session, data_dict['resource_id'])
 
     if not validation:
         raise t.ObjectNotFound(
@@ -193,20 +186,14 @@ def resource_validation_delete(context, data_dict):
     if not data_dict.get(u'resource_id'):
         raise t.ValidationError({u'resource_id': u'Missing value'})
 
-    Session = context['model'].Session
-
-    try:
-        validation = Session.query(Validation).filter(
-            Validation.resource_id == data_dict['resource_id']).one()
-    except NoResultFound:
-        validation = None
+    session = context['model'].Session
+    validation = ValidationStatusHelper().getValidationJob(session, data_dict['resource_id'])
 
     if not validation:
         raise t.ObjectNotFound(
             'No validation report exists for this resource')
 
-    Session.delete(validation)
-    Session.commit()
+    ValidationStatusHelper().deleteValidationJob(session, validation)
 
 
 def resource_validation_run_batch(context, data_dict):
@@ -387,8 +374,8 @@ def _update_search_params(search_data_dict, user_search_params=None):
         else:
             search_data_dict['fq'] = user_search_params['fq']
 
-    if (user_search_params.get('fq_list') and
-            isinstance(user_search_params['fq_list'], list)):
+    if (user_search_params.get('fq_list')
+            and isinstance(user_search_params['fq_list'], list)):
         search_data_dict['fq_list'].extend(user_search_params['fq_list'])
 
 
@@ -420,7 +407,8 @@ def _validation_dictize(validation):
     return out
 
 
-def resource_create(context, data_dict):
+@t.chained_action
+def resource_create(original_action, context, data_dict):
     '''Appends a new resource to a datasets list of resources.
 
     This is duplicate of the CKAN core resource_create action, with just the
@@ -432,6 +420,9 @@ def resource_create(context, data_dict):
     points that will allow a better approach.
 
     '''
+    if get_create_mode_from_config() != u'sync':
+        return original_action(context, data_dict)
+
     model = context['model']
 
     package_id = t.get_or_bust(data_dict, 'package_id')
@@ -481,22 +472,22 @@ def resource_create(context, data_dict):
 
     # Custom code starts
 
-    if get_create_mode_from_config() == u'sync':
+    log.debug("Running synchronous after_create validation on resource: %s", data_dict)
 
-        run_validation = True
+    run_validation = True
 
-        for plugin in plugins.PluginImplementations(IDataValidation):
-            if not plugin.can_validate(context, data_dict):
-                log.debug('Skipping validation for resource %s', resource_id)
-                run_validation = False
+    for plugin in plugins.PluginImplementations(IDataValidation):
+        if not plugin.can_validate(context, data_dict):
+            log.debug('Skipping validation for resource %s', resource_id)
+            run_validation = False
 
-        if run_validation:
-            is_local_upload = (
-                hasattr(upload, 'filename') and
-                upload.filename is not None and
-                isinstance(upload, uploader.ResourceUpload))
-            _run_sync_validation(
-                resource_id, local_upload=is_local_upload, new_resource=True)
+    if run_validation:
+        is_local_upload = (
+            hasattr(upload, 'filename')
+            and upload.filename is not None
+            and isinstance(upload, uploader.ResourceUpload))
+        _run_sync_validation(
+            resource_id, local_upload=is_local_upload, new_resource=True)
 
     # Custom code ends
 
@@ -523,7 +514,8 @@ def resource_create(context, data_dict):
     return resource
 
 
-def resource_update(context, data_dict):
+@t.chained_action
+def resource_update(original_action, context, data_dict):
     '''Update a resource.
 
     This is duplicate of the CKAN core resource_update action, with just the
@@ -535,6 +527,9 @@ def resource_update(context, data_dict):
     points that will allow a better approach.
 
     '''
+    if get_update_mode_from_config() != u'sync':
+        return original_action(context, data_dict)
+
     model = context['model']
     id = t.get_or_bust(data_dict, "id")
 
@@ -564,8 +559,8 @@ def resource_update(context, data_dict):
         raise t.ObjectNotFound(t._('Resource was not found.'))
 
     # Persist the datastore_active extra if already present and not provided
-    if ('datastore_active' in resource.extras and
-            'datastore_active' not in data_dict):
+    if ('datastore_active' in resource.extras
+            and 'datastore_active' not in data_dict):
         data_dict['datastore_active'] = resource.extras['datastore_active']
 
     for plugin in plugins.PluginImplementations(plugins.IResourceController):
@@ -598,21 +593,21 @@ def resource_update(context, data_dict):
 
     # Custom code starts
 
-    if get_update_mode_from_config() == u'sync':
+    log.debug("Running synchronous after_update validation on resource: %s", data_dict)
 
-        run_validation = True
-        for plugin in plugins.PluginImplementations(IDataValidation):
-            if not plugin.can_validate(context, data_dict):
-                log.debug('Skipping validation for resource %s', id)
-                run_validation = False
+    run_validation = True
+    for plugin in plugins.PluginImplementations(IDataValidation):
+        if not plugin.can_validate(context, data_dict):
+            log.debug('Skipping validation for resource %s', id)
+            run_validation = False
 
-        if run_validation:
-            is_local_upload = (
-                hasattr(upload, 'filename') and
-                upload.filename is not None and
-                isinstance(upload, uploader.ResourceUpload))
-            _run_sync_validation(
-                id, local_upload=is_local_upload, new_resource=True)
+    if run_validation:
+        is_local_upload = (
+            hasattr(upload, 'filename')
+            and upload.filename is not None
+            and isinstance(upload, uploader.ResourceUpload))
+        _run_sync_validation(
+            id, local_upload=is_local_upload, new_resource=False)
 
     # Custom code ends
 
@@ -672,3 +667,16 @@ def _run_sync_validation(resource_id, local_upload=False, new_resource=True):
 
         raise t.ValidationError({
             u'validation': [report]})
+
+
+@t.chained_action
+def package_patch(original_action, context, data_dict):
+    ''' Detect whether resources have been replaced, and if not,
+    place a flag in the context accordingly if save flag is not set
+
+    Note: controllers add default context where save is in request params
+        'save': 'save' in request.params
+    '''
+    if 'save' not in context and 'resources' not in data_dict:
+        context['save'] = True
+    original_action(context, data_dict)

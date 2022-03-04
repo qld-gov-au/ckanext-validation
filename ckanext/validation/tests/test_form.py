@@ -1,24 +1,62 @@
+# encoding: utf-8
+
+import datetime
 import json
 import io
 import mock
-import datetime
+import six
 
-from nose.tools import assert_in, assert_equals
+from bs4 import BeautifulSoup
+from nose.tools import assert_in, assert_equals, with_setup
 
-from ckantoolkit.tests.factories import Sysadmin, Dataset
-from ckantoolkit.tests.helpers import (
-    FunctionalTestBase, submit_and_follow, webtest_submit, call_action,
-    reset_db
-)
+from ckantoolkit import check_ckan_version
+from ckantoolkit.tests import factories, helpers
+from ckantoolkit.tests.helpers import call_action, reset_db
 
 from ckanext.validation.model import create_tables, tables_exist
 from ckanext.validation.tests.helpers import (
-    VALID_CSV, INVALID_CSV, mock_uploads
+    VALID_CSV, INVALID_CSV, mock_uploads, MockFieldStorage
 )
+
+if check_ckan_version('2.9'):
+    NEW_RESOURCE_URL = '/dataset/{}/resource/new'
+    EDIT_RESOURCE_URL = '/dataset/{}/resource/{}/edit'
+else:
+    NEW_RESOURCE_URL = '/dataset/new_resource/{}'
+    EDIT_RESOURCE_URL = '/dataset/{}/resource_edit/{}'
+
+
+def _post(app, url, data, upload=None):
+    args = []
+    if check_ckan_version('2.9'):
+        user = factories.Sysadmin()
+        if upload:
+            for entry in upload:
+                data[entry[0]] = (six.StringIO(entry[2]), entry[1])
+        kwargs = {
+            'url': url,
+            'data': data,
+            'extra_environ': {'REMOTE_USER': user['name'].encode('ascii')}
+        }
+    else:
+        admin_pass = "RandomPassword123"
+        sysadmin = factories.Sysadmin(password=admin_pass)
+        app.post("/login_generic?came_from=/user/logged_in", params={
+            "save": "",
+            "login": sysadmin["name"],
+            "password": admin_pass,
+        })
+
+        args.append(url)
+        kwargs = {
+            'params': data,
+            'upload_files': upload
+        }
+    return app.post(*args, **kwargs)
 
 
 def _get_resource_new_page_as_sysadmin(app, id):
-    user = Sysadmin()
+    user = factories.Sysadmin()
     env = {'REMOTE_USER': user['name'].encode('ascii')}
     response = app.get(
         url='/dataset/new_resource/{}'.format(id),
@@ -27,40 +65,37 @@ def _get_resource_new_page_as_sysadmin(app, id):
     return env, response
 
 
-def _get_resource_update_page_as_sysadmin(app, id, resource_id):
-    user = Sysadmin()
-    env = {'REMOTE_USER': user['name'].encode('ascii')}
-    response = app.get(
-        url='/dataset/{}/resource_edit/{}'.format(id, resource_id),
-        extra_environ=env,
-    )
-    return env, response
+def _get_response_body(response):
+    if hasattr(response, 'text'):
+        return response.text
+    else:
+        return response.body
 
 
-class TestResourceSchemaForm(FunctionalTestBase):
+def _setup_function(self):
+    reset_db()
+    if not tables_exist():
+        create_tables()
+    self.owner_org = factories.Organization(name='test-org')
 
-    def setup(self):
-        reset_db()
-        if not tables_exist():
-            create_tables()
+
+@with_setup(_setup_function)
+class TestResourceSchemaForm(object):
 
     def test_resource_form_includes_json_fields(self):
-        dataset = Dataset()
+        dataset = factories.Dataset(owner_org=self.owner_org['id'])
 
-        app = self._get_test_app()
+        app = helpers._get_test_app()
         env, response = _get_resource_new_page_as_sysadmin(app, dataset['id'])
-        form = response.forms['resource-edit']
-        assert_in('schema', form.fields)
-        assert_equals(form.fields['schema'][0].tag, 'input')
-        assert_equals(form.fields['schema_json'][0].tag, 'textarea')
-        assert_equals(form.fields['schema_url'][0].tag, 'input')
+        soup = BeautifulSoup(_get_response_body(response), 'html.parser')
 
+        assert soup.select("#resource-edit input[name='schema']")
+        assert soup.select("#resource-edit input[name='schema_url']")
+        assert soup.select("#resource-edit textarea[name='schema_json']")
+
+    @helpers.change_config('ckanext.validation.run_on_create_async', False)
     def test_resource_form_create(self):
-        dataset = Dataset()
-
-        app = self._get_test_app()
-        env, response = _get_resource_new_page_as_sysadmin(app, dataset['id'])
-        form = response.forms['resource-edit']
+        dataset = factories.Dataset(owner_org=self.owner_org['id'])
 
         value = {
             'fields': [
@@ -70,21 +105,24 @@ class TestResourceSchemaForm(FunctionalTestBase):
         }
         json_value = json.dumps(value)
 
-        form['url'] = 'https://example.com/data.csv'
-        form['schema'] = json_value
+        post_data = {
+            'save': '',
+            'id': '',
+            'name': 'test_resource_form_create',
+            'url': 'https://example.com/data.csv',
+            'schema': json_value
+        }
 
-        submit_and_follow(app, form, env, 'save')
+        app = helpers._get_test_app()
+        _post(app, NEW_RESOURCE_URL.format(dataset['id']), post_data)
 
         dataset = call_action('package_show', id=dataset['id'])
 
         assert_equals(dataset['resources'][0]['schema'], value)
 
+    @helpers.change_config('ckanext.validation.run_on_create_async', False)
     def test_resource_form_create_json(self):
-        dataset = Dataset()
-
-        app = self._get_test_app()
-        env, response = _get_resource_new_page_as_sysadmin(app, dataset['id'])
-        form = response.forms['resource-edit']
+        dataset = factories.Dataset(owner_org=self.owner_org['id'])
 
         value = {
             'fields': [
@@ -94,22 +132,25 @@ class TestResourceSchemaForm(FunctionalTestBase):
         }
         json_value = json.dumps(value)
 
-        form['url'] = 'https://example.com/data.csv'
-        form['schema_json'] = json_value
+        post_data = {
+            'save': '',
+            'id': '',
+            'name': 'test_resource_form_create_json',
+            'url': 'https://example.com/data.csv',
+            'schema_json': json_value
+        }
 
-        submit_and_follow(app, form, env, 'save')
+        app = helpers._get_test_app()
+        _post(app, NEW_RESOURCE_URL.format(dataset['id']), post_data)
 
         dataset = call_action('package_show', id=dataset['id'])
 
         assert_equals(dataset['resources'][0]['schema'], value)
 
     @mock_uploads
+    @helpers.change_config('ckanext.validation.run_on_create_async', False)
     def test_resource_form_create_upload(self, mock_open):
-        dataset = Dataset()
-
-        app = self._get_test_app()
-        env, response = _get_resource_new_page_as_sysadmin(app, dataset['id'])
-        form = response.forms['resource-edit']
+        dataset = factories.Dataset(owner_org=self.owner_org['id'])
 
         value = {
             'fields': [
@@ -119,34 +160,44 @@ class TestResourceSchemaForm(FunctionalTestBase):
         }
         json_value = json.dumps(value)
 
+        post_data = {
+            'save': '',
+            'id': '',
+            'name': 'test_resource_form_create_upload',
+            'url': 'https://example.com/data.csv'
+        }
         upload = ('schema_upload', 'schema.json', json_value)
-        form['url'] = 'https://example.com/data.csv'
 
-        webtest_submit(
-            form, 'save', upload_files=[upload], extra_environ=env)
+        app = helpers._get_test_app()
+        _post(app, NEW_RESOURCE_URL.format(dataset['id']), post_data, upload=[upload])
 
         dataset = call_action('package_show', id=dataset['id'])
 
         assert_equals(dataset['resources'][0]['schema'], value)
 
+    @helpers.change_config('ckanext.validation.run_on_create_async', False)
     def test_resource_form_create_url(self):
-        dataset = Dataset()
-
-        app = self._get_test_app()
-        env, response = _get_resource_new_page_as_sysadmin(app, dataset['id'])
-        form = response.forms['resource-edit']
+        dataset = factories.Dataset(owner_org=self.owner_org['id'])
 
         value = 'https://example.com/schemas.json'
 
-        form['url'] = 'https://example.com/data.csv'
-        form['schema_json'] = value
+        post_data = {
+            'save': '',
+            'id': '',
+            'name': 'test_resource_form_create_url',
+            'url': 'https://example.com/data.csv',
+            'schema_json': value
+        }
 
-        submit_and_follow(app, form, env, 'save')
+        app = helpers._get_test_app()
+        _post(app, NEW_RESOURCE_URL.format(dataset['id']), post_data)
 
         dataset = call_action('package_show', id=dataset['id'])
 
         assert_equals(dataset['resources'][0]['schema'], value)
 
+    @helpers.change_config('ckanext.validation.run_on_create_async', False)
+    @helpers.change_config('ckanext.validation.run_on_update_async', False)
     def test_resource_form_update(self):
         value = {
             'fields': [
@@ -154,23 +205,14 @@ class TestResourceSchemaForm(FunctionalTestBase):
                 {'name': 'department'}
             ]
         }
-        dataset = Dataset(
+        dataset = factories.Dataset(
+            owner_org=self.owner_org['id'],
             resources=[{
                 'url': 'https://example.com/data.csv',
                 'schema': value
             }]
         )
-
-        app = self._get_test_app()
-        env, response = _get_resource_update_page_as_sysadmin(
-            app, dataset['id'], dataset['resources'][0]['id'])
-        form = response.forms['resource-edit']
-
-        assert_equals(
-            form['schema'].value, json.dumps(value, indent=None))
-
-        # Clear current value
-        form['schema_json'] = ''
+        resource_id = dataset['resources'][0]['id']
 
         value = {
             'fields': [
@@ -182,14 +224,24 @@ class TestResourceSchemaForm(FunctionalTestBase):
 
         json_value = json.dumps(value)
 
-        form['schema'] = json_value
+        post_data = {
+            'save': '',
+            'id': resource_id,
+            'name': 'test_resource_form_update',
+            'url': 'https://example.com/data.csv',
+            'schema': json_value,
+            'schema_json': ''
+        }
 
-        submit_and_follow(app, form, env, 'save')
+        app = helpers._get_test_app()
+        _post(app, EDIT_RESOURCE_URL.format(dataset['id'], resource_id), post_data)
 
         dataset = call_action('package_show', id=dataset['id'])
 
         assert_equals(dataset['resources'][0]['schema'], value)
 
+    @helpers.change_config('ckanext.validation.run_on_create_async', False)
+    @helpers.change_config('ckanext.validation.run_on_update_async', False)
     def test_resource_form_update_json(self):
         value = {
             'fields': [
@@ -197,20 +249,14 @@ class TestResourceSchemaForm(FunctionalTestBase):
                 {'name': 'department'}
             ]
         }
-        dataset = Dataset(
+        dataset = factories.Dataset(
+            owner_org=self.owner_org['id'],
             resources=[{
                 'url': 'https://example.com/data.csv',
                 'schema': value
             }]
         )
-
-        app = self._get_test_app()
-        env, response = _get_resource_update_page_as_sysadmin(
-            app, dataset['id'], dataset['resources'][0]['id'])
-        form = response.forms['resource-edit']
-
-        assert_equals(
-            form['schema_json'].value, json.dumps(value, indent=2))
+        resource_id = dataset['resources'][0]['id']
 
         value = {
             'fields': [
@@ -222,14 +268,23 @@ class TestResourceSchemaForm(FunctionalTestBase):
 
         json_value = json.dumps(value)
 
-        form['schema_json'] = json_value
+        post_data = {
+            'save': '',
+            'id': resource_id,
+            'name': 'test_resource_form_update_json',
+            'url': 'https://example.com/data.csv',
+            'schema_json': json_value
+        }
 
-        submit_and_follow(app, form, env, 'save')
+        app = helpers._get_test_app()
+        _post(app, EDIT_RESOURCE_URL.format(dataset['id'], resource_id), post_data)
 
         dataset = call_action('package_show', id=dataset['id'])
 
         assert_equals(dataset['resources'][0]['schema'], value)
 
+    @helpers.change_config('ckanext.validation.run_on_create_async', False)
+    @helpers.change_config('ckanext.validation.run_on_update_async', False)
     def test_resource_form_update_url(self):
         value = {
             'fields': [
@@ -237,31 +292,34 @@ class TestResourceSchemaForm(FunctionalTestBase):
                 {'name': 'department'}
             ]
         }
-        dataset = Dataset(
+        dataset = factories.Dataset(
+            owner_org=self.owner_org['id'],
             resources=[{
                 'url': 'https://example.com/data.csv',
                 'schema': value
             }]
         )
-
-        app = self._get_test_app()
-        env, response = _get_resource_update_page_as_sysadmin(
-            app, dataset['id'], dataset['resources'][0]['id'])
-        form = response.forms['resource-edit']
-
-        assert_equals(
-            form['schema_json'].value, json.dumps(value, indent=2))
+        resource_id = dataset['resources'][0]['id']
 
         value = 'https://example.com/schema.json'
 
-        form['schema_url'] = value
+        post_data = {
+            'save': '',
+            'id': resource_id,
+            'name': 'test_resource_form_update_url',
+            'url': 'https://example.com/data.csv',
+            'schema_url': value
+        }
 
-        submit_and_follow(app, form, env, 'save')
+        app = helpers._get_test_app()
+        _post(app, EDIT_RESOURCE_URL.format(dataset['id'], resource_id), post_data)
 
         dataset = call_action('package_show', id=dataset['id'])
 
         assert_equals(dataset['resources'][0]['schema'], value)
 
+    @helpers.change_config('ckanext.validation.run_on_create_async', False)
+    @helpers.change_config('ckanext.validation.run_on_update_async', False)
     def test_resource_form_update_upload(self):
         value = {
             'fields': [
@@ -269,20 +327,14 @@ class TestResourceSchemaForm(FunctionalTestBase):
                 {'name': 'department'}
             ]
         }
-        dataset = Dataset(
+        dataset = factories.Dataset(
+            owner_org=self.owner_org['id'],
             resources=[{
                 'url': 'https://example.com/data.csv',
                 'schema': value
             }]
         )
-
-        app = self._get_test_app()
-        env, response = _get_resource_update_page_as_sysadmin(
-            app, dataset['id'], dataset['resources'][0]['id'])
-        form = response.forms['resource-edit']
-
-        assert_equals(
-            form['schema_json'].value, json.dumps(value, indent=2))
+        resource_id = dataset['resources'][0]['id']
 
         value = {
             'fields': [
@@ -294,39 +346,36 @@ class TestResourceSchemaForm(FunctionalTestBase):
 
         json_value = json.dumps(value)
 
+        post_data = {
+            'save': '',
+            'id': resource_id,
+            'name': 'test_resource_form_update_upload',
+            'url': 'https://example.com/data.csv'
+        }
         upload = ('schema_upload', 'schema.json', json_value)
-        form['url'] = 'https://example.com/data.csv'
 
-        webtest_submit(
-            form, 'save', upload_files=[upload], extra_environ=env)
+        app = helpers._get_test_app()
+        _post(app, EDIT_RESOURCE_URL.format(dataset['id'], resource_id), post_data, upload=[upload])
 
         dataset = call_action('package_show', id=dataset['id'])
 
         assert_equals(dataset['resources'][0]['schema'], value)
 
 
-class TestResourceValidationOptionsForm(FunctionalTestBase):
-
-    def setup(self):
-        reset_db()
-        if not tables_exist():
-            create_tables()
+@with_setup(_setup_function)
+class TestResourceValidationOptionsForm(object):
 
     def test_resource_form_includes_json_fields(self):
-        dataset = Dataset()
+        dataset = factories.Dataset(owner_org=self.owner_org['id'])
 
-        app = self._get_test_app()
+        app = helpers._get_test_app()
         env, response = _get_resource_new_page_as_sysadmin(app, dataset['id'])
-        form = response.forms['resource-edit']
-        assert_in('validation_options', form.fields)
-        assert_equals(form.fields['validation_options'][0].tag, 'textarea')
+        soup = BeautifulSoup(_get_response_body(response), 'html.parser')
+
+        assert soup.select("#resource-edit textarea[name='validation_options']")
 
     def test_resource_form_create(self):
-        dataset = Dataset()
-
-        app = self._get_test_app()
-        env, response = _get_resource_new_page_as_sysadmin(app, dataset['id'])
-        form = response.forms['resource-edit']
+        dataset = factories.Dataset(owner_org=self.owner_org['id'])
 
         value = {
             'delimiter': ';',
@@ -335,10 +384,16 @@ class TestResourceValidationOptionsForm(FunctionalTestBase):
         }
         json_value = json.dumps(value)
 
-        form['url'] = 'https://example.com/data.csv'
-        form['validation_options'] = json_value
+        post_data = {
+            'save': '',
+            'id': '',
+            'name': 'test_resource_form_create',
+            'url': 'https://example.com/data.csv',
+            'validation_options': json_value
+        }
 
-        submit_and_follow(app, form, env, 'save')
+        app = helpers._get_test_app()
+        _post(app, NEW_RESOURCE_URL.format(dataset['id']), post_data)
 
         dataset = call_action('package_show', id=dataset['id'])
 
@@ -351,21 +406,14 @@ class TestResourceValidationOptionsForm(FunctionalTestBase):
             'skip_rows': ['#'],
         }
 
-        dataset = Dataset(
+        dataset = factories.Dataset(
+            owner_org=self.owner_org['id'],
             resources=[{
                 'url': 'https://example.com/data.csv',
                 'validation_options': value
             }]
         )
-
-        app = self._get_test_app()
-        env, response = _get_resource_update_page_as_sysadmin(
-            app, dataset['id'], dataset['resources'][0]['id'])
-        form = response.forms['resource-edit']
-
-        assert_equals(
-            form['validation_options'].value, json.dumps(
-                value, indent=2, sort_keys=True))
+        resource_id = dataset['resources'][0]['id']
 
         value = {
             'delimiter': ';',
@@ -376,42 +424,45 @@ class TestResourceValidationOptionsForm(FunctionalTestBase):
 
         json_value = json.dumps(value)
 
-        form['url'] = 'https://example.com/data.csv'
-        form['validation_options'] = json_value
+        post_data = {
+            'save': '',
+            'id': resource_id,
+            'name': 'test_resource_form_update',
+            'url': 'https://example.com/data.csv',
+            'validation_options': json_value
+        }
 
-        submit_and_follow(app, form, env, 'save')
+        app = helpers._get_test_app()
+        _post(app, EDIT_RESOURCE_URL.format(dataset['id'], resource_id), post_data)
 
         dataset = call_action('package_show', id=dataset['id'])
 
         assert_equals(dataset['resources'][0]['validation_options'], value)
 
 
-class TestResourceValidationOnCreateForm(FunctionalTestBase):
-
-    @classmethod
-    def _apply_config_changes(cls, cfg):
-        cfg['ckanext.validation.run_on_create_sync'] = True
-
-    def setup(self):
-        reset_db()
-        if not tables_exist():
-            create_tables()
+@with_setup(_setup_function)
+class TestResourceValidationOnCreateForm(object):
 
     @mock_uploads
+    @helpers.change_config('ckanext.validation.run_on_create_sync', True)
+    @helpers.change_config('ckanext.validation.run_on_update_sync', True)
     def test_resource_form_create_valid(self, mock_open):
-        dataset = Dataset()
+        dataset = factories.Dataset(owner_org=self.owner_org['id'])
 
-        app = self._get_test_app()
-        env, response = _get_resource_new_page_as_sysadmin(app, dataset['id'])
-        form = response.forms['resource-edit']
+        post_data = {
+            'save': '',
+            'id': '',
+            'name': 'test_resource_form_create_valid',
+            'url': 'https://example.com/data.csv'
+        }
 
         upload = ('upload', 'valid.csv', VALID_CSV)
 
         valid_stream = io.BufferedReader(io.BytesIO(VALID_CSV))
 
+        app = helpers._get_test_app()
         with mock.patch('io.open', return_value=valid_stream):
-
-            submit_and_follow(app, form, env, 'save', upload_files=[upload])
+            _post(app, NEW_RESOURCE_URL.format(dataset['id']), post_data, upload=[upload])
 
         dataset = call_action('package_show', id=dataset['id'])
 
@@ -419,59 +470,60 @@ class TestResourceValidationOnCreateForm(FunctionalTestBase):
         assert 'validation_timestamp' in dataset['resources'][0]
 
     @mock_uploads
+    @helpers.change_config('ckanext.validation.run_on_create_sync', True)
+    @helpers.change_config('ckanext.validation.run_on_update_sync', True)
     def test_resource_form_create_invalid(self, mock_open):
-        dataset = Dataset()
+        dataset = factories.Dataset(owner_org=self.owner_org['id'])
 
-        app = self._get_test_app()
-        env, response = _get_resource_new_page_as_sysadmin(app, dataset['id'])
-        form = response.forms['resource-edit']
+        post_data = {
+            'save': '',
+            'id': '',
+            'name': 'test_resource_form_create_invalid',
+            'url': 'https://example.com/data.csv'
+        }
 
         upload = ('upload', 'invalid.csv', INVALID_CSV)
 
         invalid_stream = io.BufferedReader(io.BytesIO(INVALID_CSV))
 
+        app = helpers._get_test_app()
         with mock.patch('io.open', return_value=invalid_stream):
+            response = _get_response_body(_post(app, NEW_RESOURCE_URL.format(dataset['id']), post_data, upload=[upload]))
 
-            response = webtest_submit(
-                form, 'save', upload_files=[upload], extra_environ=env)
-
-        assert_in('validation', response.body)
-        assert_in('missing-value', response.body)
-        assert_in('Row 2 has a missing value in column 4', response.body)
+        assert_in('validation', response)
+        assert_in('missing-value', response)
+        assert_in('Row 2 has a missing value in column 4', response)
 
 
-class TestResourceValidationOnUpdateForm(FunctionalTestBase):
-
-    @classmethod
-    def _apply_config_changes(cls, cfg):
-        cfg['ckanext.validation.run_on_update_sync'] = True
-
-    def setup(self):
-        reset_db()
-        if not tables_exist():
-            create_tables()
+@with_setup(_setup_function)
+class TestResourceValidationOnUpdateForm(object):
 
     @mock_uploads
+    @helpers.change_config('ckanext.validation.run_on_update_sync', True)
+    @helpers.change_config('ckanext.validation.run_on_create_async', False)
     def test_resource_form_update_valid(self, mock_open):
 
-        dataset = Dataset(resources=[
-            {
+        dataset = factories.Dataset(
+            owner_org=self.owner_org['id'],
+            resources=[{
                 'url': 'https://example.com/data.csv'
-            }
-        ])
+            }]
+        )
+        resource_id = dataset['resources'][0]['id']
 
-        app = self._get_test_app()
-        env, response = _get_resource_update_page_as_sysadmin(
-            app, dataset['id'], dataset['resources'][0]['id'])
-        form = response.forms['resource-edit']
-
+        post_data = {
+            'save': '',
+            'id': resource_id,
+            'name': 'test_resource_form_update_valid',
+            'url': 'https://example.com/data.csv'
+        }
         upload = ('upload', 'valid.csv', VALID_CSV)
 
         valid_stream = io.BufferedReader(io.BytesIO(VALID_CSV))
 
+        app = helpers._get_test_app()
         with mock.patch('io.open', return_value=valid_stream):
-
-            submit_and_follow(app, form, env, 'save', upload_files=[upload])
+            _post(app, EDIT_RESOURCE_URL.format(dataset['id'], resource_id), post_data, upload=[upload])
 
         dataset = call_action('package_show', id=dataset['id'])
 
@@ -479,63 +531,72 @@ class TestResourceValidationOnUpdateForm(FunctionalTestBase):
         assert 'validation_timestamp' in dataset['resources'][0]
 
     @mock_uploads
+    @helpers.change_config('ckanext.validation.run_on_create_async', False)
+    @helpers.change_config('ckanext.validation.run_on_update_sync', True)
     def test_resource_form_update_invalid(self, mock_open):
 
-        dataset = Dataset(resources=[
-            {
+        dataset = factories.Dataset(
+            owner_org=self.owner_org['id'],
+            resources=[{
+                'name': 'test_resource_form_update_invalid',
                 'url': 'https://example.com/data.csv'
-            }
-        ])
+            }]
+        )
+        resource = dataset['resources'][0]
 
-        app = self._get_test_app()
-        env, response = _get_resource_update_page_as_sysadmin(
-            app, dataset['id'], dataset['resources'][0]['id'])
-        form = response.forms['resource-edit']
+        app = helpers._get_test_app()
+        response = app.get("/dataset/{}/resource/{}".format(dataset['id'], resource['id']))
+        soup = BeautifulSoup(_get_response_body(response), 'html.parser')
+        assert soup.select("h1.page-heading") and soup.select("h1.page-heading")[0].string.strip() == resource['name']
 
+        post_data = {
+            'save': '',
+            'id': resource['id'],
+            'name': 'test_resource_form_update_invalid',
+            'url': 'https://example.com/data.csv'
+        }
         upload = ('upload', 'invalid.csv', INVALID_CSV)
 
         invalid_stream = io.BufferedReader(io.BytesIO(INVALID_CSV))
 
         with mock.patch('io.open', return_value=invalid_stream):
+            response = _get_response_body(_post(app, EDIT_RESOURCE_URL.format(dataset['id'], resource['id']), post_data, upload=[upload]))
 
-            response = webtest_submit(
-                form, 'save', upload_files=[upload], extra_environ=env)
-
-        assert_in('validation', response.body)
-        assert_in('missing-value', response.body)
-        assert_in('Row 2 has a missing value in column 4', response.body)
+        assert_in('validation', response)
+        assert_in('missing-value', response)
+        assert_in('Row 2 has a missing value in column 4', response)
 
 
-class TestResourceValidationFieldsPersisted(FunctionalTestBase):
+@with_setup(_setup_function)
+class TestResourceValidationFieldsPersisted(object):
 
-    @classmethod
-    def _apply_config_changes(cls, cfg):
-        cfg['ckanext.validation.run_on_update_sync'] = False
-        cfg['ckanext.validation.run_on_update_sync'] = False
-
-    def setup(self):
-        reset_db()
-        if not tables_exist():
-            create_tables()
-
+    @helpers.change_config('ckanext.validation.run_on_create_sync', True)
+    @helpers.change_config('ckanext.validation.run_on_update_sync', True)
     def test_resource_form_fields_are_persisted(self):
+        upload = ('upload', 'valid.csv', VALID_CSV)
 
-        dataset = Dataset(resources=[
-            {
-                'url': 'https://example.com/data.csv',
-                'validation_status': 'success',
-                'validation_timestamp': datetime.datetime.now().isoformat()
-            }
-        ])
+        dataset = factories.Dataset(owner_org=self.owner_org['id'])
+        resource = call_action(
+            'resource_create',
+            package_id=dataset['id'],
+            validation_status='success',
+            validation_timestamp=datetime.datetime.now().isoformat(),
+            upload=MockFieldStorage(io.BytesIO(VALID_CSV), filename='data.csv'),
+            url='data.csv')
+        resource = call_action('resource_show', id=resource['id'])
+        assert 'validation_status' in resource
+        assert resource['validation_status'] == 'success'
 
-        app = self._get_test_app()
-        env, response = _get_resource_update_page_as_sysadmin(
-            app, dataset['id'], dataset['resources'][0]['id'])
-        form = response.forms['resource-edit']
+        post_data = {
+            'save': '',
+            'id': resource['id'],
+            'name': 'test_resource_form_fields_are_persisted',
+            'description': 'test desc',
+            'url': 'https://example.com/data.csv'
+        }
 
-        form['description'] = 'test desc'
-
-        submit_and_follow(app, form, env, 'save')
+        app = helpers._get_test_app()
+        _post(app, EDIT_RESOURCE_URL.format(dataset['id'], resource['id']), post_data, upload=[upload])
 
         dataset = call_action('package_show', id=dataset['id'])
 

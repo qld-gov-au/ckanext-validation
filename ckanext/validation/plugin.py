@@ -1,12 +1,15 @@
 # encoding: utf-8
 
-import logging
-import cgi
 import json
+import logging
+import os
 import six
 
 import ckan.plugins as p
 import ckantoolkit as t
+from ckan.lib.plugins import DefaultTranslation
+from ckan.lib.uploader import ALLOWED_UPLOAD_TYPES, _get_underlying_file
+
 
 from ckanext.validation import settings
 from ckanext.validation.model import tables_exist
@@ -17,6 +20,7 @@ from ckanext.validation.logic import (
     auth_resource_validation_delete, auth_resource_validation_run_batch,
     resource_create as custom_resource_create,
     resource_update as custom_resource_update,
+    package_patch
 )
 from ckanext.validation.helpers import (
     get_validation_badge,
@@ -34,29 +38,46 @@ from ckanext.validation.utils import (
 )
 from ckanext.validation.interfaces import IDataValidation
 
-
 log = logging.getLogger(__name__)
 
 
-class ValidationPlugin(p.SingletonPlugin):
+if t.check_ckan_version(min_version='2.9.0'):
+    from .plugin_mixins.flask_plugin import MixinPlugin
+else:
+    from .plugin_mixins.pylons_plugin import MixinPlugin
+
+
+class ValidationPlugin(MixinPlugin, p.SingletonPlugin, DefaultTranslation):
     p.implements(p.IConfigurer)
     p.implements(p.IActions)
-    p.implements(p.IRoutes, inherit=True)
     p.implements(p.IAuthFunctions)
     p.implements(p.IResourceController, inherit=True)
     p.implements(p.IPackageController, inherit=True)
     p.implements(p.ITemplateHelpers)
     p.implements(p.IValidators)
+    p.implements(p.ITranslation, inherit=True)
+
+    # ITranslation
+    def i18n_directory(self):
+        u'''Change the directory of the .mo translation files'''
+        return os.path.join(
+            os.path.dirname(__file__),
+            'i18n'
+        )
 
     # IConfigurer
 
     def update_config(self, config_):
         if not tables_exist():
+            if t.check_ckan_version('2.9'):
+                init_command = 'ckan validation init-db'
+            else:
+                init_command = 'paster --plugin=ckanext-validation validation init-db'
             log.critical(u'''
-The validation extension requires a database setup. Please run the following
-to create the database tables:
-    paster --plugin=ckanext-validation validation init-db
-''')
+The validation extension requires a database setup.
+Validation pages will not be enabled.
+Please run the following to create the database tables:
+    %s''', init_command)
         else:
             log.debug(u'Validation tables exist')
 
@@ -64,35 +85,18 @@ to create the database tables:
         t.add_public_directory(config_, u'public')
         t.add_resource(u'fanstatic', 'ckanext-validation')
 
-    # IRoutes
-
-    def before_map(self, map_):
-
-        controller = u'ckanext.validation.controller:ValidationController'
-
-        map_.connect(
-            u'validation_read',
-            u'/dataset/{id}/resource/{resource_id}/validation',
-            controller=controller, action=u'validation')
-
-        return map_
-
     # IActions
 
     def get_actions(self):
-        new_actions = {
+        return {
             u'resource_validation_run': resource_validation_run,
             u'resource_validation_show': resource_validation_show,
             u'resource_validation_delete': resource_validation_delete,
             u'resource_validation_run_batch': resource_validation_run_batch,
+            u'package_patch': package_patch,
+            u'resource_create': custom_resource_create,
+            u'resource_update': custom_resource_update
         }
-
-        if get_create_mode_from_config() == u'sync':
-            new_actions[u'resource_create'] = custom_resource_create
-        if get_update_mode_from_config() == u'sync':
-            new_actions[u'resource_update'] = custom_resource_update
-
-        return new_actions
 
     # IAuthFunctions
 
@@ -133,15 +137,20 @@ to create the database tables:
         schema_upload = data_dict.pop(u'schema_upload', None)
         schema_url = data_dict.pop(u'schema_url', None)
         schema_json = data_dict.pop(u'schema_json', None)
+        log.debug("Populating schema; schema_upload is [%s], schema_url is [%s], schema_json is [%s]",
+                  schema_upload, schema_url, schema_json)
 
-        if isinstance(schema_upload, cgi.FieldStorage):
-            data_dict[u'schema'] = schema_upload.file.read()
+        if isinstance(schema_upload, ALLOWED_UPLOAD_TYPES):
+            log.debug("Populating schema from schema_upload")
+            data_dict[u'schema'] = _get_underlying_file(schema_upload).read()
         elif schema_url:
-            if (not isinstance(schema_url, six.string_types) or
-                    not schema_url.lower()[:4] == u'http'):
+            if (not isinstance(schema_url, six.string_types)
+                    or not schema_url.lower()[:4] == u'http'):
                 raise t.ValidationError({u'schema_url': 'Must be a valid URL'})
+            log.debug("Populating schema from schema_url")
             data_dict[u'schema'] = schema_url
         elif schema_json:
+            log.debug("Populating schema from schema_json")
             data_dict[u'schema'] = schema_json
 
         return data_dict
@@ -179,9 +188,9 @@ to create the database tables:
         needs_validation = False
         if ((
             # File uploaded
-            resource.get(u'url_type') == u'upload' or
+            resource.get(u'url_type') == u'upload'
             # URL defined
-            resource.get(u'url')
+            or resource.get(u'url')
         ) and (
             # Make sure format is supported
             resource.get(u'format', u'').lower() in
@@ -211,15 +220,15 @@ to create the database tables:
         needs_validation = False
         if (
             # New file uploaded
-            updated_resource.get(u'upload') or
+            updated_resource.get(u'upload')
             # External URL changed
-            updated_resource.get(u'url') != current_resource.get(u'url') or
+            or updated_resource.get(u'url') != current_resource.get(u'url')
             # Schema changed
-            (updated_resource.get(u'schema') !=
-             current_resource.get(u'schema')) or
+            or (updated_resource.get(u'schema')
+                != current_resource.get(u'schema'))
             # Format changed
-            (updated_resource.get(u'format', u'').lower() !=
-             current_resource.get(u'format', u'').lower())
+            or (updated_resource.get(u'format', u'').lower()
+                != current_resource.get(u'format', u'').lower())
         ) and (
             # Make sure format is supported
             updated_resource.get(u'format', u'').lower() in
@@ -241,17 +250,18 @@ to create the database tables:
                 and not get_create_mode_from_config() == u'async'):
             return
 
-        if context.get('_validation_performed'):
+        if context.pop('_validation_performed', None):
             # Ugly, but needed to avoid circular loops caused by the
             # validation job calling resource_patch (which calls
             # package_update)
-            del context['_validation_performed']
             return
 
         if is_dataset:
             package_id = data_dict.get('id')
-            if package_id in self.packages_to_skip:
-                del self.packages_to_skip[package_id]
+            if self.packages_to_skip.pop(package_id, None) or context.get('save', False):
+                # Either we're updating an individual resource,
+                # or we're updating the package metadata via the web form;
+                # in both cases, we don't need to validate every resource.
                 return
 
             for resource in data_dict.get(u'resources', []):

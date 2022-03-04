@@ -15,14 +15,17 @@ class TestResourceControllerHooksUpdate(object):
         reset_db()
         if not tables_exist():
             create_tables()
+        self.owner_org = factories.Organization(name='test-org')
+        self.test_dataset = factories.Dataset(owner_org=self.owner_org['id'])
 
     @change_config('ckanext.validation.run_on_create_async', False)
-    @mock.patch('ckanext.validation.logic.enqueue_job')
+    @mock.patch('ckantoolkit.enqueue_job')
     def test_validation_does_not_run_on_other_fields(self, mock_enqueue):
 
         resource = {'format': 'CSV'}
 
-        dataset = factories.Dataset(resources=[resource])
+        dataset = factories.Dataset(
+            owner_org=self.owner_org['id'], resources=[resource])
 
         dataset['resources'][0]['description'] = 'Some resource'
 
@@ -31,19 +34,20 @@ class TestResourceControllerHooksUpdate(object):
         mock_enqueue.assert_not_called()
 
     @change_config('ckanext.validation.run_on_create_async', False)
-    @mock.patch('ckanext.validation.logic.enqueue_job')
+    @mock.patch('ckantoolkit.enqueue_job')
     def test_validation_does_not_run_on_other_formats(self, mock_enqueue):
 
         resource = {'format': 'PDF'}
 
-        dataset = factories.Dataset(resources=[resource])
+        dataset = factories.Dataset(
+            owner_org=self.owner_org['id'], resources=[resource])
 
         call_action('resource_update', {}, **dataset['resources'][0])
 
         mock_enqueue.assert_not_called()
 
     @change_config('ckanext.validation.run_on_create_async', False)
-    @mock.patch('ckanext.validation.logic.enqueue_job')
+    @mock.patch('ckantoolkit.enqueue_job')
     def test_validation_run_on_upload(self, mock_enqueue):
 
         resource = {
@@ -52,24 +56,26 @@ class TestResourceControllerHooksUpdate(object):
             'url_type': 'upload'
         }
 
-        dataset = factories.Dataset(resources=[resource])
+        dataset = factories.Dataset(
+            owner_org=self.owner_org['id'], resources=[resource])
 
         call_action('resource_update', {}, **dataset['resources'][0])
 
         assert_equals(mock_enqueue.call_count, 1)
 
-        assert_equals(mock_enqueue.call_args[0][0], run_validation_job)
+        assert_equals(mock_enqueue.call_args.kwargs['fn'], run_validation_job)
         assert_equals(
-            mock_enqueue.call_args[0][1][0]['id'],
+            mock_enqueue.call_args.kwargs['kwargs']['resource'],
             dataset['resources'][0]['id'])
 
     @change_config('ckanext.validation.run_on_create_async', False)
-    @mock.patch('ckanext.validation.logic.enqueue_job')
+    @mock.patch('ckantoolkit.enqueue_job')
     def test_validation_run_on_url_change(self, mock_enqueue):
 
         resource = {'format': 'CSV', 'url': 'https://some.url'}
 
-        dataset = factories.Dataset(resources=[resource])
+        dataset = factories.Dataset(
+            owner_org=self.owner_org['id'], resources=[resource])
 
         dataset['resources'][0]['url'] = 'https://some.new.url'
 
@@ -77,13 +83,13 @@ class TestResourceControllerHooksUpdate(object):
 
         assert_equals(mock_enqueue.call_count, 1)
 
-        assert_equals(mock_enqueue.call_args[0][0], run_validation_job)
+        assert_equals(mock_enqueue.call_args.kwargs['fn'], run_validation_job)
         assert_equals(
-            mock_enqueue.call_args[0][1][0]['id'],
+            mock_enqueue.call_args.kwargs['kwargs']['resource'],
             dataset['resources'][0]['id'])
 
     @change_config('ckanext.validation.run_on_create_async', False)
-    @mock.patch('ckanext.validation.logic.enqueue_job')
+    @mock.patch('ckantoolkit.enqueue_job')
     def test_validation_run_on_schema_change(self, mock_enqueue):
 
         resource = {
@@ -96,7 +102,8 @@ class TestResourceControllerHooksUpdate(object):
             }
         }
 
-        dataset = factories.Dataset(resources=[resource])
+        dataset = factories.Dataset(
+            owner_org=self.owner_org['id'], resources=[resource])
 
         dataset['resources'][0]['schema'] = {
             'fields': [
@@ -109,16 +116,15 @@ class TestResourceControllerHooksUpdate(object):
 
         assert_equals(mock_enqueue.call_count, 1)
 
-        assert_equals(mock_enqueue.call_args[0][0], run_validation_job)
+        assert_equals(mock_enqueue.call_args.kwargs['fn'], run_validation_job)
         assert_equals(
-            mock_enqueue.call_args[0][1][0]['id'],
+            mock_enqueue.call_args.kwargs['kwargs']['resource'],
             dataset['resources'][0]['id'])
 
     @change_config('ckanext.validation.run_on_create_async', False)
-    @mock.patch('ckanext.validation.logic.enqueue_job')
+    @mock.patch('ckantoolkit.enqueue_job')
     def test_validation_run_on_format_change(self, mock_enqueue):
-
-        resource = factories.Resource()
+        resource = factories.Resource(package_id=self.test_dataset['id'])
 
         resource['format'] = 'CSV'
 
@@ -126,15 +132,15 @@ class TestResourceControllerHooksUpdate(object):
 
         assert_equals(mock_enqueue.call_count, 1)
 
-        assert_equals(mock_enqueue.call_args[0][0], run_validation_job)
-        assert_equals(mock_enqueue.call_args[0][1][0]['id'], resource['id'])
+        assert_equals(mock_enqueue.call_args.kwargs['fn'], run_validation_job)
+        assert_equals(mock_enqueue.call_args.kwargs['kwargs']['resource'], resource['id'])
 
     @change_config('ckanext.validation.run_on_create_async', False)
     @change_config('ckanext.validation.run_on_update_async', False)
-    @mock.patch('ckanext.validation.logic.enqueue_job')
+    @mock.patch('ckantoolkit.enqueue_job')
     def test_validation_does_not_run_when_config_false(self, mock_enqueue):
-
-        resource = factories.Resource(format='CSV')
+        resource = factories.Resource(
+            format='CSV', package_id=self.test_dataset['id'])
 
         resource['url'] = 'http://some.new.url'
 
@@ -149,47 +155,46 @@ class TestResourceControllerHooksCreate(object):
         reset_db()
         if not tables_exist():
             create_tables()
+        self.owner_org = factories.Organization(name='test-org')
+        self.test_dataset = factories.Dataset(owner_org=self.owner_org['id'])
 
-    @mock.patch('ckanext.validation.logic.enqueue_job')
+    @mock.patch('ckantoolkit.enqueue_job')
     def test_validation_does_not_run_on_other_formats(self, mock_enqueue):
-
-        factories.Resource(format='PDF')
+        factories.Resource(format='PDF', package_id=self.test_dataset['id'])
 
         mock_enqueue.assert_not_called()
 
-    @mock.patch('ckanext.validation.logic.enqueue_job')
+    @mock.patch('ckantoolkit.enqueue_job')
     @change_config('ckanext.validation.run_on_update_async', False)
     def test_validation_run_with_upload(self, mock_enqueue):
-
-        resource = factories.Resource(format='CSV', url_type='upload')
+        resource = factories.Resource(
+            format='CSV', url_type='upload', package_id=self.test_dataset['id'])
 
         assert_equals(mock_enqueue.call_count, 1)
 
-        assert_equals(mock_enqueue.call_args[0][0], run_validation_job)
-        assert_equals(mock_enqueue.call_args[0][1][0]['id'], resource['id'])
+        assert_equals(mock_enqueue.call_args.kwargs['fn'], run_validation_job)
+        assert_equals(mock_enqueue.call_args.kwargs['kwargs']['resource'], resource['id'])
 
-    @mock.patch('ckanext.validation.logic.enqueue_job')
+    @mock.patch('ckantoolkit.enqueue_job')
     @change_config('ckanext.validation.run_on_update_async', False)
     def test_validation_run_with_url(self, mock_enqueue):
-
-        resource = factories.Resource(format='CSV', url='http://some.data')
+        resource = factories.Resource(
+            format='CSV', url='http://some.data', package_id=self.test_dataset['id'])
 
         assert_equals(mock_enqueue.call_count, 1)
 
-        assert_equals(mock_enqueue.call_args[0][0], run_validation_job)
-        assert_equals(mock_enqueue.call_args[0][1][0]['id'], resource['id'])
+        assert_equals(mock_enqueue.call_args.kwargs['fn'], run_validation_job)
+        assert_equals(mock_enqueue.call_args.kwargs['kwargs']['resource'], resource['id'])
 
     @change_config('ckanext.validation.run_on_create_async', False)
     @change_config('ckanext.validation.run_on_update_async', False)
-    @mock.patch('ckanext.validation.logic.enqueue_job')
+    @mock.patch('ckantoolkit.enqueue_job')
     def test_validation_does_not_run_when_config_false(self, mock_enqueue):
-
-        dataset = factories.Dataset()
 
         resource = {
             'format': 'CSV',
             'url': 'http://some.data',
-            'package_id': dataset['id'],
+            'package_id': self.test_dataset['id'],
         }
 
         call_action('resource_create', {}, **resource)
@@ -203,54 +208,55 @@ class TestPackageControllerHooksCreate(object):
         reset_db()
         if not tables_exist():
             create_tables()
+        self.owner_org = factories.Organization(name='test-org')
 
-    @mock.patch('ckanext.validation.logic.enqueue_job')
+    @mock.patch('ckantoolkit.enqueue_job')
     def test_validation_does_not_run_on_other_formats(self, mock_enqueue):
-
-        factories.Dataset(resources=[{'format': 'PDF'}])
+        factories.Dataset(
+            owner_org=self.owner_org['id'], resources=[{'format': 'PDF'}])
 
         mock_enqueue.assert_not_called()
 
     @change_config('ckanext.validation.run_on_create_async', False)
-    @mock.patch('ckanext.validation.logic.enqueue_job')
+    @mock.patch('ckantoolkit.enqueue_job')
     def test_validation_does_not_run_when_config_false(self, mock_enqueue):
-
-        factories.Dataset(resources=[
-            {'format': 'CSV', 'url': 'http://some.data'}])
+        factories.Dataset(
+            owner_org=self.owner_org['id'], resources=[
+                {'format': 'CSV', 'url': 'http://some.data'}])
 
         mock_enqueue.assert_not_called()
 
-    @mock.patch('ckanext.validation.logic.enqueue_job')
+    @mock.patch('ckantoolkit.enqueue_job')
     def test_validation_run_with_upload(self, mock_enqueue):
-
         resource = {
             'id': 'test-resource-id',
             'format': 'CSV',
             'url_type': 'upload'
         }
-        factories.Dataset(resources=[resource])
+        factories.Dataset(
+            owner_org=self.owner_org['id'], resources=[resource])
 
         assert_equals(mock_enqueue.call_count, 1)
 
-        assert_equals(mock_enqueue.call_args[0][0], run_validation_job)
-        assert_equals(mock_enqueue.call_args[0][1][0]['id'], resource['id'])
+        assert_equals(mock_enqueue.call_args.kwargs['fn'], run_validation_job)
+        assert_equals(mock_enqueue.call_args.kwargs['kwargs']['resource'], resource['id'])
 
-    @mock.patch('ckanext.validation.logic.enqueue_job')
+    @mock.patch('ckantoolkit.enqueue_job')
     def test_validation_run_with_url(self, mock_enqueue):
-
         resource = {
             'id': 'test-resource-id',
             'format': 'CSV',
             'url': 'http://some.data'
         }
-        factories.Dataset(resources=[resource])
+        factories.Dataset(
+            owner_org=self.owner_org['id'], resources=[resource])
 
         assert_equals(mock_enqueue.call_count, 1)
 
-        assert_equals(mock_enqueue.call_args[0][0], run_validation_job)
-        assert_equals(mock_enqueue.call_args[0][1][0]['id'], resource['id'])
+        assert_equals(mock_enqueue.call_args.kwargs['fn'], run_validation_job)
+        assert_equals(mock_enqueue.call_args.kwargs['kwargs']['resource'], resource['id'])
 
-    @mock.patch('ckanext.validation.logic.enqueue_job')
+    @mock.patch('ckantoolkit.enqueue_job')
     def test_validation_run_only_supported_formats(self, mock_enqueue):
 
         resource1 = {
@@ -264,12 +270,13 @@ class TestPackageControllerHooksCreate(object):
             'url': 'http://some.doc'
         }
 
-        factories.Dataset(resources=[resource1, resource2])
+        factories.Dataset(
+            owner_org=self.owner_org['id'], resources=[resource1, resource2])
 
         assert_equals(mock_enqueue.call_count, 1)
 
-        assert_equals(mock_enqueue.call_args[0][0], run_validation_job)
-        assert_equals(mock_enqueue.call_args[0][1][0]['id'], resource1['id'])
+        assert_equals(mock_enqueue.call_args.kwargs['fn'], run_validation_job)
+        assert_equals(mock_enqueue.call_args.kwargs['kwargs']['resource'], resource1['id'])
 
 
 class TestPackageControllerHooksUpdate(object):
@@ -278,9 +285,10 @@ class TestPackageControllerHooksUpdate(object):
         reset_db()
         if not tables_exist():
             create_tables()
+        self.owner_org = factories.Organization(name='test-org')
 
     @change_config('ckanext.validation.run_on_create_async', False)
-    @mock.patch('ckanext.validation.logic.enqueue_job')
+    @mock.patch('ckantoolkit.enqueue_job')
     def test_validation_runs_with_url(self, mock_enqueue):
 
         resource = {
@@ -288,7 +296,8 @@ class TestPackageControllerHooksUpdate(object):
             'format': 'CSV',
             'url': 'http://some.data'
         }
-        dataset = factories.Dataset(resources=[resource], id='myid')
+        dataset = factories.Dataset(
+            owner_org=self.owner_org['id'], resources=[resource], id='myid')
 
         mock_enqueue.assert_not_called()
 
@@ -298,11 +307,11 @@ class TestPackageControllerHooksUpdate(object):
 
         assert_equals(mock_enqueue.call_count, 1)
 
-        assert_equals(mock_enqueue.call_args[0][0], run_validation_job)
-        assert_equals(mock_enqueue.call_args[0][1][0]['id'], resource['id'])
+        assert_equals(mock_enqueue.call_args.kwargs['fn'], run_validation_job)
+        assert_equals(mock_enqueue.call_args.kwargs['kwargs']['resource'], resource['id'])
 
     @change_config('ckanext.validation.run_on_create_async', False)
-    @mock.patch('ckanext.validation.logic.enqueue_job')
+    @mock.patch('ckantoolkit.enqueue_job')
     def test_validation_runs_with_upload(self, mock_enqueue):
 
         resource = {
@@ -310,7 +319,8 @@ class TestPackageControllerHooksUpdate(object):
             'format': 'CSV',
             'url_type': 'upload'
         }
-        dataset = factories.Dataset(resources=[resource])
+        dataset = factories.Dataset(
+            owner_org=self.owner_org['id'], resources=[resource])
 
         mock_enqueue.assert_not_called()
 
@@ -320,11 +330,11 @@ class TestPackageControllerHooksUpdate(object):
 
         assert_equals(mock_enqueue.call_count, 1)
 
-        assert_equals(mock_enqueue.call_args[0][0], run_validation_job)
-        assert_equals(mock_enqueue.call_args[0][1][0]['id'], resource['id'])
+        assert_equals(mock_enqueue.call_args.kwargs['fn'], run_validation_job)
+        assert_equals(mock_enqueue.call_args.kwargs['kwargs']['resource'], resource['id'])
 
     @change_config('ckanext.validation.run_on_create_async', False)
-    @mock.patch('ckanext.validation.logic.enqueue_job')
+    @mock.patch('ckantoolkit.enqueue_job')
     def test_validation_does_not_run_on_other_formats(self, mock_enqueue):
 
         resource = {
@@ -332,7 +342,8 @@ class TestPackageControllerHooksUpdate(object):
             'format': 'PDF',
             'url': 'http://some.doc'
         }
-        dataset = factories.Dataset(resources=[resource])
+        dataset = factories.Dataset(
+            owner_org=self.owner_org['id'], resources=[resource])
 
         mock_enqueue.assert_not_called()
 
@@ -343,7 +354,7 @@ class TestPackageControllerHooksUpdate(object):
         mock_enqueue.assert_not_called()
 
     @change_config('ckanext.validation.run_on_create_async', False)
-    @mock.patch('ckanext.validation.logic.enqueue_job')
+    @mock.patch('ckantoolkit.enqueue_job')
     def test_validation_run_only_supported_formats(self, mock_enqueue):
 
         resource1 = {
@@ -357,7 +368,8 @@ class TestPackageControllerHooksUpdate(object):
             'url': 'http://some.doc'
         }
 
-        dataset = factories.Dataset(resources=[resource1, resource2])
+        dataset = factories.Dataset(
+            owner_org=self.owner_org['id'], resources=[resource1, resource2])
 
         mock_enqueue.assert_not_called()
 
@@ -367,12 +379,12 @@ class TestPackageControllerHooksUpdate(object):
 
         assert_equals(mock_enqueue.call_count, 1)
 
-        assert_equals(mock_enqueue.call_args[0][0], run_validation_job)
-        assert_equals(mock_enqueue.call_args[0][1][0]['id'], resource1['id'])
+        assert_equals(mock_enqueue.call_args.kwargs['fn'], run_validation_job)
+        assert_equals(mock_enqueue.call_args.kwargs['kwargs']['resource'], resource1['id'])
 
     @change_config('ckanext.validation.run_on_create_async', False)
     @change_config('ckanext.validation.run_on_update_async', False)
-    @mock.patch('ckanext.validation.logic.enqueue_job')
+    @mock.patch('ckantoolkit.enqueue_job')
     def test_validation_does_not_run_when_config_false(self, mock_enqueue):
 
         resource = {
@@ -380,8 +392,25 @@ class TestPackageControllerHooksUpdate(object):
             'format': 'CSV',
             'url': 'http://some.data'
         }
-        dataset = factories.Dataset(resources=[resource])
+        dataset = factories.Dataset(
+            owner_org=self.owner_org['id'], resources=[resource])
 
         call_action('package_update', {}, **dataset)
+
+        mock_enqueue.assert_not_called()
+
+    @change_config('ckanext.validation.run_on_create_async', False)
+    @mock.patch('ckantoolkit.enqueue_job')
+    def test_validation_does_not_run_when_editing_via_web_form(self, mock_enqueue):
+
+        resource = {
+            'id': 'test-resource-id',
+            'format': 'CSV',
+            'url': 'http://some.data'
+        }
+        dataset = factories.Dataset(
+            owner_org=self.owner_org['id'], resources=[resource])
+
+        call_action('package_update', context={'save': True}, **dataset)
 
         mock_enqueue.assert_not_called()
