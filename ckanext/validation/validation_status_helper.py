@@ -119,7 +119,7 @@ class ValidationStatusHelper:
         :param error:
         :return:
         """
-        log.debug("updateValidationJobStatus: %s status: %s", resource_id, status)
+        log.debug("updateValidationJobStatus: %s status: %s, error: %s", resource_id, status, error)
         if validationRecord is None:
             validationRecord = self.getValidationJob(session, resource_id)
 
