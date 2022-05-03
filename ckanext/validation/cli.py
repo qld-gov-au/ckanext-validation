@@ -34,9 +34,11 @@ def init_db():
                    u'Not to be used with -r or -s')
 @click.option('-s', '--search',
               default=False,
-              help=u'Run data validation on all resources for a particular dataset (if the format is suitable).'
-                   u' You can use the dataset id or name, and it can be defined multiple times. '
-                   u'Not to be used with -r or -s')
+              help=u'Extra search parameters that will be used for getting the datasets to run '
+                   u'validation on. It must be a JSON object like the one used by the `package_search` API call.'
+                   u' Supported fields are `q`, `fq` and `fq_list`. Check the documentation for examples. '
+                   u'Note that when using this you will have to specify the resource formats to target yourself.'
+                   u' Not to be used with -r or -d.')
 def run_validation(yes, resource, dataset, search):
     common.run_validation(yes, resource, dataset, search)
 
@@ -54,4 +56,4 @@ def report(output):
               help=u'Location of the CSV validation report file on the relevant commands.',
               default=u'validation_errors_report.csv')
 def report_full(output):
-    common.report(output)
+    common.report(output, full=True)
