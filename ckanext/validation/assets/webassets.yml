@@ -1,0 +1,52 @@
+main-css:
+  output: ckanext-validation/%(version)s_validation.css
+  contents:
+    - css/validation.css
+
+validation-report-css:
+  output: ckanext-validation/%(version)s_validation-report.css
+  contents:
+    - css/validation-report.css
+
+validation-report-form-css:
+  output: ckanext-validation/%(version)s_validation-report-form.css
+  contents:
+    - css/validation-report-form.css
+
+goodtables-ui-css:
+  output: ckanext-validation/%(version)s_goodtables-ui.css
+  contents:
+    - vendor/goodtables-ui/goodtables-ui.css
+
+resource-schema-form:
+  output: visualize/%(version)s_module-resource-schema.js
+  contents:
+    - js/module-resource-schema.js
+  extra:
+    preload:
+      - base/main
+
+module-validation-report:
+  output: visualize/%(version)s_module-validation-report.js
+  contents:
+    - js/module-validation-report.js
+  extra:
+    preload:
+      - base/main
+
+module-modal-dialog:
+  output: visualize/%(version)s_module-modal-dialog.js
+  contents:
+    - js/module-modal-dialog.js
+  extra:
+    preload:
+      - base/main
+
+goodtables-ui:
+  output: ckanext-validation/%(version)s_goodtables-ui.js
+  contents:
+    - vendor/goodtables-ui/goodtables-ui.js
+  extra:
+    preload:
+      - ckanext-validation/goodtables-ui-css
+

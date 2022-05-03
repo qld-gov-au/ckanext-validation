@@ -2,7 +2,8 @@
 import json
 
 from ckan.lib.helpers import url_for_static
-from ckantoolkit import url_for, _, config, asbool, literal
+from ckantoolkit import url_for, _, config, asbool,\
+    literal, check_ckan_version
 
 
 def get_validation_badge(resource, in_listing=False):
@@ -37,8 +38,13 @@ def get_validation_badge(resource, in_listing=False):
     else:
         status = 'unknown'
 
+    if check_ckan_version(min_version='2.9.0'):
+        action = 'validation.read'
+    else:
+        action = 'validation_read'
+
     validation_url = url_for(
-        'validation_read',
+        action,
         id=resource['package_id'],
         resource_id=resource['id'])
 

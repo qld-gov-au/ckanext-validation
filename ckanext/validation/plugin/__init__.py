@@ -1,13 +1,17 @@
 # encoding: utf-8
-
+import os
 import logging
 import cgi
 import json
 
 import ckan.plugins as p
 import ckantoolkit as t
-from ckan.lib.plugins import DefaultTranslation
 
+try:
+    from ckan.lib.plugins import DefaultTranslation
+except ImportError:
+    class DefaultTranslation():
+        pass
 
 from ckanext.validation import settings
 from ckanext.validation.model import tables_exist
@@ -35,20 +39,32 @@ from ckanext.validation.utils import (
 )
 from ckanext.validation.interfaces import IDataValidation
 
-
 log = logging.getLogger(__name__)
 
 
-class ValidationPlugin(p.SingletonPlugin, DefaultTranslation):
+if t.check_ckan_version(min_version='2.9.0'):
+    from ckanext.validation.plugin.flask_plugin import MixinPlugin
+else:
+    from ckanext.validation.plugin.pylons_plugin import MixinPlugin
+
+
+class ValidationPlugin(MixinPlugin, p.SingletonPlugin, DefaultTranslation):
     p.implements(p.IConfigurer)
     p.implements(p.IActions)
-    p.implements(p.IRoutes, inherit=True)
     p.implements(p.IAuthFunctions)
     p.implements(p.IResourceController, inherit=True)
     p.implements(p.IPackageController, inherit=True)
     p.implements(p.ITemplateHelpers)
     p.implements(p.IValidators)
-    p.implements(p.ITranslation)
+    p.implements(p.ITranslation, inherit=True)
+
+    # ITranslation
+    def i18n_directory(self):
+        u'''Change the directory of the .mo translation files'''
+        return os.path.join(
+            os.path.dirname(__file__),
+            '../i18n'
+        )
 
     # IConfigurer
 
@@ -62,22 +78,9 @@ to create the database tables:
         else:
             log.debug(u'Validation tables exist')
 
-        t.add_template_directory(config_, u'templates')
-        t.add_public_directory(config_, u'public')
-        t.add_resource(u'fanstatic', 'ckanext-validation')
-
-    # IRoutes
-
-    def before_map(self, map_):
-
-        controller = u'ckanext.validation.controller:ValidationController'
-
-        map_.connect(
-            u'validation_read',
-            u'/dataset/{id}/resource/{resource_id}/validation',
-            controller=controller, action=u'validation')
-
-        return map_
+        t.add_template_directory(config_, u'../templates')
+        t.add_public_directory(config_, u'../public')
+        t.add_resource(u'../assets', 'ckanext-validation')
 
     # IActions
 
