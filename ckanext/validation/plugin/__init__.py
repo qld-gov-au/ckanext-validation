@@ -4,6 +4,8 @@ import logging
 import cgi
 import json
 
+from six import string_types
+
 import ckan.plugins as p
 import ckantoolkit as t
 
@@ -142,7 +144,7 @@ to create the database tables:
         if isinstance(schema_upload, cgi.FieldStorage):
             data_dict[u'schema'] = schema_upload.file.read()
         elif schema_url:
-            if (not isinstance(schema_url, basestring) or
+            if (not isinstance(schema_url, string_types) or
                     not schema_url.lower()[:4] == u'http'):
                 raise t.ValidationError({u'schema_url': 'Must be a valid URL'})
             data_dict[u'schema'] = schema_url
