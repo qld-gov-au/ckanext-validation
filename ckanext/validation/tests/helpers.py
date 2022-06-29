@@ -1,19 +1,19 @@
-import __builtin__ as builtins
-import cgi
+import builtins
 import functools
 import mock
 
+from werkzeug.datastructures import FileStorage as FlaskFileStorage
 from pyfakefs import fake_filesystem
 
 import ckan.lib.uploader
 from ckan.tests.helpers import change_config
 
 
-INVALID_CSV = '''a,b,c,d
+INVALID_CSV = b'''a,b,c,d
 1,2,3
 '''
 
-VALID_CSV = '''a,b,c,d
+VALID_CSV = b'''a,b,c,d
 1,2,3,4
 '''
 
@@ -140,11 +140,10 @@ def mock_uploads(func):
     return wrapper
 
 
-class MockFieldStorage(cgi.FieldStorage):
+class MockFieldStorage(FlaskFileStorage):
+    content_type = None
 
-    def __init__(self, fp, filename):
-
-        self.file = fp
+    def __init__(self, stream, filename):
+        self.stream = stream
         self.filename = filename
-        self.name = 'upload'
-        self.list = None
+        self.name = u"upload"
