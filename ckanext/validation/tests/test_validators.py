@@ -25,11 +25,11 @@ class TestResourceSchemaValidator(object):
 
         pytest.raises(Invalid, resource_schema_validator, schema, {})
 
-    # def test_resource_schema_invalid_schema_string(self):
+    def test_resource_schema_invalid_schema_string(self):
 
-    #     schema = '{"a": 1}'
+        schema = '{"a": 1}'
 
-    #     pytest.raises(Invalid, resource_schema_validator, schema, {})
+        pytest.raises(Invalid, resource_schema_validator, schema, {})
 
     def test_resource_schema_valid_json_not_a_dict_string(self):
 
