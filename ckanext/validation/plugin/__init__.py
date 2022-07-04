@@ -1,12 +1,12 @@
 # encoding: utf-8
 import os
 import logging
-import cgi
 import json
 
 from six import string_types
 
 import ckan.plugins as p
+from ckan.lib.uploader import ALLOWED_UPLOAD_TYPES
 import ckantoolkit as t
 
 try:
@@ -141,7 +141,7 @@ to create the database tables:
         schema_url = data_dict.pop(u'schema_url', None)
         schema_json = data_dict.pop(u'schema_json', None)
 
-        if isinstance(schema_upload, cgi.FieldStorage):
+        if isinstance(schema_upload, ALLOWED_UPLOAD_TYPES):
             data_dict[u'schema'] = schema_upload.file.read()
         elif schema_url:
             if (not isinstance(schema_url, string_types) or
