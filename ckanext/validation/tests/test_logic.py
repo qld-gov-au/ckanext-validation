@@ -8,7 +8,7 @@ from six import StringIO, BytesIO
 
 from ckan import model
 from ckan.tests.helpers import (
-    call_action, call_auth, change_config, FunctionalTestBase
+    call_action, call_auth, change_config, _get_test_app
 )
 from ckan.tests import factories
 
@@ -394,17 +394,15 @@ class TestAuth(object):
 
 
 @pytest.mark.usefixtures("clean_db", "validation_setup")
-class TestResourceValidationOnCreate(FunctionalTestBase):
+class TestResourceValidationOnCreate(object):
+    # The _get_test_app() must be called inside the test
+    # if we use `app` fixture the app is created and then the config is changed
+    # which does not apply the configuration to the test
 
-    def setup(self):
-        pass
-
-    @classmethod
-    def _apply_config_changes(cls, cfg):
-        cfg['ckanext.validation.run_on_create_sync'] = True
-
+    @change_config('ckanext.validation.run_on_create_sync', True)
     @mock_uploads
     def test_validation_fails_on_upload(self, mock_open):
+        _get_test_app()
 
         invalid_file = BytesIO()
         invalid_file.write(INVALID_CSV)
@@ -429,8 +427,10 @@ class TestResourceValidationOnCreate(FunctionalTestBase):
         assert 'missing-value' in str(e.value)
         assert 'Row 2 has a missing value in column 4' in str(e.value)
 
+    @change_config('ckanext.validation.run_on_create_sync', True)
     @mock_uploads
     def test_validation_fails_no_validation_object_stored(self, mock_open):
+        _get_test_app()
 
         invalid_file = BytesIO()
         invalid_file.write(INVALID_CSV)
@@ -456,8 +456,10 @@ class TestResourceValidationOnCreate(FunctionalTestBase):
 
         assert validation_count_after == validation_count_before
 
+    @change_config('ckanext.validation.run_on_create_sync', True)
     @mock_uploads
     def test_validation_passes_on_upload(self, mock_open):
+        _get_test_app()
 
         invalid_file = BytesIO()
         invalid_file.write(VALID_CSV)
@@ -479,9 +481,11 @@ class TestResourceValidationOnCreate(FunctionalTestBase):
         assert resource['validation_status'] == 'success'
         assert 'validation_timestamp' in resource
 
+    @change_config('ckanext.validation.run_on_create_sync', True)
     @mock.patch('ckanext.validation.jobs.validate',
                 return_value=VALID_REPORT)
     def test_validation_passes_with_url(self, mock_validate):
+        _get_test_app()
 
         url = 'https://example.com/valid.csv'
 
@@ -499,17 +503,16 @@ class TestResourceValidationOnCreate(FunctionalTestBase):
 
 
 @pytest.mark.usefixtures("clean_db", "validation_setup")
-class TestResourceValidationOnUpdate(FunctionalTestBase):
+class TestResourceValidationOnUpdate(object):
 
-    @classmethod
-    def _apply_config_changes(cls, cfg):
-        cfg['ckanext.validation.run_on_update_sync'] = True
-
+    @change_config('ckanext.validation.run_on_update_sync', True)
     def setup(self):
-        pass
+        _get_test_app()
 
+    @change_config('ckanext.validation.run_on_update_sync', True)
     @mock_uploads
     def test_validation_fails_on_upload(self, mock_open):
+        _get_test_app()
 
         dataset = factories.Dataset(resources=[
             {
@@ -538,8 +541,10 @@ class TestResourceValidationOnUpdate(FunctionalTestBase):
         assert 'missing-value' in str(e.value)
         assert 'Row 2 has a missing value in column 4' in str(e.value)
 
+    @change_config('ckanext.validation.run_on_update_sync', True)
     @mock_uploads
     def test_validation_fails_no_validation_object_stored(self, mock_open):
+        _get_test_app()
 
         dataset = factories.Dataset(resources=[
             {
@@ -568,8 +573,10 @@ class TestResourceValidationOnUpdate(FunctionalTestBase):
 
         assert validation_count_after == 0
 
+    @change_config('ckanext.validation.run_on_update_sync', True)
     @mock_uploads
     def test_validation_passes_on_upload(self, mock_open):
+        _get_test_app()
 
         dataset = factories.Dataset(resources=[
             {
@@ -596,9 +603,11 @@ class TestResourceValidationOnUpdate(FunctionalTestBase):
         assert resource['validation_status'] == 'success'
         assert 'validation_timestamp' in resource
 
+    @change_config('ckanext.validation.run_on_update_sync', True)
     @mock.patch('ckanext.validation.jobs.validate',
                 return_value=VALID_REPORT)
     def test_validation_passes_with_url(self, mock_validate):
+        _get_test_app()
 
         dataset = factories.Dataset(resources=[
             {
@@ -679,25 +688,25 @@ class TestSchemaFields(object):
             schema_url=url
         )
 
-    # @mock_uploads
-    # def test_schema_upload_field(self, mock_open):
+    @mock_uploads
+    def test_schema_upload_field(self, mock_open):
 
-    #     schema_file = StringIO('{"fields":[{"name":"category"}]}')
+        schema_file = StringIO('{"fields":[{"name":"category"}]}')
 
-    #     mock_upload = MockFieldStorage(schema_file, 'schema.json')
+        mock_upload = MockFieldStorage(schema_file, 'schema.json')
 
-    #     dataset = factories.Dataset()
+        dataset = factories.Dataset()
 
-    #     resource = call_action(
-    #         'resource_create',
-    #         package_id=dataset['id'],
-    #         url='http://example.com/file.csv',
-    #         schema_upload=mock_upload
-    #     )
-    #     print(resource)
-    #     assert resource['schema'] == {'fields': [{'name': 'category'}]}
-    #     assert 'schema_upload' not in resource
-    #     assert 'schema_url' not in resource
+        resource = call_action(
+            'resource_create',
+            package_id=dataset['id'],
+            url='http://example.com/file.csv',
+            schema_upload=mock_upload
+        )
+        print(resource)
+        assert resource['schema'] == {'fields': [{'name': 'category'}]}
+        assert 'schema_upload' not in resource
+        assert 'schema_url' not in resource
 
 
 @pytest.mark.usefixtures("clean_db", "validation_setup")
