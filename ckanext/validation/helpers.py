@@ -1,7 +1,6 @@
 # encoding: utf-8
 import json
 
-from ckan.lib.helpers import url_for_static
 from ckantoolkit import url_for, _, config, asbool,\
     literal, check_ckan_version
 
@@ -55,9 +54,7 @@ def get_validation_badge(resource, in_listing=False):
         validation_url=validation_url,
         prefix=_('data'),
         status=status,
-        status_title=statuses[status],
-        alt=messages[status],
-        title=resource.get('validation_timestamp', ''))
+        status_title=statuses[status])
 
 
 def validation_extract_report_from_errors(errors):
