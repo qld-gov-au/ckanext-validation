@@ -273,7 +273,7 @@ def resource_validation_run_batch(context, data_dict):
         try:
             search_params = json.loads(search_params)
         except ValueError as e:
-            msg = 'Error parsing search parameters'.format(search_params)
+            msg = 'Error parsing search parameters'
             return {'output': msg}
 
     while True:
@@ -309,9 +309,9 @@ def resource_validation_run_batch(context, data_dict):
 
                     except t.ValidationError as e:
                         log.warning(
-                            u'Could not run validation for resource {} ' +
+                            u'Could not run validation for resource {} '.format(resource['id']) +
                             u'from dataset {}: {}'.format(
-                                resource['id'], dataset['name'], str(e)))
+                                dataset['name'], str(e)))
 
             if len(query['results']) < page_size:
                 break

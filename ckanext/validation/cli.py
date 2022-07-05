@@ -2,6 +2,7 @@ import click
 
 import ckanext.validation.common as common
 
+
 def get_commands():
     return [validation]
 

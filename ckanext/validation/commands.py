@@ -129,7 +129,6 @@ report file on the relevant commands.''')
 
         common.run_validation(assume_yes, resource_ids, dataset_ids, query)
 
-
     def report(self, full=False):
 
         output_csv = self.options.output_file

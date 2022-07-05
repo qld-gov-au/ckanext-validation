@@ -1,5 +1,5 @@
 import mock
-from nose.tools import assert_equals
+import pytest
 
 from ckan import plugins as p
 from ckan.tests import helpers, factories
@@ -50,13 +50,12 @@ class BaseTestInterfaces(helpers.FunctionalTestBase):
             p.unload('test_validation_plugin')
 
     def setup(self):
-
-        super(BaseTestInterfaces, self).setup()
-
+        helpers.reset_db()
         for plugin in p.PluginImplementations(IDataValidation):
             return plugin.reset_counter()
 
 
+@pytest.mark.usefixtures("clean_db", "validation_setup")
 class TestInterfaceSync(BaseTestInterfaces):
 
     @classmethod
@@ -64,8 +63,8 @@ class TestInterfaceSync(BaseTestInterfaces):
         cfg['ckanext.validation.run_on_create_sync'] = True
         cfg['ckanext.validation.run_on_update_sync'] = True
 
-    @helpers.change_config('ckanext.validation.run_on_create_async', False)
-    @helpers.change_config('ckanext.validation.run_on_update_async', False)
+    # @helpers.change_config('ckanext.validation.run_on_create_async', False)
+    # @helpers.change_config('ckanext.validation.run_on_update_async', False)
     @mock.patch('ckanext.validation.jobs.validate',
                 return_value=VALID_REPORT)
     def test_can_validate_called_on_create_sync(self, mock_validation):
@@ -77,12 +76,12 @@ class TestInterfaceSync(BaseTestInterfaces):
             format='CSV',
             package_id=dataset['id']
         )
-        assert_equals(_get_plugin_calls(), 1)
+        assert _get_plugin_calls() == 1
 
         assert mock_validation.called
 
-    @helpers.change_config('ckanext.validation.run_on_create_async', False)
-    @helpers.change_config('ckanext.validation.run_on_update_async', False)
+    # @helpers.change_config('ckanext.validation.run_on_create_async', False)
+    # @helpers.change_config('ckanext.validation.run_on_update_async', False)
     @mock.patch('ckanext.validation.jobs.validate')
     def test_can_validate_called_on_create_sync_no_validation(self, mock_validation):
 
@@ -94,12 +93,12 @@ class TestInterfaceSync(BaseTestInterfaces):
             package_id=dataset['id'],
             my_custom_field='xx',
         )
-        assert_equals(_get_plugin_calls(), 1)
+        assert _get_plugin_calls() == 1
 
         assert not mock_validation.called
 
-    @helpers.change_config('ckanext.validation.run_on_create_async', False)
-    @helpers.change_config('ckanext.validation.run_on_update_async', False)
+    # @helpers.change_config('ckanext.validation.run_on_create_async', False)
+    # @helpers.change_config('ckanext.validation.run_on_update_async', False)
     @mock.patch('ckanext.validation.jobs.validate',
                 return_value=VALID_REPORT)
     def test_can_validate_called_on_update_sync(self, mock_validation):
@@ -113,12 +112,12 @@ class TestInterfaceSync(BaseTestInterfaces):
             format='CSV',
             package_id=dataset['id']
         )
-        assert_equals(_get_plugin_calls(), 2)  # One for create and one for update
+        assert _get_plugin_calls() == 2  # One for create and one for update
 
         assert mock_validation.called
 
-    @helpers.change_config('ckanext.validation.run_on_create_async', False)
-    @helpers.change_config('ckanext.validation.run_on_update_async', False)
+    # @helpers.change_config('ckanext.validation.run_on_create_async', False)
+    # @helpers.change_config('ckanext.validation.run_on_update_async', False)
     @mock.patch('ckanext.validation.jobs.validate')
     def test_can_validate_called_on_update_sync_no_validation(self, mock_validation):
 
@@ -132,7 +131,7 @@ class TestInterfaceSync(BaseTestInterfaces):
             package_id=dataset['id'],
             my_custom_field='xx',
         )
-        assert_equals(_get_plugin_calls(), 2)  # One for create and one for update
+        assert _get_plugin_calls() == 2  # One for create and one for update
 
         assert not mock_validation.called
 
@@ -144,7 +143,7 @@ class TestInterfaceAsync(BaseTestInterfaces):
         cfg['ckanext.validation.run_on_create_sync'] = False
         cfg['ckanext.validation.run_on_update_sync'] = False
 
-    @helpers.change_config('ckanext.validation.run_on_create_async', True)
+    # @helpers.change_config('ckanext.validation.run_on_create_async', True)
     @mock.patch('ckanext.validation.logic.enqueue_job')
     def test_can_validate_called_on_create_async(self, mock_validation):
 
@@ -155,11 +154,11 @@ class TestInterfaceAsync(BaseTestInterfaces):
             format='CSV',
             package_id=dataset['id']
         )
-        assert_equals(_get_plugin_calls(), 1)
+        assert _get_plugin_calls() == 1
 
         assert mock_validation.called
 
-    @helpers.change_config('ckanext.validation.run_on_create_async', True)
+    # @helpers.change_config('ckanext.validation.run_on_create_async', True)
     @mock.patch('ckanext.validation.logic.enqueue_job')
     def test_can_validate_called_on_create_async_no_validation(self, mock_validation):
 
@@ -171,12 +170,12 @@ class TestInterfaceAsync(BaseTestInterfaces):
             package_id=dataset['id'],
             my_custom_field='xx',
         )
-        assert_equals(_get_plugin_calls(), 1)
+        assert _get_plugin_calls() == 1
 
         assert not mock_validation.called
 
-    @helpers.change_config('ckanext.validation.run_on_create_async', False)
-    @helpers.change_config('ckanext.validation.run_on_update_async', True)
+    # @helpers.change_config('ckanext.validation.run_on_create_async', False)
+    # @helpers.change_config('ckanext.validation.run_on_update_async', True)
     @mock.patch('ckanext.validation.logic.enqueue_job')
     def test_can_validate_called_on_update_async(self, mock_validation):
 
@@ -189,12 +188,12 @@ class TestInterfaceAsync(BaseTestInterfaces):
             format='CSV',
             package_id=dataset['id']
         )
-        assert_equals(_get_plugin_calls(), 1)
+        assert _get_plugin_calls() == 1
 
         assert mock_validation.called
 
-    @helpers.change_config('ckanext.validation.run_on_create_async', False)
-    @helpers.change_config('ckanext.validation.run_on_update_async', True)
+    # @helpers.change_config('ckanext.validation.run_on_create_async', False)
+    # @helpers.change_config('ckanext.validation.run_on_update_async', True)
     @mock.patch('ckanext.validation.logic.enqueue_job')
     def test_can_validate_called_on_update_async_no_validation(self, mock_validation):
 
@@ -209,6 +208,6 @@ class TestInterfaceAsync(BaseTestInterfaces):
             my_custom_field='xx',
 
         )
-        assert_equals(_get_plugin_calls(), 1)
+        assert _get_plugin_calls() == 1
 
         assert not mock_validation.called

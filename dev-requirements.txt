@@ -1,1 +1,2 @@
 pyfakefs==2.7
+pytest-ckan

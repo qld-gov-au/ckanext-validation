@@ -1,20 +1,16 @@
 import mock
-from nose.tools import assert_equals
 
-from ckan.tests.helpers import call_action, reset_db
+import pytest
+
+from ckan.tests.helpers import call_action
 from ckan.tests import factories
 from ckan.tests.helpers import change_config
 
-from ckanext.validation.model import create_tables, tables_exist
 from ckanext.validation.jobs import run_validation_job
 
 
+@pytest.mark.usefixtures("clean_db", "validation_setup")
 class TestResourceControllerHooksUpdate(object):
-
-    def setup(self):
-        reset_db()
-        if not tables_exist():
-            create_tables()
 
     @change_config('ckanext.validation.run_on_create_async', False)
     @mock.patch('ckanext.validation.logic.enqueue_job')
@@ -56,12 +52,11 @@ class TestResourceControllerHooksUpdate(object):
 
         call_action('resource_update', {}, **dataset['resources'][0])
 
-        assert_equals(mock_enqueue.call_count, 1)
+        assert mock_enqueue.call_count == 1
 
-        assert_equals(mock_enqueue.call_args[0][0], run_validation_job)
-        assert_equals(
-            mock_enqueue.call_args[0][1][0]['id'],
-            dataset['resources'][0]['id'])
+        assert mock_enqueue.call_args[0][0] == run_validation_job
+        assert mock_enqueue.call_args[0][1][0]['id'] ==\
+               dataset['resources'][0]['id']
 
     @change_config('ckanext.validation.run_on_create_async', False)
     @mock.patch('ckanext.validation.logic.enqueue_job')
@@ -75,12 +70,11 @@ class TestResourceControllerHooksUpdate(object):
 
         call_action('resource_update', {}, **dataset['resources'][0])
 
-        assert_equals(mock_enqueue.call_count, 1)
+        assert mock_enqueue.call_count == 1
 
-        assert_equals(mock_enqueue.call_args[0][0], run_validation_job)
-        assert_equals(
-            mock_enqueue.call_args[0][1][0]['id'],
-            dataset['resources'][0]['id'])
+        assert mock_enqueue.call_args[0][0] == run_validation_job
+        assert mock_enqueue.call_args[0][1][0]['id'] ==\
+               dataset['resources'][0]['id']
 
     @change_config('ckanext.validation.run_on_create_async', False)
     @mock.patch('ckanext.validation.logic.enqueue_job')
@@ -107,12 +101,11 @@ class TestResourceControllerHooksUpdate(object):
 
         call_action('resource_update', {}, **dataset['resources'][0])
 
-        assert_equals(mock_enqueue.call_count, 1)
+        assert mock_enqueue.call_count == 1
 
-        assert_equals(mock_enqueue.call_args[0][0], run_validation_job)
-        assert_equals(
-            mock_enqueue.call_args[0][1][0]['id'],
-            dataset['resources'][0]['id'])
+        assert mock_enqueue.call_args[0][0] == run_validation_job
+        assert mock_enqueue.call_args[0][1][0]['id'] ==\
+               dataset['resources'][0]['id']
 
     @change_config('ckanext.validation.run_on_create_async', False)
     @mock.patch('ckanext.validation.logic.enqueue_job')
@@ -124,10 +117,10 @@ class TestResourceControllerHooksUpdate(object):
 
         call_action('resource_update', {}, **resource)
 
-        assert_equals(mock_enqueue.call_count, 1)
+        assert mock_enqueue.call_count == 1
 
-        assert_equals(mock_enqueue.call_args[0][0], run_validation_job)
-        assert_equals(mock_enqueue.call_args[0][1][0]['id'], resource['id'])
+        assert mock_enqueue.call_args[0][0] == run_validation_job
+        assert mock_enqueue.call_args[0][1][0]['id'] == resource['id']
 
     @change_config('ckanext.validation.run_on_create_async', False)
     @change_config('ckanext.validation.run_on_update_async', False)
@@ -143,12 +136,8 @@ class TestResourceControllerHooksUpdate(object):
         mock_enqueue.assert_not_called()
 
 
+@pytest.mark.usefixtures("clean_db", "validation_setup")
 class TestResourceControllerHooksCreate(object):
-
-    def setup(self):
-        reset_db()
-        if not tables_exist():
-            create_tables()
 
     @mock.patch('ckanext.validation.logic.enqueue_job')
     def test_validation_does_not_run_on_other_formats(self, mock_enqueue):
@@ -163,10 +152,10 @@ class TestResourceControllerHooksCreate(object):
 
         resource = factories.Resource(format='CSV', url_type='upload')
 
-        assert_equals(mock_enqueue.call_count, 1)
+        assert mock_enqueue.call_count == 1
 
-        assert_equals(mock_enqueue.call_args[0][0], run_validation_job)
-        assert_equals(mock_enqueue.call_args[0][1][0]['id'], resource['id'])
+        assert mock_enqueue.call_args[0][0] == run_validation_job
+        assert mock_enqueue.call_args[0][1][0]['id'] == resource['id']
 
     @mock.patch('ckanext.validation.logic.enqueue_job')
     @change_config('ckanext.validation.run_on_update_async', False)
@@ -174,10 +163,10 @@ class TestResourceControllerHooksCreate(object):
 
         resource = factories.Resource(format='CSV', url='http://some.data')
 
-        assert_equals(mock_enqueue.call_count, 1)
+        assert mock_enqueue.call_count == 1
 
-        assert_equals(mock_enqueue.call_args[0][0], run_validation_job)
-        assert_equals(mock_enqueue.call_args[0][1][0]['id'], resource['id'])
+        assert mock_enqueue.call_args[0][0] == run_validation_job
+        assert mock_enqueue.call_args[0][1][0]['id'] == resource['id']
 
     @change_config('ckanext.validation.run_on_create_async', False)
     @change_config('ckanext.validation.run_on_update_async', False)
@@ -197,12 +186,8 @@ class TestResourceControllerHooksCreate(object):
         mock_enqueue.assert_not_called()
 
 
+@pytest.mark.usefixtures("clean_db", "validation_setup")
 class TestPackageControllerHooksCreate(object):
-
-    def setup(self):
-        reset_db()
-        if not tables_exist():
-            create_tables()
 
     @mock.patch('ckanext.validation.logic.enqueue_job')
     def test_validation_does_not_run_on_other_formats(self, mock_enqueue):
@@ -230,10 +215,10 @@ class TestPackageControllerHooksCreate(object):
         }
         factories.Dataset(resources=[resource])
 
-        assert_equals(mock_enqueue.call_count, 1)
+        assert mock_enqueue.call_count == 1
 
-        assert_equals(mock_enqueue.call_args[0][0], run_validation_job)
-        assert_equals(mock_enqueue.call_args[0][1][0]['id'], resource['id'])
+        assert mock_enqueue.call_args[0][0] == run_validation_job
+        assert mock_enqueue.call_args[0][1][0]['id'] == resource['id']
 
     @mock.patch('ckanext.validation.logic.enqueue_job')
     def test_validation_run_with_url(self, mock_enqueue):
@@ -245,10 +230,10 @@ class TestPackageControllerHooksCreate(object):
         }
         factories.Dataset(resources=[resource])
 
-        assert_equals(mock_enqueue.call_count, 1)
+        assert mock_enqueue.call_count == 1
 
-        assert_equals(mock_enqueue.call_args[0][0], run_validation_job)
-        assert_equals(mock_enqueue.call_args[0][1][0]['id'], resource['id'])
+        assert mock_enqueue.call_args[0][0] == run_validation_job
+        assert mock_enqueue.call_args[0][1][0]['id'] == resource['id']
 
     @mock.patch('ckanext.validation.logic.enqueue_job')
     def test_validation_run_only_supported_formats(self, mock_enqueue):
@@ -266,18 +251,14 @@ class TestPackageControllerHooksCreate(object):
 
         factories.Dataset(resources=[resource1, resource2])
 
-        assert_equals(mock_enqueue.call_count, 1)
+        assert mock_enqueue.call_count == 1
 
-        assert_equals(mock_enqueue.call_args[0][0], run_validation_job)
-        assert_equals(mock_enqueue.call_args[0][1][0]['id'], resource1['id'])
+        assert mock_enqueue.call_args[0][0] == run_validation_job
+        assert mock_enqueue.call_args[0][1][0]['id'] == resource1['id']
 
 
+@pytest.mark.usefixtures("clean_db", "validation_setup")
 class TestPackageControllerHooksUpdate(object):
-
-    def setup(self):
-        reset_db()
-        if not tables_exist():
-            create_tables()
 
     @change_config('ckanext.validation.run_on_create_async', False)
     @mock.patch('ckanext.validation.logic.enqueue_job')
@@ -296,10 +277,10 @@ class TestPackageControllerHooksUpdate(object):
 
         call_action('package_update', {}, **dataset)
 
-        assert_equals(mock_enqueue.call_count, 1)
+        assert mock_enqueue.call_count == 1
 
-        assert_equals(mock_enqueue.call_args[0][0], run_validation_job)
-        assert_equals(mock_enqueue.call_args[0][1][0]['id'], resource['id'])
+        assert mock_enqueue.call_args[0][0] == run_validation_job
+        assert mock_enqueue.call_args[0][1][0]['id'] == resource['id']
 
     @change_config('ckanext.validation.run_on_create_async', False)
     @mock.patch('ckanext.validation.logic.enqueue_job')
@@ -318,10 +299,10 @@ class TestPackageControllerHooksUpdate(object):
 
         call_action('package_update', {}, **dataset)
 
-        assert_equals(mock_enqueue.call_count, 1)
+        assert mock_enqueue.call_count == 1
 
-        assert_equals(mock_enqueue.call_args[0][0], run_validation_job)
-        assert_equals(mock_enqueue.call_args[0][1][0]['id'], resource['id'])
+        assert mock_enqueue.call_args[0][0] == run_validation_job
+        assert mock_enqueue.call_args[0][1][0]['id'] == resource['id']
 
     @change_config('ckanext.validation.run_on_create_async', False)
     @mock.patch('ckanext.validation.logic.enqueue_job')
@@ -365,10 +346,10 @@ class TestPackageControllerHooksUpdate(object):
 
         call_action('package_update', {}, **dataset)
 
-        assert_equals(mock_enqueue.call_count, 1)
+        assert mock_enqueue.call_count == 1
 
-        assert_equals(mock_enqueue.call_args[0][0], run_validation_job)
-        assert_equals(mock_enqueue.call_args[0][1][0]['id'], resource1['id'])
+        assert mock_enqueue.call_args[0][0] == run_validation_job
+        assert mock_enqueue.call_args[0][1][0]['id'] == resource1['id']
 
     @change_config('ckanext.validation.run_on_create_async', False)
     @change_config('ckanext.validation.run_on_update_async', False)
