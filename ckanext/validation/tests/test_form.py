@@ -1,20 +1,18 @@
 import json
 import io
 import mock
-import datetime
 
 import pytest
 from bs4 import BeautifulSoup
-from six import BytesIO, StringIO, ensure_binary
+from six import BytesIO, ensure_binary
 
-from ckan.tests.factories import Sysadmin, Dataset, Organization
+from ckan.tests.factories import Sysadmin, Dataset
 from ckan.tests.helpers import (
-    FunctionalTestBase, call_action,
-    _get_test_app
+    FunctionalTestBase, call_action
 )
 
 from ckanext.validation.tests.helpers import (
-    VALID_CSV, INVALID_CSV, mock_uploads, MockFieldStorage
+    VALID_CSV, mock_uploads
 )
 
 NEW_RESOURCE_URL = '/dataset/{}/resource/new'
