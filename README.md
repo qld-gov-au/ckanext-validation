@@ -1,7 +1,7 @@
 # ckanext-validation
 
-[![Build Status](https://travis-ci.org/frictionlessdata/ckanext-validation.svg?branch=master)](https://travis-ci.org/frictionlessdata/ckanext-validation)
-[![Coverage Status](https://coveralls.io/repos/github/frictionlessdata/ckanext-validation/badge.svg?branch=master)](https://coveralls.io/github/frictionlessdata/ckanext-validation?branch=master)
+[![CI Actions Status](https://github.com/keitaroinc/ckanext-validation/workflows/Tests/badge.svg)](https://github.com/keitaroinc/ckanext-validation/actions)
+[![CKAN](https://img.shields.io/badge/ckan-2.9-red)](https://www.ckan.org)
 
 Data description and validation for CKAN with [Frictionless Data](https://frictionlessdata.io) tools.
 
