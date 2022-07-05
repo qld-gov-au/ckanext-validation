@@ -1,5 +1,7 @@
 # encoding: utf-8
 
+from ckantoolkit import BaseController
+
 import ckanext.validation.common as common
 
 
