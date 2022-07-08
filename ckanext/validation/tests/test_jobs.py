@@ -3,7 +3,7 @@ import json
 import io
 
 import pytest
-from six import BytesIO
+from six import BytesIO, ensure_binary
 
 import ckantoolkit
 from ckan.lib.uploader import ResourceUpload
@@ -198,7 +198,8 @@ class TestValidationJob(object):
     @mock_uploads
     def test_job_local_paths_are_hidden(self, mock_open):
 
-        invalid_csv = bytes('id,type\n' + '1,a,\n' * 1010, encoding='utf-8')
+        invalid_csv = ensure_binary('id,type\n' + '1,a,\n' * 1010,
+                                    encoding='utf-8')
         invalid_file = BytesIO()
 
         invalid_file.write(invalid_csv)
@@ -249,7 +250,7 @@ a,b,c
             upload=mock_upload,
             validation_options=validation_options)
 
-        invalid_stream = io.BufferedReader(BytesIO(invalid_csv))
+        invalid_stream = io.BufferedReader(io.BytesIO(invalid_csv))
 
         with mock.patch('io.open', return_value=invalid_stream):
 
@@ -286,7 +287,7 @@ a;b;c
             upload=mock_upload,
             validation_options=validation_options)
 
-        invalid_stream = io.BufferedReader(BytesIO(invalid_csv))
+        invalid_stream = io.BufferedReader(io.BytesIO(invalid_csv))
 
         with mock.patch('io.open', return_value=invalid_stream):
 
