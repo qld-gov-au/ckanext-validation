@@ -5,6 +5,7 @@ import logging
 import json
 
 from sqlalchemy.orm.exc import NoResultFound
+from six import string_types
 
 import ckan.plugins as plugins
 import ckan.lib.uploader as uploader
@@ -262,14 +263,14 @@ def resource_validation_run_batch(context, data_dict):
     count_resources = 0
 
     dataset_ids = data_dict.get('dataset_ids')
-    if isinstance(dataset_ids, str):
+    if isinstance(dataset_ids, string_types):
         try:
             dataset_ids = json.loads(dataset_ids)
         except ValueError as e:
             dataset_ids = [dataset_ids]
 
     search_params = data_dict.get('query')
-    if isinstance(search_params, str):
+    if isinstance(search_params, string_types):
         try:
             search_params = json.loads(search_params)
         except ValueError as e:
