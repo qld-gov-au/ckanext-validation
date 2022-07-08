@@ -1,3 +1,7 @@
+try:
+    import builtins
+except ImportError:
+    import __builtin__ as builtins
 import json
 import io
 import mock
@@ -6,17 +10,24 @@ import pytest
 from bs4 import BeautifulSoup
 from six import BytesIO, ensure_binary
 
+from ckantoolkit import check_ckan_version
+import ckan.lib.uploader
+from ckan.tests import helpers
 from ckan.tests.factories import Sysadmin, Dataset
 from ckan.tests.helpers import (
     FunctionalTestBase, call_action
 )
 
 from ckanext.validation.tests.helpers import (
-    VALID_CSV, mock_uploads
+    VALID_CSV, mock_uploads, _mock_open_if_open_fails, _mock_os
 )
 
-NEW_RESOURCE_URL = '/dataset/{}/resource/new'
-EDIT_RESOURCE_URL = '/dataset/{}/resource/{}/edit'
+if check_ckan_version('2.9'):
+    NEW_RESOURCE_URL = '/dataset/{}/resource/new'
+    EDIT_RESOURCE_URL = '/dataset/{}/resource/{}/edit'
+else:
+    NEW_RESOURCE_URL = '/dataset/new_resource/{}'
+    EDIT_RESOURCE_URL = '/dataset/{}/resource_edit/{}'
 
 
 def _get_resource_new_page_as_sysadmin(app, id):
@@ -42,14 +53,22 @@ def _get_extra_env_as_sysadmin():
     return {'REMOTE_USER': user['name'].encode('ascii')}
 
 
+def _get_response_body(response):
+    if hasattr(response, 'text'):
+        return response.text
+    else:
+        return response.body
+
+
 def _get_form(response):
-    soup = BeautifulSoup(response.data)
+    soup = BeautifulSoup(_get_response_body(response), 'html.parser')
     return soup.find('form', id='resource-edit')
 
 
 def _post(app, url, data, resource_id='', upload=None):
+    args = []
     env = _get_extra_env_as_sysadmin()
-    if upload:
+    if upload and check_ckan_version('2.9'):
         for entry in upload:
             data[entry[0]] = (BytesIO(entry[2]), entry[1])
 
@@ -57,13 +76,21 @@ def _post(app, url, data, resource_id='', upload=None):
     data['id'] = resource_id
     data['save'] = ''
 
-    kwargs = {
-         'url': url,
-         'data': data,
-         'extra_environ': env
-    }
+    if check_ckan_version('2.9'):
+        kwargs = {
+            'url': url,
+            'data': data,
+            'extra_environ': env
+        }
+    else:
+        args.append(url)
+        kwargs = {
+            'params': data,
+            'extra_environ': env,
+            'upload_files': upload
+        }
 
-    return app.post(**kwargs)
+    return app.post(*args, **kwargs)
 
 
 @pytest.mark.usefixtures("clean_db", "validation_setup")
@@ -126,8 +153,20 @@ class TestResourceSchemaForm(object):
 
         assert dataset['resources'][0]['schema'] == value
 
-    @mock_uploads
+    @helpers.change_config('ckan.storage_path', '/doesnt_exist')
+    @mock.patch.object(ckan.lib.uploader, 'os', _mock_os)
+    @mock.patch.object(builtins, 'open',
+                       side_effect=_mock_open_if_open_fails)
+    @mock.patch.object(ckan.lib.uploader, '_storage_path',
+                       new='/doesnt_exist')
     def test_resource_form_create_upload(self, mock_open, app):
+        # With Python2 only, worked in python3
+        # IF i passed app as argument, with mock_upload I got:
+        # TypeError:
+        # test_resource_form_create_valid() takes exactly 3 arguments (2 given)
+
+        # OR if I created the test up inside the test got:
+        # OSError: [Errno 13] Permission denied: '/doesnt_exist'
         dataset = Dataset()
         value = {
             'fields': [
@@ -423,8 +462,20 @@ class TestResourceValidationOnCreateForm(FunctionalTestBase):
     def setup(self):
         pass
 
-    @mock_uploads
+    @helpers.change_config('ckan.storage_path', '/doesnt_exist')
+    @mock.patch.object(ckan.lib.uploader, 'os', _mock_os)
+    @mock.patch.object(builtins, 'open',
+                       side_effect=_mock_open_if_open_fails)
+    @mock.patch.object(ckan.lib.uploader, '_storage_path',
+                       new='/doesnt_exist')
     def test_resource_form_create_valid(self, mock_open, app):
+        # With Python2 only, worked in python3
+        # IF i passed app as argument, with mock_upload I got:
+        # TypeError:
+        # test_resource_form_create_valid() takes exactly 3 arguments (2 given)
+
+        # OR if I created the test up inside the test got:
+        # OSError: [Errno 13] Permission denied: '/doesnt_exist'
         dataset = Dataset()
 
         upload = ('upload', 'valid.csv', VALID_CSV)
@@ -477,11 +528,10 @@ class TestResourceValidationOnUpdateForm(FunctionalTestBase):
         cfg['ckanext.validation.run_on_update_sync'] = True
 
     def setup(self):
-        pass
+        self.app = helpers._get_test_app()
 
     @mock_uploads
-    def test_resource_form_update_valid(self, mock_open, app):
-
+    def test_resource_form_update_valid(self, mock_open):
         dataset = Dataset(resources=[
             {
                 'url': 'https://example.com/data.csv'
@@ -498,7 +548,7 @@ class TestResourceValidationOnUpdateForm(FunctionalTestBase):
         resource_id = dataset['resources'][0]['id']
 
         with mock.patch('io.open', return_value=valid_stream):
-            _post(app, EDIT_RESOURCE_URL.format(dataset['id'], resource_id),
+            _post(self.app, EDIT_RESOURCE_URL.format(dataset['id'], resource_id),
                   params, resource_id=resource_id, upload=[upload])
 
         dataset = call_action('package_show', id=dataset['id'])
