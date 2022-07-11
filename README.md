@@ -1,7 +1,7 @@
 # ckanext-validation
 
 [![CI Actions Status](https://github.com/keitaroinc/ckanext-validation/workflows/Tests/badge.svg)](https://github.com/keitaroinc/ckanext-validation/actions)
-[![CKAN](https://img.shields.io/badge/ckan-2.9-red)](https://www.ckan.org)
+[![CKAN](https://img.shields.io/badge/ckan-2.9,%202.8-red)](https://www.ckan.org)
 
 Data description and validation for CKAN with [Frictionless Data](https://frictionlessdata.io) tools.
 
