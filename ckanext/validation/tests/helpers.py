@@ -1,6 +1,7 @@
-try:
+import six
+if six.PY3:
     import builtins
-except ImportError:
+else:
     import __builtin__ as builtins
 import functools
 import mock
