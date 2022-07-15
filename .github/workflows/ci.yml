@@ -64,3 +64,17 @@ jobs:
         paster --plugin=ckanext-validation validation init-db -c test.ini
     - name: Run tests
       run: pytest --ckan-ini=test.ini --cov=ckanext.validation --cov-report=xml --cov-append --disable-warnings ckanext/validation/tests
+    - name: Coveralls
+      uses: AndreMiras/coveralls-python-action@develop
+      with:
+        parallel: true
+        flag-name: CKAN ${{ matrix.ckan-version }} Unit Test
+
+  coveralls_finish:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+    - name: Coveralls Finished
+      uses: AndreMiras/coveralls-python-action@develop
+      with:
+        parallel-finished: true
