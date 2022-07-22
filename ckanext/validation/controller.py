@@ -2,7 +2,7 @@
 
 from ckantoolkit import BaseController
 
-import ckanext.validation.common as common
+from ckanext.validation import common
 
 
 class ValidationController(BaseController):

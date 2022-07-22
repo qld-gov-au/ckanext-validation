@@ -51,7 +51,7 @@ class TestResourceSchemaValidator(object):
             resource_schema_validator(schema, {})
 
         assert e.value.error.startswith(
-            'Invalid Table Schema: ' +
+            'Invalid Table Schema: '
             'Descriptor validation error: \'fields\' is a required property')
 
     def test_resource_schema_valid_schema_object(self):
@@ -105,7 +105,7 @@ class TestValidationOptionsValidator(object):
         value = '{"headers": 3}'
 
         assert validation_options_validator(value, {}) ==\
-               '{"delimiter": ";", "headers": 3}'
+            '{"delimiter": ";", "headers": 3}'
 
     @change_config('ckanext.validation.default_validation_options',
                    '{"delimiter":";", "headers":2}')
@@ -114,4 +114,4 @@ class TestValidationOptionsValidator(object):
         value = '{"headers": 3}'
 
         assert validation_options_validator(value, {}) ==\
-               '{"delimiter": ";", "headers": 3}'
+            '{"delimiter": ";", "headers": 3}'

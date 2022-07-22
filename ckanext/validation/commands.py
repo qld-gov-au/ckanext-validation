@@ -1,9 +1,10 @@
 # encoding: utf-8
+
 import sys
 
 from ckantoolkit import CkanCommand
 
-import ckanext.validation.common as common
+from ckanext.validation import common
 
 
 class Validation(CkanCommand):

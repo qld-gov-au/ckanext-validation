@@ -1,8 +1,8 @@
 # encoding: utf-8
-import os
-import logging
-import json
 
+import json
+import logging
+import os
 from six import string_types
 
 import ckan.plugins as p
@@ -72,11 +72,15 @@ class ValidationPlugin(MixinPlugin, p.SingletonPlugin, DefaultTranslation):
 
     def update_config(self, config_):
         if not tables_exist():
+            if t.check_ckan_version('2.9'):
+                init_command = 'ckan validation init-db'
+            else:
+                init_command = 'paster --plugin=ckanext-validation validation init-db'
             log.critical(u'''
-The validation extension requires a database setup. Please run the following
-to create the database tables:
-    paster --plugin=ckanext-validation validation init-db
-''')
+The validation extension requires a database setup.
+Validation pages will not be enabled.
+Please run the following to create the database tables:
+    %s''', init_command)
         else:
             log.debug(u'Validation tables exist')
 
@@ -145,8 +149,8 @@ to create the database tables:
                 and schema_upload.filename:
             data_dict[u'schema'] = _get_underlying_file(schema_upload).read()
         elif schema_url:
-            if (not isinstance(schema_url, string_types) or
-                    not schema_url.lower()[:4] == u'http'):
+            if (not isinstance(schema_url, string_types)
+                    or not schema_url.lower()[:4] == u'http'):
                 raise t.ValidationError({u'schema_url': 'Must be a valid URL'})
             data_dict[u'schema'] = schema_url
         elif schema_json:
@@ -186,9 +190,9 @@ to create the database tables:
         needs_validation = False
         if ((
             # File uploaded
-            resource.get(u'url_type') == u'upload' or
+            resource.get(u'url_type') == u'upload'
             # URL defined
-            resource.get(u'url')
+            or resource.get(u'url')
             ) and (
             # Make sure format is supported
             resource.get(u'format', u'').lower() in
@@ -200,7 +204,7 @@ to create the database tables:
 
             for plugin in p.PluginImplementations(IDataValidation):
                 if not plugin.can_validate(context, resource):
-                    log.debug('Skipping validation for resource {}'.format(resource['id']))
+                    log.debug('Skipping validation for resource %s', resource['id'])
                     return
 
             _run_async_validation(resource[u'id'])
@@ -213,22 +217,21 @@ to create the database tables:
             return updated_resource
 
         needs_validation = False
-        if ((
+        if (
             # New file uploaded
-            updated_resource.get(u'upload') or
+            updated_resource.get(u'upload')
             # External URL changed
-            updated_resource.get(u'url') != current_resource.get(u'url') or
+            or updated_resource.get(u'url') != current_resource.get(u'url')
             # Schema changed
-            (updated_resource.get(u'schema') !=
-             current_resource.get(u'schema')) or
+            or (updated_resource.get(u'schema')
+                != current_resource.get(u'schema'))
             # Format changed
-            (updated_resource.get(u'format', u'').lower() !=
-             current_resource.get(u'format', u'').lower())
+            or (updated_resource.get(u'format', u'').lower()
+                != current_resource.get(u'format', u'').lower())
             ) and (
             # Make sure format is supported
             updated_resource.get(u'format', u'').lower() in
-                settings.SUPPORTED_FORMATS
-                )):
+                settings.SUPPORTED_FORMATS):
             needs_validation = True
 
         if needs_validation:
@@ -271,7 +274,7 @@ to create the database tables:
             if resource_id in self.resources_to_validate:
                 for plugin in p.PluginImplementations(IDataValidation):
                     if not plugin.can_validate(context, data_dict):
-                        log.debug('Skipping validation for resource {}'.format(data_dict['id']))
+                        log.debug('Skipping validation for resource %s', data_dict['id'])
                         return
 
                 del self.resources_to_validate[resource_id]
@@ -310,6 +313,5 @@ def _run_async_validation(resource_id):
             {u'resource_id': resource_id,
              u'async': True})
     except t.ValidationError as e:
-        log.warning(
-            u'Could not run validation for resource {}: {}'.format(
-                resource_id, str(e)))
+        log.warning(u'Could not run validation for resource %s: %s',
+                    resource_id, e)

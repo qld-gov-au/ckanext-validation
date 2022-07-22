@@ -1,10 +1,9 @@
-import logging
+# encoding: utf-8
 
 from flask import Blueprint
 
-import ckanext.validation.common as common
+from ckanext.validation import common
 
-log = logging.getLogger(__name__)
 validation = Blueprint(u'validation', __name__)
 
 

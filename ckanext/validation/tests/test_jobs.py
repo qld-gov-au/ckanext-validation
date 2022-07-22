@@ -1,7 +1,8 @@
-import mock
-import json
-import io
+# encoding: utf-8
 
+import io
+import json
+import mock
 import pytest
 from six import BytesIO, ensure_binary
 
@@ -14,8 +15,8 @@ from ckanext.validation.model import Validation
 from ckanext.validation.jobs import (
     run_validation_job, uploader, Session, requests)
 from ckanext.validation.tests.helpers import (
-        VALID_REPORT, INVALID_REPORT, ERROR_REPORT, VALID_REPORT_LOCAL_FILE,
-        mock_uploads, MockFieldStorage
+    VALID_REPORT, INVALID_REPORT, ERROR_REPORT, VALID_REPORT_LOCAL_FILE,
+    mock_uploads, MockFieldStorage
 )
 
 
@@ -59,10 +60,8 @@ class TestValidationJob(object):
     @mock.patch.object(Session, 'commit')
     @mock.patch.object(ckantoolkit, 'get_action')
     @mock.patch.object(requests, 'Session', return_value='Some_Session')
-    def test_job_run_schema(
-         self, mock_requests, mock_get_action,
-         mock_commit, mock_validate, dataset):
-
+    def test_job_run_schema(self, mock_requests, mock_get_action,
+                            mock_commit, mock_validate, dataset):
         schema = {
             'fields': [
                 {'name': 'id', 'type': 'integer'},
@@ -94,7 +93,6 @@ class TestValidationJob(object):
     def test_job_run_uploaded_file(self, mock_requests,
                                    mock_get_action, mock_commit,
                                    mock_uploader, mock_validate, dataset):
-
         resource = {
             'id': 'test',
             'url': '__upload',
@@ -168,7 +166,7 @@ class TestValidationJob(object):
             self, mock_uploader, mock_validate):
 
         resource = factories.Resource(
-                url='__upload', url_type='upload', format='csv')
+            url='__upload', url_type='upload', format='csv')
 
         run_validation_job(resource)
 

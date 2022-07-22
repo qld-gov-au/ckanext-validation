@@ -1,3 +1,5 @@
+# encoding: utf-8
+
 import mock
 import pytest
 
@@ -35,7 +37,6 @@ class BaseTestInterfaces(helpers.FunctionalTestBase):
 
     @classmethod
     def setup_class(cls):
-
         super(BaseTestInterfaces, cls).setup_class()
 
         if not p.plugin_loaded('test_validation_plugin'):
@@ -43,7 +44,6 @@ class BaseTestInterfaces(helpers.FunctionalTestBase):
 
     @classmethod
     def teardown_class(cls):
-
         super(BaseTestInterfaces, cls).teardown_class()
 
         if p.plugin_loaded('test_validation_plugin'):

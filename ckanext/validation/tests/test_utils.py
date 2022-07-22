@@ -76,8 +76,8 @@ class TestFiles(object):
         resource_id = str(uuid.uuid4())
 
         assert get_local_upload_path(resource_id) ==\
-               '/doesnt_exist/resources/{}/{}/{}'.format(
-                   resource_id[0:3], resource_id[3:6], resource_id[6:])
+            '/doesnt_exist/resources/{}/{}/{}'.format(
+                resource_id[0:3], resource_id[3:6], resource_id[6:])
 
     @mock_uploads
     def test_delete_upload_file(self, mock_open):

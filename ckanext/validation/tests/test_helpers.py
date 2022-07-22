@@ -79,8 +79,8 @@ class TestExtractReportFromErrors(object):
         }
 
         errors = {
-          'some_field': ['Some error'],
-          'validation': [report],
+            'some_field': ['Some error'],
+            'validation': [report],
         }
 
         extracted_report, errors = validation_extract_report_from_errors(
@@ -96,8 +96,8 @@ class TestExtractReportFromErrors(object):
     def test_report_not_extracted(self):
 
         errors = {
-          'some_field': ['Some error'],
-          'some_other_field': ['Some other error']
+            'some_field': ['Some error'],
+            'some_other_field': ['Some other error']
         }
 
         report, errors = validation_extract_report_from_errors(errors)

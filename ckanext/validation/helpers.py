@@ -22,14 +22,6 @@ def get_validation_badge(resource, in_listing=False):
         'unknown': _('unknown'),
     }
 
-    messages = {
-        'success': _('Valid data'),
-        'failure': _('Invalid data'),
-        'invalid': _('Invalid data'),
-        'error': _('Error during validation'),
-        'unknown': _('Data validation unknown'),
-    }
-
     if resource['validation_status'] in ['success', 'failure', 'error']:
         status = resource['validation_status']
         if status == 'failure':

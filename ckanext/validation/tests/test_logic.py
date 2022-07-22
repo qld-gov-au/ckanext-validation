@@ -1,3 +1,5 @@
+# encoding: utf-8
+
 import datetime
 import io
 import json
@@ -13,10 +15,11 @@ from ckan.tests.helpers import (
 from ckan.tests import factories
 
 import ckantoolkit as t
+
 from ckanext.validation.model import Validation
 from ckanext.validation.tests.helpers import (
-        VALID_CSV, INVALID_CSV, VALID_REPORT,
-        mock_uploads, MockFieldStorage
+    VALID_CSV, INVALID_CSV, VALID_REPORT,
+    mock_uploads, MockFieldStorage
 )
 
 
@@ -165,7 +168,6 @@ class TestResourceValidationShow(object):
 
     @change_config('ckanext.validation.run_on_create_async', False)
     def test_resource_validation_show_returns_all_fields(self):
-
         resource = {'format': 'CSV', 'url': 'https://some.url'}
 
         dataset = factories.Dataset(resources=[resource])
@@ -214,7 +216,6 @@ class TestResourceValidationDelete(object):
     @change_config('ckanext.validation.run_on_create_async', False)
     @change_config('ckanext.validation.run_on_update_async', False)
     def test_resource_validation_delete_removes_object(self):
-
         resource = factories.Resource(format='csv')
         timestamp = datetime.datetime.utcnow()
         validation = Validation(
@@ -375,7 +376,6 @@ class TestAuth(object):
                          resource_id=dataset['resources'][0]['id'])
 
     def test_show_anon_private_dataset(self):
-
         user = factories.User()
         org = factories.Organization()
         dataset = factories.Dataset(
@@ -415,7 +415,6 @@ class TestResourceValidationOnCreate(FunctionalTestBase):
         invalid_stream = io.BufferedReader(io.BytesIO(INVALID_CSV))
 
         with mock.patch('io.open', return_value=invalid_stream):
-
             with pytest.raises(t.ValidationError) as e:
                 call_action(
                     'resource_create',
@@ -618,7 +617,6 @@ class TestResourceValidationOnUpdate(FunctionalTestBase):
 class TestSchemaFields(object):
 
     def test_schema_field(self):
-
         dataset = factories.Dataset()
 
         resource = call_action(
@@ -633,7 +631,6 @@ class TestSchemaFields(object):
         assert 'schema_url' not in resource
 
     def test_schema_field_url(self):
-
         url = 'https://example.com/schema.json'
 
         dataset = factories.Dataset()
@@ -650,7 +647,6 @@ class TestSchemaFields(object):
         assert 'schema_url' not in resource
 
     def test_schema_url_field(self):
-
         url = 'https://example.com/schema.json'
 
         dataset = factories.Dataset()
@@ -670,11 +666,12 @@ class TestSchemaFields(object):
 
         url = 'not-a-url'
 
-        pytest.raises(
-            t.ValidationError, call_action, 'resource_create',
-            url='http://example.com/file.csv',
-            schema_url=url
-        )
+        with pytest.raises(t.ValidationError):
+            call_action(
+                'resource_create',
+                url='http://example.com/file.csv',
+                schema_url=url
+            )
 
     @mock_uploads
     def test_schema_upload_field(self, mock_open):
@@ -701,7 +698,6 @@ class TestSchemaFields(object):
 class TestValidationOptionsField(object):
 
     def test_validation_options_field(self):
-
         dataset = factories.Dataset()
 
         validation_options = {
@@ -720,7 +716,6 @@ class TestValidationOptionsField(object):
         assert resource['validation_options'] == validation_options
 
     def test_validation_options_field_string(self):
-
         dataset = factories.Dataset()
 
         validation_options = '''{

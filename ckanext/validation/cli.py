@@ -1,6 +1,8 @@
+# encoding: utf-8
+
 import click
 
-import ckanext.validation.common as common
+from ckanext.validation import common
 
 
 def get_commands():
@@ -16,6 +18,8 @@ def validation():
 
 @validation.command(name='init-db')
 def init_db():
+    """ Initialize database tables.
+    """
     common.init_db()
 
 
@@ -41,6 +45,13 @@ def init_db():
                    u'Note that when using this you will have to specify the resource formats to target yourself.'
                    u' Not to be used with -r or -d.')
 def run_validation(yes, resource, dataset, search):
+    '''Start asynchronous data validation on the site resources. If no
+    options are provided it will run validation on all resources of
+    the supported formats (`ckanext.validation.formats`). You can
+    specify particular datasets to run the validation on their
+    resources. You can also pass arbitrary search parameters to filter
+    the selected datasets.
+    '''
     common.run_validation(yes, resource, dataset, search)
 
 
@@ -49,6 +60,17 @@ def run_validation(yes, resource, dataset, search):
               help=u'Location of the CSV validation report file on the relevant commands.',
               default=u'validation_errors_report.csv')
 def report(output):
+    '''Generate a report with all current data validation reports. This
+    will print an overview of the total number of tabular resources
+    and a breakdown of how many have a validation status of success,
+    failure or error. Additionally it will create a CSV report with all
+    failing resources, including the following fields:
+        * Dataset name
+        * Resource id
+        * Resource URL
+        * Status
+        * Validation report URL
+    '''
     common.report(output)
 
 
@@ -57,4 +79,16 @@ def report(output):
               help=u'Location of the CSV validation report file on the relevant commands.',
               default=u'validation_errors_report.csv')
 def report_full(output):
+    '''Generate a detailed report. This is similar to 'report'
+    but on the CSV report it will add a row for each error found on the
+    validation report (limited to ten occurrences of the same error
+    type per file). So the fields in the generated CSV report will be:
+
+        * Dataset name
+        * Resource id
+        * Resource URL
+        * Status
+        * Error code
+        * Error message
+    '''
     common.report(output, full=True)

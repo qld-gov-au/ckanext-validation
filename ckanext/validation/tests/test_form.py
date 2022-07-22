@@ -1,5 +1,7 @@
-import json
+# encoding: utf-8
+
 import io
+import json
 import mock
 
 import pytest
@@ -117,10 +119,10 @@ class TestResourceSchemaForm(object):
         json_value = json.dumps(value)
 
         params = {
-                'package_id': dataset['id'],
-                'url': 'https://example.com/data.csv',
-                'schema': json_value,
-            }
+            'package_id': dataset['id'],
+            'url': 'https://example.com/data.csv',
+            'schema': json_value,
+        }
 
         _post(app, NEW_RESOURCE_URL.format(dataset['id']), params)
 
@@ -140,10 +142,10 @@ class TestResourceSchemaForm(object):
         json_value = json.dumps(value)
 
         params = {
-                'package_id': dataset['id'],
-                'url': 'https://example.com/data.csv',
-                'schema_json': json_value,
-            }
+            'package_id': dataset['id'],
+            'url': 'https://example.com/data.csv',
+            'schema_json': json_value,
+        }
 
         _post(app, NEW_RESOURCE_URL.format(dataset['id']), params)
 
@@ -164,8 +166,8 @@ class TestResourceSchemaForm(object):
 
         upload = ('schema_upload', 'schema.json', json_value)
         params = {
-                'url': 'https://example.com/data.csv',
-            }
+            'url': 'https://example.com/data.csv',
+        }
 
         _post(self.app, NEW_RESOURCE_URL.format(dataset['id']),
               params, upload=[upload])
@@ -180,10 +182,10 @@ class TestResourceSchemaForm(object):
         value = 'https://example.com/schemas.json'
 
         params = {
-                'package_id': dataset['id'],
-                'url': 'https://example.com/data.csv',
-                'schema_json': value,
-            }
+            'package_id': dataset['id'],
+            'url': 'https://example.com/data.csv',
+            'schema_json': value,
+        }
 
         _post(app, NEW_RESOURCE_URL.format(dataset['id']), params)
 
@@ -205,8 +207,10 @@ class TestResourceSchemaForm(object):
             }]
         )
 
+        resource_id = dataset['resources'][0]['id']
+
         response = _get_resource_update_page_as_sysadmin(
-            app, dataset['id'], dataset['resources'][0]['id'])
+            app, dataset['id'], resource_id)
         form = _get_form(response)
 
         assert form.find(attrs={'name': "schema"})['value'] == \
@@ -221,8 +225,6 @@ class TestResourceSchemaForm(object):
         }
 
         json_value = json.dumps(value)
-
-        resource_id = dataset['resources'][0]['id']
 
         params = {
             'url': 'https://example.com/data.csv',
@@ -250,8 +252,10 @@ class TestResourceSchemaForm(object):
             }]
         )
 
+        resource_id = dataset['resources'][0]['id']
+
         response = _get_resource_update_page_as_sysadmin(
-            app, dataset['id'], dataset['resources'][0]['id'])
+            app, dataset['id'], resource_id)
         form = _get_form(response)
 
         assert form.find(attrs={'name': "schema_json"}).text == \
@@ -266,8 +270,6 @@ class TestResourceSchemaForm(object):
         }
 
         json_value = json.dumps(value)
-
-        resource_id = dataset['resources'][0]['id']
 
         params = {
             'url': 'https://example.com/data.csv',
@@ -294,17 +296,16 @@ class TestResourceSchemaForm(object):
                 'schema': value
             }]
         )
+        resource_id = dataset['resources'][0]['id']
 
         response = _get_resource_update_page_as_sysadmin(
-            app, dataset['id'], dataset['resources'][0]['id'])
+            app, dataset['id'], resource_id)
         form = _get_form(response)
 
         assert form.find(attrs={'name': "schema_json"}).text ==\
             json.dumps(value, indent=2)
 
         value = 'https://example.com/schema.json'
-
-        resource_id = dataset['resources'][0]['id']
 
         params = {
             'url': 'https://example.com/data.csv',
@@ -331,9 +332,10 @@ class TestResourceSchemaForm(object):
                 'schema': value
             }]
         )
+        resource_id = dataset['resources'][0]['id']
 
         response = _get_resource_update_page_as_sysadmin(
-            app, dataset['id'], dataset['resources'][0]['id'])
+            app, dataset['id'], resource_id)
         form = _get_form(response)
 
         assert form.find(attrs={'name': "schema_json"}).text == \
@@ -348,7 +350,6 @@ class TestResourceSchemaForm(object):
         }
 
         json_value = ensure_binary(json.dumps(value), encoding='utf-8')
-        resource_id = dataset['resources'][0]['id']
 
         upload = ('schema_upload', 'schema.json', json_value)
         params = {
@@ -384,9 +385,9 @@ class TestResourceValidationOptionsForm(object):
         }
         json_value = json.dumps(value)
         params = {
-                'url': 'https://example.com/data.csv',
-                'validation_options': json_value,
-            }
+            'url': 'https://example.com/data.csv',
+            'validation_options': json_value,
+        }
 
         _post(app, NEW_RESOURCE_URL.format(dataset['id']), params)
 
@@ -407,9 +408,10 @@ class TestResourceValidationOptionsForm(object):
                 'validation_options': value
             }]
         )
+        resource_id = dataset['resources'][0]['id']
 
         response = _get_resource_update_page_as_sysadmin(
-            app, dataset['id'], dataset['resources'][0]['id'])
+            app, dataset['id'], resource_id)
         form = _get_form(response)
 
         assert form.find("textarea",
@@ -429,7 +431,6 @@ class TestResourceValidationOptionsForm(object):
             'url': 'https://example.com/data.csv',
             'validation_options': json_value
         }
-        resource_id = dataset['resources'][0]['id']
 
         _post(app, EDIT_RESOURCE_URL.format(dataset['id'], resource_id),
               params, resource_id=resource_id)
@@ -538,12 +539,12 @@ class TestResourceValidationOnUpdateForm(FunctionalTestBase):
     #             'url': 'https://example.com/data.csv'
     #         }
     #     ])
+    #     resource_id = dataset['resources'][0]['id']
 
     #     response = _get_resource_update_page_as_sysadmin(
-    #         app, dataset['id'], dataset['resources'][0]['id'])
+    #         app, dataset['id'], resource_id)
 
     #     upload = ('upload', 'invalid.csv', INVALID_CSV)
-    #     resource_id = dataset['resources'][0]['id']
     #     params = {}
     #     invalid_stream = io.BufferedReader(io.BytesIO(INVALID_CSV))
 

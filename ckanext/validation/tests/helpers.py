@@ -1,10 +1,12 @@
+# encoding: utf-8
+
+import functools
+import mock
 import six
 if six.PY3:
     import builtins
 else:
     import __builtin__ as builtins
-import functools
-import mock
 
 from werkzeug.datastructures import FileStorage as FlaskFileStorage
 from pyfakefs import fake_filesystem

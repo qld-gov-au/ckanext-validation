@@ -1,16 +1,18 @@
-from __future__ import print_function
+# encoding: utf-8
 
-import sys
-import logging
 import csv
+import logging
+import six
+import sys
 
 from ckantoolkit import (c, NotAuthorized,
                          ObjectNotFound, abort, _,
                          render, get_action, config,
                          check_ckan_version)
-from ckanext.validation.model import create_tables, tables_exist
+
 from ckanext.validation import settings
 from ckanext.validation.logic import _search_datasets
+from ckanext.validation.model import create_tables, tables_exist
 
 
 log = logging.getLogger(__name__)
@@ -43,18 +45,28 @@ def validation(resource_id):
             u'validation': validation,
             u'resource': resource,
             u'pkg_dict': dataset,
+            u'dataset': dataset,
         })
 
     except NotAuthorized:
-        abort(403, _(u'Unauthorized to read this validation report'))
+        return abort(403, _(u'Unauthorized to read this validation report'))
     except ObjectNotFound:
-
-        abort(404, _(u'No validation report exists for this resource'))
+        return abort(404, _(u'No validation report exists for this resource'))
 
 
 ###############################################################################
 #                                     CLI                                     #
 ###############################################################################
+
+
+def user_confirm(msg):
+    if check_ckan_version(min_version='2.9'):
+        import click
+        return click.confirm(msg)
+    else:
+        from ckan.lib.cli import query_yes_no
+        return query_yes_no(msg) == 'yes'
+
 
 def error(msg):
     '''
@@ -74,10 +86,10 @@ def init_db():
     print(u'Validation tables created')
 
 
-def run_validation(assume_yes, resource_id, dataset_id, search_params):
+def run_validation(assume_yes, resource_ids, dataset_ids, search_params):
 
-    if resource_id:
-        for resource_id in resource_id:
+    if resource_ids:
+        for resource_id in resource_ids:
             resource = get_action('resource_show')({}, {'id': resource_id})
             _run_validation_on_resource(
                 resource['id'], resource['package_id'])
@@ -89,23 +101,15 @@ def run_validation(assume_yes, resource_id, dataset_id, search_params):
             error('No suitable datasets, exiting...')
 
         elif not assume_yes:
-
-            msg = ('\nYou are about to start validation for {0} datasets' +
+            msg = ('\nYou are about to start validation for {0} datasets'
                    '.\n Do you want to continue?')
 
-            if check_ckan_version(min_version='2.9.0'):
-                import click
-                if not click.confirm(msg.format(query['count'])):
-                    error('Command aborted by user')
-            else:
-                from ckan.lib.cli import query_yes_no
-                confirm = query_yes_no(msg.format(query['count']))
-                if confirm == 'no':
-                    error('Command aborted by user')
+            if not user_confirm(msg.format(query['count'])):
+                error('Command aborted by user')
 
         result = get_action('resource_validation_run_batch')(
             {'ignore_auth': True},
-            {'dataset_ids': dataset_id,
+            {'dataset_ids': dataset_ids,
              'query': search_params}
         )
         print(result['output'])
@@ -118,11 +122,8 @@ def _run_validation_on_resource(resource_id, dataset_id):
         {u'resource_id': resource_id,
          u'async': True})
 
-    msg = ('Resource {} from dataset {} sent to ' +
-           'the validation queue')
-
-    log.debug(
-        msg.format(resource_id, dataset_id))
+    log.debug('Resource %s from dataset %s sent to the validation queue',
+              resource_id, dataset_id)
 
 
 def _process_row(dataset, resource, writer):
@@ -248,7 +249,7 @@ def report(output_csv, full=False):
                                 row_counts = _process_row_full(dataset, resource, writer)
                                 if not row_counts:
                                     continue
-                                for code, count in row_counts.items():
+                                for code, count in six.iteritems(row_counts):
                                     if code not in error_counts:
                                         error_counts[code] = count
                                     else:
@@ -277,24 +278,24 @@ def report(output_csv, full=False):
     outputs['output_csv'] = output_csv
 
     outputs['formats_success_output'] = ''
-    for count, code in sorted([(v, k) for k, v in outputs['formats_success'].items()], reverse=True):
+    for count, code in sorted([(v, k) for k, v in six.iteritems(outputs['formats_success'])], reverse=True):
         outputs['formats_success_output'] += '* {}: {}\n'.format(code, count)
 
     outputs['formats_failure_output'] = ''
-    for count, code in sorted([(v, k) for k, v in outputs['formats_failure'].items()], reverse=True):
+    for count, code in sorted([(v, k) for k, v in six.iteritems(outputs['formats_failure'])], reverse=True):
         outputs['formats_failure_output'] += '* {}: {}\n'.format(code, count)
 
     error_counts_output = ''
     if full:
-        for count, code in sorted([(v, k) for k, v in error_counts.items()], reverse=True):
+        for count, code in sorted([(v, k) for k, v in six.iteritems(error_counts)], reverse=True):
             error_counts_output += '* {}: {}\n'.format(code, count)
 
     outputs['error_counts_output'] = error_counts_output
 
     msg_errors = '''
-                Errors breakdown:
-                {}
-                '''.format(outputs['error_counts_output'])
+        Errors breakdown:
+        {}
+        '''.format(outputs['error_counts_output'])
 
     outputs['msg_errors'] = msg_errors if full else ''
 

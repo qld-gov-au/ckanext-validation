@@ -83,11 +83,12 @@ def resource_validation_run(context, data_dict):
 
     t.check_access(u'resource_validation_run', context, data_dict)
 
-    if not data_dict.get(u'resource_id'):
+    resource_id = data_dict.get(u'resource_id')
+    if not resource_id:
         raise t.ValidationError({u'resource_id': u'Missing value'})
 
     resource = t.get_action(u'resource_show')(
-        {}, {u'id': data_dict[u'resource_id']})
+        {}, {u'id': resource_id})
 
     # TODO: limit to sysadmins
     async_job = data_dict.get(u'async', True)
@@ -95,7 +96,7 @@ def resource_validation_run(context, data_dict):
     # Ensure format is supported
     if not resource.get(u'format', u'').lower() in settings.SUPPORTED_FORMATS:
         raise t.ValidationError(
-            {u'format': u'Unsupported resource format.' +
+            {u'format': u'Unsupported resource format.'
              u'Must be one of {}'.format(
                  u','.join(settings.SUPPORTED_FORMATS))})
 
@@ -110,7 +111,7 @@ def resource_validation_run(context, data_dict):
 
     try:
         validation = Session.query(Validation).filter(
-            Validation.resource_id == data_dict['resource_id']).one()
+            Validation.resource_id == resource_id).one()
     except NoResultFound:
         validation = None
 
@@ -310,9 +311,8 @@ def resource_validation_run_batch(context, data_dict):
 
                     except t.ValidationError as e:
                         log.warning(
-                            u'Could not run validation for resource {} '.format(resource['id']) +
-                            u'from dataset {}: {}'.format(
-                                dataset['name'], str(e)))
+                            u'Could not run validation for resource %s from dataset %s: %s',
+                            resource['id'], dataset['name'], e)
 
             if len(query['results']) < page_size:
                 break
@@ -388,8 +388,8 @@ def _update_search_params(search_data_dict, user_search_params=None):
         else:
             search_data_dict['fq'] = user_search_params['fq']
 
-    if (user_search_params.get('fq_list') and
-            isinstance(user_search_params['fq_list'], list)):
+    if (user_search_params.get('fq_list')
+            and isinstance(user_search_params['fq_list'], list)):
         search_data_dict['fq_list'].extend(user_search_params['fq_list'])
 
 
@@ -565,8 +565,8 @@ def resource_update(context, data_dict):
         raise t.ObjectNotFound(t._('Resource was not found.'))
 
     # Persist the datastore_active extra if already present and not provided
-    if ('datastore_active' in resource.extras and
-            'datastore_active' not in data_dict):
+    if ('datastore_active' in resource.extras
+            and 'datastore_active' not in data_dict):
         data_dict['datastore_active'] = resource.extras['datastore_active']
 
     for plugin in plugins.PluginImplementations(plugins.IResourceController):
@@ -642,9 +642,8 @@ def _run_sync_validation(resource_id, local_upload=False, new_resource=True):
             {u'resource_id': resource_id,
              u'async': False})
     except t.ValidationError as e:
-        log.info(
-            u'Could not run validation for resource {}: {}'.format(
-                resource_id, str(e)))
+        log.info(u'Could not run validation for resource %s: %s',
+                 resource_id, e)
         return
 
     validation = t.get_action(u'resource_validation_show')(
