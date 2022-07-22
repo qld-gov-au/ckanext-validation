@@ -14,8 +14,8 @@ from ckanext.validation.jobs import run_validation_job
 def _assert_validation_enqueued(mock_enqueue, resource_id):
     assert mock_enqueue.call_count == 1
 
-    assert mock_enqueue.call_args[0][0] == run_validation_job
-    assert mock_enqueue.call_args[0][1][0]['id'] == resource_id
+    assert mock_enqueue.call_args[1]['fn'] == run_validation_job
+    assert mock_enqueue.call_args[1]['kwargs']['resource'] == resource_id
 
 
 @pytest.mark.usefixtures("clean_db", "validation_setup")

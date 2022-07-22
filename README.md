@@ -103,6 +103,9 @@ The extension requires changes in the CKAN metadata schema. The easiest way to a
 Read more below about how to [change the CKAN metadata schema](#changes-in-the-metadata-schema)
 
 ### Operation modes
+Use the following to configure which queue async jobs are added to
+
+	ckanext.validation.queue = bulk (Defaults to default)
 
 Use the following configuration options to choose the [operation modes](#operation-modes):
 

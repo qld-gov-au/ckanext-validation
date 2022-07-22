@@ -26,12 +26,25 @@ from ckanext.validation.utils import (
 log = logging.getLogger(__name__)
 
 
-def enqueue_job(*args, **kwargs):
-    try:
-        return t.enqueue_job(*args, **kwargs)
-    except AttributeError:
-        from ckanext.rq.jobs import enqueue as enqueue_job_legacy
-        return enqueue_job_legacy(*args, **kwargs)
+def enqueue_validation_job(package_id, resource_id):
+    enqueue_args = {
+        'fn': run_validation_job,
+        'title': "run_validation_job: package_id: {} resource: {}".format(package_id, resource_id),
+        'kwargs': {'resource': resource_id},
+    }
+    if t.check_ckan_version('2.8'):
+        ttl = 24 * 60 * 60  # 24 hour ttl.
+        rq_kwargs = {
+            'ttl': ttl
+        }
+        if t.check_ckan_version('2.9'):
+            rq_kwargs['failure_ttl'] = ttl
+        enqueue_args['rq_kwargs'] = rq_kwargs
+    # Optional variable, if not set, default queue is used
+    queue = t.config.get('ckanext.validation.queue', None)
+    if queue:
+        enqueue_args['queue'] = queue
+    t.enqueue_job(**enqueue_args)
 
 
 # Auth
@@ -129,8 +142,10 @@ def resource_validation_run(context, data_dict):
     Session.commit()
 
     if async_job:
-        enqueue_job(run_validation_job, [resource])
+        package_id = resource['package_id']
+        enqueue_validation_job(package_id, resource_id)
     else:
+        # run_validation_job(resource_id)  # TODO only pass resource_id, tests need to be fixed for this
         run_validation_job(resource)
 
 
