@@ -4,7 +4,7 @@ import io
 import json
 import mock
 import pytest
-from six import BytesIO, ensure_binary
+from six import ensure_binary
 
 import ckantoolkit
 from ckan.lib.uploader import ResourceUpload
@@ -40,14 +40,13 @@ class TestValidationJob(object):
     @mock.patch.object(requests, 'Session', return_value='Some_Session')
     def test_job_run_no_schema(self, mock_requests, mock_get_action,
                                mock_commit, mock_validate, dataset):
-
         resource = {
             'id': 'test',
             'url': 'http://example.com/file.csv',
             'format': 'csv',
             'package_id': dataset['id'],
         }
-        print("HERE-2")
+
         run_validation_job(resource)
 
         mock_validate.assert_called_with(
@@ -198,7 +197,7 @@ class TestValidationJob(object):
 
         invalid_csv = ensure_binary('id,type\n' + '1,a,\n' * 1010,
                                     encoding='utf-8')
-        invalid_file = BytesIO()
+        invalid_file = io.BytesIO()
 
         invalid_file.write(invalid_csv)
 
@@ -237,9 +236,7 @@ a,b,c
             'skip_rows': ['#']
         }
 
-        invalid_file = BytesIO()
-
-        invalid_file.write(invalid_csv)
+        invalid_file = io.BytesIO(invalid_csv)
 
         mock_upload = MockFieldStorage(invalid_file, 'invalid.csv')
 
@@ -274,9 +271,7 @@ a;b;c
             "skip_rows": ["#"]
         }'''
 
-        invalid_file = BytesIO()
-
-        invalid_file.write(invalid_csv)
+        invalid_file = io.BytesIO(invalid_csv)
 
         mock_upload = MockFieldStorage(invalid_file, 'invalid.csv')
 

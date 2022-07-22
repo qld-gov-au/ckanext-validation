@@ -6,7 +6,7 @@ import mock
 
 import pytest
 from bs4 import BeautifulSoup
-from six import BytesIO, ensure_binary
+from six import ensure_binary
 
 from ckantoolkit import check_ckan_version
 from ckan.tests import helpers
@@ -65,15 +65,14 @@ def _get_form(response):
 def _post(app, url, data, resource_id='', upload=None):
     args = []
     env = _get_extra_env_as_sysadmin()
-    if upload and check_ckan_version('2.9'):
-        for entry in upload:
-            data[entry[0]] = (BytesIO(entry[2]), entry[1])
-
     # from the form
     data['id'] = resource_id
     data['save'] = ''
 
     if check_ckan_version('2.9'):
+        if upload:
+            for entry in upload:
+                data[entry[0]] = (io.BytesIO(entry[2]), entry[1])
         kwargs = {
             'url': url,
             'data': data,
@@ -106,7 +105,6 @@ class TestResourceSchemaForm(object):
         assert form.find("textarea", attrs={'name': 'schema_json'})
         assert form.find("input", attrs={'name': 'schema_url'})
 
-    @pytest.mark.usefixtures("clean_db", "validation_setup")
     def test_resource_form_create(self, app):
         dataset = Dataset()
 
@@ -572,10 +570,9 @@ class TestResourceValidationOnUpdateForm(FunctionalTestBase):
 
 #     @mock_uploads
 #     def test_resource_form_fields_are_persisted(self, mock_open, app):
-
 #         upload = MockFieldStorage(io.BytesIO(VALID_CSV), 'valid.csv')
 
-#         valid_stream = io.BufferedReader(BytesIO(VALID_CSV))
+#         valid_stream = io.BufferedReader(io.BytesIO(VALID_CSV))
 
 #         dataset = Dataset()
 #         with mock.patch('io.open', return_value=valid_stream):

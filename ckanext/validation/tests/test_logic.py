@@ -6,7 +6,6 @@ import json
 import mock
 
 import pytest
-from six import StringIO, BytesIO
 
 from ckan import model
 from ckan.tests.helpers import (
@@ -405,8 +404,7 @@ class TestResourceValidationOnCreate(FunctionalTestBase):
 
     @mock_uploads
     def test_validation_fails_on_upload(self, mock_open):
-        invalid_file = BytesIO()
-        invalid_file.write(INVALID_CSV)
+        invalid_file = io.BytesIO(INVALID_CSV)
 
         mock_upload = MockFieldStorage(invalid_file, 'invalid.csv')
 
@@ -429,8 +427,7 @@ class TestResourceValidationOnCreate(FunctionalTestBase):
 
     @mock_uploads
     def test_validation_fails_no_validation_object_stored(self, mock_open):
-        invalid_file = BytesIO()
-        invalid_file.write(INVALID_CSV)
+        invalid_file = io.BytesIO(INVALID_CSV)
 
         mock_upload = MockFieldStorage(invalid_file, 'invalid.csv')
 
@@ -455,8 +452,7 @@ class TestResourceValidationOnCreate(FunctionalTestBase):
 
     @mock_uploads
     def test_validation_passes_on_upload(self, mock_open):
-        invalid_file = BytesIO()
-        invalid_file.write(VALID_CSV)
+        invalid_file = io.BytesIO(VALID_CSV)
 
         mock_upload = MockFieldStorage(invalid_file, 'invalid.csv')
 
@@ -513,8 +509,7 @@ class TestResourceValidationOnUpdate(FunctionalTestBase):
             }
         ])
 
-        invalid_file = BytesIO()
-        invalid_file.write(INVALID_CSV)
+        invalid_file = io.BytesIO(INVALID_CSV)
 
         mock_upload = MockFieldStorage(invalid_file, 'invalid.csv')
 
@@ -543,8 +538,7 @@ class TestResourceValidationOnUpdate(FunctionalTestBase):
             }
         ])
 
-        invalid_file = BytesIO()
-        invalid_file.write(INVALID_CSV)
+        invalid_file = io.BytesIO(INVALID_CSV)
 
         mock_upload = MockFieldStorage(invalid_file, 'invalid.csv')
 
@@ -573,8 +567,7 @@ class TestResourceValidationOnUpdate(FunctionalTestBase):
             }
         ])
 
-        valid_file = BytesIO()
-        valid_file.write(INVALID_CSV)
+        valid_file = io.BytesIO(INVALID_CSV)
 
         mock_upload = MockFieldStorage(valid_file, 'valid.csv')
 
@@ -676,7 +669,7 @@ class TestSchemaFields(object):
     @mock_uploads
     def test_schema_upload_field(self, mock_open):
 
-        schema_file = StringIO('{"fields":[{"name":"category"}]}')
+        schema_file = io.BytesIO(b'{"fields":[{"name":"category"}]}')
 
         mock_upload = MockFieldStorage(schema_file, 'schema.json')
 

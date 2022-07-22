@@ -22,7 +22,6 @@ def _assert_validation_badge_status(resource, status):
 class TestBadges(object):
 
     def test_get_validation_badge_no_validation(self):
-
         resource = factories.Resource(
             format='CSV',
         )
@@ -30,7 +29,6 @@ class TestBadges(object):
         assert get_validation_badge(resource) == ''
 
     def test_get_validation_badge_success(self):
-
         resource = factories.Resource(
             format='CSV',
             validation_status='success',
@@ -40,7 +38,6 @@ class TestBadges(object):
         _assert_validation_badge_status(resource, 'success')
 
     def test_get_validation_badge_failure(self):
-
         resource = factories.Resource(
             format='CSV',
             validation_status='failure',
@@ -50,7 +47,6 @@ class TestBadges(object):
         _assert_validation_badge_status(resource, 'invalid')
 
     def test_get_validation_badge_error(self):
-
         resource = factories.Resource(
             format='CSV',
             validation_status='error',
@@ -60,7 +56,6 @@ class TestBadges(object):
         _assert_validation_badge_status(resource, 'error')
 
     def test_get_validation_badge_other(self):
-
         resource = factories.Resource(
             format='CSV',
             validation_status='not-sure',
