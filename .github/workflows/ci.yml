@@ -52,16 +52,12 @@ jobs:
         pip install -e .
         # Replace default path to CKAN core config file with the one on the container
         sed -i -e 's/use = config:.*/use = config:\/srv\/app\/src\/ckan\/test-core.ini/' test.ini
-    - name: Setup extension (CKAN >= 2.9)
-      if: ${{ matrix.ckan-version != '2.7' && matrix.ckan-version != '2.8' }}
+    - name: Setup extension
       run: |
-        ckan -c test.ini db init
-        ckan -c test.ini validation init-db
-    - name: Setup extension (CKAN < 2.9)
-      if: ${{ matrix.ckan-version == '2.7' || matrix.ckan-version == '2.8' }}
-      run: |
-        paster --plugin=ckan db init -c test.ini
-        paster --plugin=ckanext-validation validation init-db -c test.ini
+        chmod u+x bin/ckan_cli
+        export CKAN_INI=test.ini
+        bin/ckan_cli db init
+        PASTER_PLUGIN=ckanext-validation bin/ckan_cli validation init-db
     - name: Run tests
       run: pytest --ckan-ini=test.ini --cov=ckanext.validation --cov-report=xml --cov-append --disable-warnings ckanext/validation/tests
     - name: Coveralls
