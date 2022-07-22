@@ -188,16 +188,16 @@ Please run the following to create the database tables:
 
     def _handle_validation_for_resource(self, context, resource):
         needs_validation = False
-        if ((
+        if (
             # File uploaded
             resource.get(u'url_type') == u'upload'
             # URL defined
             or resource.get(u'url')
-            ) and (
+        ) and (
             # Make sure format is supported
             resource.get(u'format', u'').lower() in
                 settings.SUPPORTED_FORMATS
-                )):
+        ):
             needs_validation = True
 
         if needs_validation:
@@ -228,9 +228,9 @@ Please run the following to create the database tables:
             # Format changed
             or (updated_resource.get(u'format', u'').lower()
                 != current_resource.get(u'format', u'').lower())
-            ) and (
-            # Make sure format is supported
-            updated_resource.get(u'format', u'').lower() in
+        ) and (
+                # Make sure format is supported
+                updated_resource.get(u'format', u'').lower() in
                 settings.SUPPORTED_FORMATS):
             needs_validation = True
 

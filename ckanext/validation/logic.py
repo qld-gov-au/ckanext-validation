@@ -267,14 +267,14 @@ def resource_validation_run_batch(context, data_dict):
     if isinstance(dataset_ids, string_types):
         try:
             dataset_ids = json.loads(dataset_ids)
-        except ValueError as e:
+        except ValueError:
             dataset_ids = [dataset_ids]
 
     search_params = data_dict.get('query')
     if isinstance(search_params, string_types):
         try:
             search_params = json.loads(search_params)
-        except ValueError as e:
+        except ValueError:
             msg = 'Error parsing search parameters'
             return {'output': msg}
 
@@ -493,9 +493,9 @@ def resource_create(context, data_dict):
 
         if run_validation:
             is_local_upload = (
-                hasattr(upload, 'filename') and
-                upload.filename is not None and
-                isinstance(upload, uploader.ResourceUpload))
+                hasattr(upload, 'filename')
+                and upload.filename is not None
+                and isinstance(upload, uploader.ResourceUpload))
             _run_sync_validation(
                 resource_id, local_upload=is_local_upload, new_resource=True)
 
@@ -609,9 +609,9 @@ def resource_update(context, data_dict):
 
         if run_validation:
             is_local_upload = (
-                hasattr(upload, 'filename') and
-                upload.filename is not None and
-                isinstance(upload, uploader.ResourceUpload))
+                hasattr(upload, 'filename')
+                and upload.filename is not None
+                and isinstance(upload, uploader.ResourceUpload))
             _run_sync_validation(
                 id, local_upload=is_local_upload, new_resource=True)
 
