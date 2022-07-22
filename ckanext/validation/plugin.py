@@ -45,9 +45,9 @@ log = logging.getLogger(__name__)
 
 
 if t.check_ckan_version(min_version='2.9.0'):
-    from ckanext.validation.plugin.flask_plugin import MixinPlugin
+    from .plugin_mixins.flask_plugin import MixinPlugin
 else:
-    from ckanext.validation.plugin.pylons_plugin import MixinPlugin
+    from .plugin_mixins.pylons_plugin import MixinPlugin
 
 
 class ValidationPlugin(MixinPlugin, p.SingletonPlugin, DefaultTranslation):
@@ -65,7 +65,7 @@ class ValidationPlugin(MixinPlugin, p.SingletonPlugin, DefaultTranslation):
         u'''Change the directory of the .mo translation files'''
         return os.path.join(
             os.path.dirname(__file__),
-            '../i18n'
+            'i18n'
         )
 
     # IConfigurer
@@ -84,9 +84,9 @@ Please run the following to create the database tables:
         else:
             log.debug(u'Validation tables exist')
 
-        t.add_template_directory(config_, u'../templates')
-        t.add_public_directory(config_, u'../public')
-        t.add_resource(u'../assets', 'ckanext-validation')
+        t.add_template_directory(config_, u'templates')
+        t.add_public_directory(config_, u'public')
+        t.add_resource(u'assets', 'ckanext-validation')
 
     # IActions
 
