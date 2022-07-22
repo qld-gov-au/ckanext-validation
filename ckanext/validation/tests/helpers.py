@@ -8,10 +8,10 @@ if six.PY3:
 else:
     import __builtin__ as builtins
 
-from werkzeug.datastructures import FileStorage as FlaskFileStorage
 from pyfakefs import fake_filesystem
 
 import ckan.lib.uploader
+from ckantoolkit import check_ckan_version
 from ckan.tests.helpers import change_config
 
 
@@ -146,10 +146,16 @@ def mock_uploads(func):
     return wrapper
 
 
-class MockFieldStorage(FlaskFileStorage):
-    content_type = None
+if check_ckan_version('2.9'):
+    from werkzeug.datastructures import FileStorage as MockFieldStorage
+else:
+    import cgi
 
-    def __init__(self, stream, filename):
-        self.stream = stream
-        self.filename = filename
-        self.name = u"upload"
+    class MockFieldStorage(cgi.FieldStorage):
+
+        def __init__(self, fp, filename):
+
+            self.file = fp
+            self.filename = filename
+            self.name = u"upload"
+            self.list = None
