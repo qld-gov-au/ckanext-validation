@@ -22,17 +22,25 @@ log = logging.getLogger(__name__)
 
 
 def run_validation_job(resource):
+    # handle either a resource dict or just an ID
+    # ID is more efficient, as resource dicts can be very large
+    if isinstance(resource, string_types):
+        log.debug(u'run_validation_job: calling resource_show: %s', resource)
+        resource = t.get_action('resource_show')({'ignore_auth': True}, {'id': resource})
 
-    log.debug(u'Validating resource %s', resource['id'])
-
+    resource_id = resource.get('id')
+    if resource_id:
+        log.debug(u'Validating resource: %s', resource_id)
+    else:
+        log.debug(u'Validating resource dict: %s', resource)
     try:
         validation = Session.query(Validation).filter(
-            Validation.resource_id == resource['id']).one()
+            Validation.resource_id == resource_id).one()
     except NoResultFound:
         validation = None
 
     if not validation:
-        validation = Validation(resource_id=resource['id'])
+        validation = Validation(resource_id=resource_id)
 
     validation.status = u'running'
     Session.add(validation)
