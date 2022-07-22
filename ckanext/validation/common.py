@@ -22,8 +22,7 @@ log = logging.getLogger(__name__)
 ###############################################################################
 
 
-def validation(resource_id):
-
+def validation(resource_id, id=None):
     try:
         validation = get_action(u'resource_validation_show')(
             {u'user': c.user},
@@ -33,9 +32,13 @@ def validation(resource_id):
             {u'user': c.user},
             {u'id': resource_id})
 
+        package_id = resource[u'package_id']
+        if id and id != package_id:
+            raise ObjectNotFound("Resource {} not found in package {}".format(resource_id, id))
+
         dataset = get_action(u'package_show')(
             {u'user': c.user},
-            {u'id': resource[u'package_id']})
+            {u'id': id or resource[u'package_id']})
 
         # Needed for core resource templates
         c.package = c.pkg_dict = dataset

@@ -6,12 +6,9 @@ from ckanext.validation import common
 
 validation = Blueprint(u'validation', __name__)
 
-
-def read(id, resource_id):
-    return common.validation(resource_id)
-
-
-validation.add_url_rule(u'/dataset/<id>/resource/<resource_id>/validation', view_func=read)
+validation.add_url_rule(
+    u'/dataset/<id>/resource/<resource_id>/validation', 'read', methods=('GET',), view_func=common.validation
+)
 
 
 def get_blueprints():
