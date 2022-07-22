@@ -162,6 +162,7 @@ Please run the following to create the database tables:
         return self._process_schema_fields(data_dict)
 
     resources_to_validate = {}
+    packages_to_skip = {}
 
     def after_create(self, context, data_dict):
 
@@ -213,6 +214,9 @@ Please run the following to create the database tables:
 
         updated_resource = self._process_schema_fields(updated_resource)
 
+        # the call originates from a resource API, so don't validate the entire package
+        self.packages_to_skip[updated_resource['package_id']] = True
+
         if not get_update_mode_from_config() == u'async':
             return updated_resource
 
@@ -229,8 +233,8 @@ Please run the following to create the database tables:
             or (updated_resource.get(u'format', u'').lower()
                 != current_resource.get(u'format', u'').lower())
         ) and (
-                # Make sure format is supported
-                updated_resource.get(u'format', u'').lower() in
+            # Make sure format is supported
+            updated_resource.get(u'format', u'').lower() in
                 settings.SUPPORTED_FORMATS):
             needs_validation = True
 
@@ -249,14 +253,20 @@ Please run the following to create the database tables:
                 and not get_create_mode_from_config() == u'async'):
             return
 
-        if context.get('_validation_performed'):
+        if context.pop('_validation_performed', None):
             # Ugly, but needed to avoid circular loops caused by the
             # validation job calling resource_patch (which calls
             # package_update)
-            del context['_validation_performed']
             return
 
         if is_dataset:
+            package_id = data_dict.get('id')
+            if self.packages_to_skip.pop(package_id, None) or context.get('save', False):
+                # Either we're updating an individual resource,
+                # or we're updating the package metadata via the web form;
+                # in both cases, we don't need to validate every resource.
+                return
+
             for resource in data_dict.get(u'resources', []):
                 if resource[u'id'] in self.resources_to_validate:
                     # This is part of a resource_update call, it will be
