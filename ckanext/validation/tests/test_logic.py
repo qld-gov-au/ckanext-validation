@@ -57,16 +57,14 @@ class TestResourceValidationRun(object):
                 u'Resource must have a valid URL or an uploaded file'} ==\
             err.value.error_dict
 
-    @mock.patch('ckanext.validation.logic.enqueue_job')
+    @mock.patch('ckantoolkit.enqueue_job')
     def test_resource_validation_with_url(self, mock_enqueue_job):
-
         resource = factories.Resource(url='http://example.com', format='csv')
 
         call_action('resource_validation_run', resource_id=resource['id'])
 
-    @mock.patch('ckanext.validation.logic.enqueue_job')
+    @mock.patch('ckantoolkit.enqueue_job')
     def test_resource_validation_with_upload(self, mock_enqueue_job):
-
         resource = factories.Resource(url='', url_type='upload', format='csv')
 
         call_action('resource_validation_run', resource_id=resource['id'])
@@ -83,10 +81,9 @@ class TestResourceValidationRun(object):
 
     #     assert len(jobs_after) == len(jobs) + 1
 
-    @mock.patch('ckanext.validation.logic.enqueue_job')
+    @mock.patch('ckantoolkit.enqueue_job')
     def test_resource_validation_creates_validation_object(
             self, mock_enqueue_job):
-
         resource = factories.Resource(format='csv')
 
         call_action('resource_validation_run', resource_id=resource['id'])
@@ -102,7 +99,7 @@ class TestResourceValidationRun(object):
         assert validation.error is None
 
     @change_config('ckanext.validation.run_on_create_async', False)
-    @mock.patch('ckanext.validation.logic.enqueue_job')
+    @mock.patch('ckantoolkit.enqueue_job')
     def test_resource_validation_resets_existing_validation_object(
             self, mock_enqueue_job):
 
