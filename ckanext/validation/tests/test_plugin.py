@@ -326,3 +326,17 @@ class TestPackageControllerHooksUpdate(object):
         call_action('package_update', {}, **dataset)
 
         mock_enqueue.assert_not_called()
+
+    @change_config('ckanext.validation.run_on_create_async', False)
+    @mock.patch('ckantoolkit.enqueue_job')
+    def test_validation_does_not_run_when_editing_via_web_form(self, mock_enqueue):
+        resource = {
+            'id': 'test-resource-id',
+            'format': 'CSV',
+            'url': 'http://some.data'
+        }
+        dataset = factories.Dataset(resources=[resource])
+
+        call_action('package_update', context={'save': True}, **dataset)
+
+        mock_enqueue.assert_not_called()

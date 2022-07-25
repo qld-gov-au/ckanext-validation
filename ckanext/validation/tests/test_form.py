@@ -563,7 +563,9 @@ class TestResourceValidationOnUpdateForm(FunctionalTestBase):
             self.app, dataset['id'], resource_id)
 
         upload = ('upload', 'invalid.csv', INVALID_CSV)
-        params = {}
+        params = {
+            'name': 'test_resource_form_update_invalid',
+        }
 
         invalid_stream = io.BufferedReader(io.BytesIO(INVALID_CSV))
 
@@ -613,10 +615,9 @@ class TestResourceValidationFieldsPersisted(FunctionalTestBase):
         resource_id = resource['id']
 
         params = {
-            'description': 'test desc'
+            'name': 'test_resource_form_fields_are_persisted',
+            'description': 'test desc',
         }
-
-        dataset = call_action('package_show', id=dataset['id'])
 
         valid_stream = io.BufferedReader(io.BytesIO(VALID_CSV))
 
