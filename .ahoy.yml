@@ -80,7 +80,7 @@ commands:
     usage: Install a site.
     cmd: |
       ahoy title "Installing a fresh site"
-      ahoy cli "./scripts/init.sh"
+      ahoy cli '$APP_DIR/scripts/init.sh'
 
   clean:
     usage: Remove containers and all build files.
@@ -109,6 +109,13 @@ commands:
       ahoy cli "flake8 ${@:-ckanext}" || \
       [ "${ALLOW_LINT_FAIL:-0}" -eq 1 ]
 
+  copy-local-files:
+    usage: Update files from local repo.
+    cmd: |
+      docker cp . $(docker-compose ps -q ckan):/app/
+      docker cp .docker/scripts/ckan_cli $(docker-compose ps -q ckan):/app/ckan/default/bin/
+      ahoy cli 'chmod u+x $VENV_DIR/bin/ckan_cli; cp .docker/test.ini $CKAN_INI'
+
   test-unit:
     usage: Run unit tests.
     cmd: |
@@ -120,7 +127,7 @@ commands:
     cmd: |
       ahoy start-ckan-job-worker &
       sleep 5 &&
-      ahoy cli "behave ${*:-test/features} --tags=-format_autocomplete" || \
+      ahoy cli "behave -k ${*:-test/features} --tags=-format_autocomplete" || \
       [ "${ALLOW_BDD_FAIL:-0}" -eq 1 ]
       ahoy stop-ckan-job-worker
 
