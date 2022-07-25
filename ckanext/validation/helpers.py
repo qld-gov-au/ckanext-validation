@@ -40,13 +40,14 @@ def get_validation_badge(resource, in_listing=False):
         resource_id=resource['id'])
 
     return u'''
-<a href="{validation_url}" class="validation-badge">
+<a href="{validation_url}" class="validation-badge" title="{title}">
     <span class="prefix">{prefix}</span><span class="status {status}">{status_title}</span>
 </a>'''.format(
         validation_url=validation_url,
         prefix=_('data'),
         status=status,
-        status_title=statuses[status])
+        status_title=statuses[status],
+        title=resource.get('validation_timestamp', ''))
 
 
 def validation_extract_report_from_errors(errors):
