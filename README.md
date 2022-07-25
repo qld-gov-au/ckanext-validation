@@ -53,7 +53,7 @@ If you are eager to get started, jump to the [Installation](#installation) and [
 
 ## Versions supported and requirements
 
-This extension has been tested with CKAN 2.4 to 2.7.
+This extension has been tested with CKAN 2.8 and 2.9.
 
 It is strongly recommended to use it alongside [ckanext-scheming](https://github.com/ckan/ckanext-scheming) to define the necessary extra fields in the default CKAN schema. By default, the extension installs ckanext-scheming version 2.1.0.
 
@@ -64,18 +64,24 @@ If you want to use [asynchronous validation](#asynchronous-validation) with back
 
 To install ckanext-validation, activate your CKAN virtualenv and run:
 
-    git clone https://github.com/frictionlessdata/ckanext-validation.git
+    git clone https://github.com/qld-gov-au/ckanext-validation.git
     cd ckanext-validation
     pip install -r requirements.txt
     python setup.py develop
 
 Or:
 
-    pip install -e 'git+https://github.com/frictionlessdata/ckanext-validation.git#egg=ckanext-validation'
+    pip install -e 'git+https://github.com/qld-gov-au/ckanext-validation.git#egg=ckanext-validation'
     cd ckanext-validation
     pip install -r requirements.txt
 
 Create the database tables by running:
+
+ON CKAN >= 2.9:
+
+    ckan -c /path/to/ini/file validation init-db
+
+ON CKAN <= 2.8:
 
     paster validation init-db -c ../path/to/ini/file
 
@@ -101,7 +107,7 @@ Read more below about how to [change the CKAN metadata schema](#changes-in-the-m
 ### Operation modes
 Use the following to configure which queue async jobs are added to
 
-    ckanext.validation.queue = bulk (Defaults to default)
+	ckanext.validation.queue = bulk (Defaults to default)
 
 Use the following configuration options to choose the [operation modes](#operation-modes):
 
@@ -285,6 +291,12 @@ Asynchronous validation is run in the background whenever a resource of a suppor
 This mode might be useful for instances where datasets are harvested from other sources, or where multiple publishers create datasets and as a maintainer you only want to give visibility to the quality of data, encouraging publishers to fix any issues.
 
 You will need to run the `worker` commmand to pick up validation jobs. Please refer to the [background jobs documentation](http://docs.ckan.org/en/latest/maintaining/background-tasks.html) for more details:
+
+ON CKAN >= 2.9:
+
+    ckan -c /path/to/ini/file jobs worker
+
+ON CKAN <= 2.8:
 
     paster jobs worker -c /path/to/ini/file
 
@@ -522,15 +534,33 @@ def resource_validation_run_batch(context, data_dict):
 
 ### Starting the validation process manually
 
-You can start (asynchronous) validation jobs from the command line using the `paster validation run` command. If no parameters are provided it will start a validation job for all resources in the site of suitable format (ie `ckanext.validation.formats`):
+You can start (asynchronous) validation jobs from the command line using the `validation run` command. If no parameters are provided it will start a validation job for all resources in the site of suitable format (ie `ckanext.validation.formats`):
+
+ON CKAN >= 2.9:
+
+    ckan -c /path/to/ini/file validation run
+
+ON CKAN <= 2.8:
 
     paster validation run -c /path/to/ckan/ini
 
 You can limit the resources by specifying a dataset id or name:
 
+ON CKAN >= 2.9:
+
+    ckan -c /path/to/ini/file validation run -d statistical-data-2018
+
+ON CKAN <= 2.8:
+
     paster validation run -c /path/to/ckan/ini -d statistical-data-2018
 
 Or providing arbitrary search parameters:
+
+ON CKAN >= 2.9:
+
+    ckan -c /path/to/ini/file validation run -s '{"fq":"res_format:XLSX"}'
+
+ON CKAN <= 2.8:
 
     paster validation run -c ../ckan/development.ini -s '{"fq":"res_format:XLSX"}'
 
@@ -539,13 +569,21 @@ Or providing arbitrary search parameters:
 
 The extension provides two small utilities to generate a global report with all the current data validation reports:
 
-	paster validation report -c /path/to/ckan/ini
+ON CKAN >= 2.9:
 
-	paster validation report-full -c /path/to/ckan/ini
+    ckan -c /path/to/ini/file validation report
+
+    ckan -c /path/to/ini/file validation report-full
+
+ON CKAN <= 2.8:
+
+    paster validation report -c /path/to/ckan/ini
+
+    paster validation report-full -c /path/to/ckan/ini
 
 
 Both commands will print an overview of the total number of datasets and tabular resources, and a breakdown of how many have a validation status of success,
-failure or error. Additionally they will create a CSV report. `paster validation report` will create a report with all failing resources, including the following fields:
+failure or error. Additionally they will create a CSV report. `validation report` will create a report with all failing resources, including the following fields:
 
 * Dataset name
 * Resource id
@@ -554,7 +592,7 @@ failure or error. Additionally they will create a CSV report. `paster validation
 * Status
 * Validation report URL
 
-`paster validation report-full` will add a row on the output CSV for each error found on the validation report (limited to ten occurrences of the same error type per file). So the fields in the generated CSV report will be:
+`validation report-full` will add a row on the output CSV for each error found on the validation report (limited to ten occurrences of the same error type per file). So the fields in the generated CSV report will be:
 
 * Dataset name
 * Resource id
@@ -566,21 +604,26 @@ failure or error. Additionally they will create a CSV report. `paster validation
 
 In both cases you can define the location of the output CSV passing the `-o` or `--output` option:
 
+ON CKAN >= 2.9:
+
+    ckan -c /path/to/ini/file validation report-full -o /tmp/reports/validation_full.csv
+
+ON CKAN <= 2.8:
 
 	paster validation report-full -c /path/to/ckan/ini -o /tmp/reports/validation_full.csv
 
 
 Check the command help for more details:
 
-	paster validation --help
+	validation --help
 
-	Usage: paster validation [options] Utilities for the CKAN data validation extension
+	Usage: validation [options] Utilities for the CKAN data validation extension
 
     Usage:
-        paster validation init-db
+        validation init-db
             Initialize database tables
 
-        paster validation run [options]
+        validation run [options]
 
             Start asynchronous data validation on the site resources. If no
             options are provided it will run validation on all resources of
@@ -589,7 +632,7 @@ Check the command help for more details:
             resources. You can also pass arbitrary search parameters to filter
             the selected datasets.
 
-         paster validation report [options]
+        validation report [options]
 
             Generate a report with all current data validation reports. This
             will print an overview of the total number of tabular resources
@@ -602,7 +645,7 @@ Check the command help for more details:
                 * Status
                 * Validation report URL
 
-          paster validation report-full [options]
+        validation report-full [options]
 
             Generate a detailed report. This is similar to the previous command
             but on the CSV report it will add a row for each error found on the
@@ -654,7 +697,7 @@ Check the command help for more details:
 
 To run the tests, do:
 
-    nosetests --nologcapture --with-pylons=test.ini
+    pytest --ckan-ini=test.ini ckanext/validation/tests/ 
 
 
 ## Copying and License
