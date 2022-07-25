@@ -54,10 +54,11 @@ jobs:
         sed -i -e 's/use = config:.*/use = config:\/srv\/app\/src\/ckan\/test-core.ini/' test.ini
     - name: Setup extension
       run: |
-        chmod u+x bin/ckan_cli
+        CKAN_CLI=bin/ckan_cli
+        chmod u+x $CKAN_CLI
         export CKAN_INI=test.ini
-        bin/ckan_cli db init
-        PASTER_PLUGIN=ckanext-validation bin/ckan_cli validation init-db
+        $CKAN_CLI db init
+        PASTER_PLUGIN=ckanext-validation $CKAN_CLI validation init-db
     - name: Run tests
       run: pytest --ckan-ini=test.ini --cov=ckanext.validation --cov-report=xml --cov-append --disable-warnings ckanext/validation/tests
     - name: Coveralls
