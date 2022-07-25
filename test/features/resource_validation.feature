@@ -3,7 +3,7 @@ Feature: Resource validation
     Scenario: As an editor, I can create and update a resource with an uploaded validation schema
         Given "TestOrgEditor" as the persona
         When I log in
-        And I visit "/dataset/new_resource/warandpeace"
+        And I open the new resource form for dataset "warandpeace"
         And I fill in "name" with "Test validation schema"
         And I attach the file "test.csv" to "upload"
         And I fill in "description" with "Testing validation schema"
@@ -34,7 +34,7 @@ Feature: Resource validation
     Scenario: As an editor, I can create and update a resource with validation options
         Given "TestOrgEditor" as the persona
         When I log in
-        And I visit "/dataset/new_resource/warandpeace"
+        And I open the new resource form for dataset "warandpeace"
         And I fill in "name" with "Test validation options"
         And I attach the file "test.csv" to "upload"
         And I fill in "description" with "Testing validation options"
@@ -61,7 +61,7 @@ Feature: Resource validation
     Scenario: As an editor, I can create a resource with a valid CSV and see a success status
         Given "TestOrgEditor" as the persona
         When I log in
-        And I visit "/dataset/new_resource/warandpeace"
+        And I open the new resource form for dataset "warandpeace"
         And I fill in "name" with "Test valid CSV create"
         And I attach the file "valid.csv" to "upload"
         And I fill in "description" with "Testing validation that should pass"
@@ -78,7 +78,7 @@ Feature: Resource validation
     Scenario: As an editor, I can create a resource with an invalid CSV and see a failure status
         Given "TestOrgEditor" as the persona
         When I log in
-        And I visit "/dataset/new_resource/warandpeace"
+        And I open the new resource form for dataset "warandpeace"
         And I fill in "name" with "Test invalid CSV create"
         And I attach the file "invalid.csv" to "upload"
         And I fill in "description" with "Testing validation with insufficient fields"
@@ -95,7 +95,7 @@ Feature: Resource validation
     Scenario: As an editor, I can update a resource with a valid CSV and see a success status
         Given "TestOrgEditor" as the persona
         When I log in
-        And I visit "/dataset/new_resource/warandpeace"
+        And I open the new resource form for dataset "warandpeace"
         And I fill in "name" with "Test valid CSV update"
         And I attach the file "invalid.csv" to "upload"
         And I fill in "description" with "Testing validation that should pass on update"
@@ -117,7 +117,7 @@ Feature: Resource validation
     Scenario: As an editor, I can update a resource with an invalid CSV and see a failure status
         Given "TestOrgEditor" as the persona
         When I log in
-        And I visit "/dataset/new_resource/warandpeace"
+        And I open the new resource form for dataset "warandpeace"
         And I fill in "name" with "Test invalid CSV update"
         And I attach the file "valid.csv" to "upload"
         And I fill in "description" with "Testing validation that should fail on update"

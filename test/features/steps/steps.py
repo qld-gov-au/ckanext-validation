@@ -42,11 +42,21 @@ def log_in_directly(context):
     """)
 
 
+@step(u'I open the new resource form for dataset "{name}"')
+def go_to_new_resource_form(context, name):
+    context.execute_steps(u"""
+        When I go to dataset "{name}"
+        And I click the link with text that contains "Manage"
+        And I click the link with text that contains "Resources"
+        And I click the link with text that contains "Add new resource"
+    """.format(name=name))
+
+
 @step(u'I create a resource with name "{name}" and URL "{url}"')
 def add_resource(context, name, url):
     context.execute_steps(u"""
         When I log in
-        And I visit "/dataset/new_resource/warandpeace"
+        And I open the new resource form for dataset "warandpeace"
         And I press the element with xpath "//form[@id='resource-edit']//a[string() = 'Link']"
         And I fill in "name" with "{}"
         And I fill in "url" with "{}"
