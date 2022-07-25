@@ -1,20 +1,25 @@
-import __builtin__ as builtins
-import cgi
+# encoding: utf-8
+
 import functools
 import mock
+import six
+if six.PY3:
+    import builtins
+else:
+    import __builtin__ as builtins
 
 from pyfakefs import fake_filesystem
 
 import ckan.lib.uploader
-from ckan.tests.helpers import change_config
 from ckantoolkit import check_ckan_version
+from ckan.tests.helpers import change_config
 
 
-INVALID_CSV = '''a,b,c,d
+INVALID_CSV = b'''a,b,c,d
 1,2,3
 '''
 
-VALID_CSV = '''a,b,c,d
+VALID_CSV = b'''a,b,c,d
 1,2,3,4
 '''
 
@@ -144,11 +149,13 @@ def mock_uploads(func):
 if check_ckan_version('2.9'):
     from werkzeug.datastructures import FileStorage as MockFieldStorage
 else:
+    import cgi
+
     class MockFieldStorage(cgi.FieldStorage):
 
         def __init__(self, fp, filename):
 
             self.file = fp
             self.filename = filename
-            self.name = 'upload'
+            self.name = u"upload"
             self.list = None

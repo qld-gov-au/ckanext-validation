@@ -9,7 +9,7 @@ from sqlalchemy.orm.exc import NoResultFound
 
 log = logging.getLogger(__name__)
 
-REDIS_PREFIX = 'ckanext-s3filestore:'
+REDIS_PREFIX = 'ckanext-validation:'
 
 
 class StatusTypes:

@@ -4,15 +4,14 @@
 #
 set -e
 
+CKAN_USER_NAME="${CKAN_USER_NAME:-admin}"
+CKAN_DISPLAY_NAME="${CKAN_DISPLAY_NAME:-Administrator}"
+CKAN_USER_EMAIL="${CKAN_USER_EMAIL:-admin@localhost}"
 CKAN_ACTION_URL=http://ckan:3000/api/action
 
 if [ "$VENV_DIR" != "" ]; then
   . ${VENV_DIR}/bin/activate
 fi
-
-CKAN_USER_NAME="${CKAN_USER_NAME:-admin}"
-CKAN_DISPLAY_NAME="${CKAN_DISPLAY_NAME:-Administrator}"
-CKAN_USER_EMAIL="${CKAN_USER_EMAIL:-admin@localhost}"
 
 add_user_if_needed () {
     echo "Adding user '$2' ($1) with email address [$3]"
@@ -25,7 +24,6 @@ add_user_if_needed () {
 add_user_if_needed "$CKAN_USER_NAME" "$CKAN_DISPLAY_NAME" "$CKAN_USER_EMAIL"
 ckan_cli sysadmin add "${CKAN_USER_NAME}"
 
-# We know the "admin" sysadmin account exists, so we'll use her API KEY to create further data
 API_KEY=$(ckan_cli user show "${CKAN_USER_NAME}" | tr -d '\n' | sed -r 's/^(.*)apikey=(\S*)(.*)/\2/')
 if [ "$API_KEY" = "None" ]; then
     echo "No API Key found on ${CKAN_USER_NAME}, generating API Token..."
@@ -45,17 +43,18 @@ add_user_if_needed test_org_admin "Test Admin" test_org_admin@localhost
 add_user_if_needed test_org_editor "Test Editor" test_org_editor@localhost
 add_user_if_needed test_org_member "Test Member" test_org_member@localhost
 
-echo "Creating ${TEST_ORG_TITLE} Organisation:"
+echo "Creating ${TEST_ORG_TITLE} organisation:"
 
 TEST_ORG=$( \
     curl -LsH "Authorization: ${API_KEY}" \
     --data "name=${TEST_ORG_NAME}&title=${TEST_ORG_TITLE}" \
     ${CKAN_ACTION_URL}/organization_create
 )
+echo "${TEST_ORG_TITLE} organisation is: ${TEST_ORG}"
 
-TEST_ORG_ID=$(echo $TEST_ORG | sed -r 's/^(.*)"id": "(.*)",(.*)/\2/')
+TEST_ORG_ID=$(echo $TEST_ORG | python $APP_DIR/scripts/extract-id.py)
 
-echo "Assigning test users to ${TEST_ORG_TITLE} Organisation:"
+echo "Assigning test users to '${TEST_ORG_TITLE}' organisation (${TEST_ORG_ID}):"
 
 curl -LsH "Authorization: ${API_KEY}" \
     --data "id=${TEST_ORG_ID}&object=test_org_admin&object_type=user&capacity=admin" \
