@@ -1,38 +1,13 @@
-import mock
-from nose.tools import assert_equals, with_setup
+# encoding: utf-8
 
-from ckan import model, plugins as p
+import mock
+import pytest
+
+from ckan import plugins as p
 from ckan.tests import helpers, factories
 
 from ckanext.validation.interfaces import IDataValidation
 from ckanext.validation.tests.helpers import VALID_REPORT
-
-
-def _test_org():
-    org_name = 'test-org'
-
-    def load_model_org():
-        orgs = model.Session.query(model.Group)\
-            .filter(model.Group.type == 'organization')\
-            .filter(model.Group.name == org_name).all()
-        if orgs:
-            return orgs[0]
-
-    org = load_model_org()
-    if not org:
-        factories.Organization(name=org_name)
-        org = load_model_org()
-    return org
-
-
-def _setup_function(self, *args, **kwargs):
-    helpers.reset_db()
-    self.owner_org = factories.Organization(name='test-org')
-    self.test_dataset = factories.Dataset(owner_org=self.owner_org['id'])
-    if not p.plugin_loaded('test_validation_plugin'):
-        p.load('test_validation_plugin')
-    for plugin in p.PluginImplementations(IDataValidation):
-        return plugin.reset_counter()
 
 
 class TestPlugin(p.SingletonPlugin):
@@ -58,154 +33,160 @@ def _get_plugin_calls():
         return plugin.calls
 
 
-class BaseTestInterfaces(object):
+class BaseTestInterfaces(helpers.FunctionalTestBase):
+
+    @classmethod
+    def setup_class(cls):
+        super(BaseTestInterfaces, cls).setup_class()
+
+        if not p.plugin_loaded('test_validation_plugin'):
+            p.load('test_validation_plugin')
 
     @classmethod
     def teardown_class(cls):
+        super(BaseTestInterfaces, cls).teardown_class()
+
         if p.plugin_loaded('test_validation_plugin'):
             p.unload('test_validation_plugin')
 
+    def setup(self):
+        helpers.reset_db()
+        for plugin in p.PluginImplementations(IDataValidation):
+            return plugin.reset_counter()
 
-@with_setup(_setup_function)
+
+@pytest.mark.usefixtures("clean_db", "validation_setup")
 class TestInterfaceSync(BaseTestInterfaces):
 
-    @helpers.change_config('ckanext.validation.run_on_create_sync', True)
-    @helpers.change_config('ckanext.validation.run_on_update_sync', True)
-    @helpers.change_config('ckanext.validation.run_on_create_async', False)
-    @helpers.change_config('ckanext.validation.run_on_update_async', False)
-    @mock.patch('ckanext.validation.jobs.validate', return_value=VALID_REPORT)
-    def test_can_validate_called_on_create_sync(self, mock_validation):
+    @classmethod
+    def _apply_config_changes(cls, cfg):
+        cfg['ckanext.validation.run_on_create_sync'] = True
+        cfg['ckanext.validation.run_on_update_sync'] = True
 
+    @mock.patch('ckanext.validation.jobs.validate',
+                return_value=VALID_REPORT)
+    def test_can_validate_called_on_create_sync(self, mock_validation):
+        dataset = factories.Dataset()
         helpers.call_action(
             'resource_create',
             url='https://example.com/data.csv',
             format='CSV',
-            package_id=self.test_dataset['id']
+            package_id=dataset['id']
         )
-        assert_equals(_get_plugin_calls(), 1)
+        assert _get_plugin_calls() == 1
 
         assert mock_validation.called
 
-    @helpers.change_config('ckanext.validation.run_on_create_sync', True)
-    @helpers.change_config('ckanext.validation.run_on_update_sync', True)
-    @helpers.change_config('ckanext.validation.run_on_create_async', False)
-    @helpers.change_config('ckanext.validation.run_on_update_async', False)
     @mock.patch('ckanext.validation.jobs.validate')
     def test_can_validate_called_on_create_sync_no_validation(self, mock_validation):
-
+        dataset = factories.Dataset()
         helpers.call_action(
             'resource_create',
             url='https://example.com/data.csv',
             format='CSV',
-            package_id=self.test_dataset['id'],
+            package_id=dataset['id'],
             my_custom_field='xx',
         )
-        assert_equals(_get_plugin_calls(), 1)
+        assert _get_plugin_calls() == 1
 
         assert not mock_validation.called
 
-    @helpers.change_config('ckanext.validation.run_on_create_sync', True)
-    @helpers.change_config('ckanext.validation.run_on_update_sync', True)
-    @helpers.change_config('ckanext.validation.run_on_create_async', False)
-    @helpers.change_config('ckanext.validation.run_on_update_async', False)
-    @mock.patch('ckanext.validation.jobs.validate', return_value=VALID_REPORT)
+    @mock.patch('ckanext.validation.jobs.validate',
+                return_value=VALID_REPORT)
     def test_can_validate_called_on_update_sync(self, mock_validation):
-
-        resource = factories.Resource(package_id=self.test_dataset['id'])
+        dataset = factories.Dataset()
+        resource = factories.Resource(package_id=dataset['id'])
         helpers.call_action(
             'resource_update',
             id=resource['id'],
             url='https://example.com/data.csv',
             format='CSV',
-            package_id=self.test_dataset['id']
+            package_id=dataset['id']
         )
-        assert_equals(_get_plugin_calls(), 2)  # One for create and one for update
+        assert _get_plugin_calls() == 2  # One for create and one for update
 
         assert mock_validation.called
 
-    @helpers.change_config('ckanext.validation.run_on_create_sync', True)
-    @helpers.change_config('ckanext.validation.run_on_update_sync', True)
-    @helpers.change_config('ckanext.validation.run_on_create_async', False)
-    @helpers.change_config('ckanext.validation.run_on_update_async', False)
     @mock.patch('ckanext.validation.jobs.validate')
     def test_can_validate_called_on_update_sync_no_validation(self, mock_validation):
-
-        resource = factories.Resource(package_id=self.test_dataset['id'])
+        dataset = factories.Dataset()
+        resource = factories.Resource(package_id=dataset['id'])
         helpers.call_action(
             'resource_update',
             id=resource['id'],
             url='https://example.com/data.csv',
             format='CSV',
-            package_id=self.test_dataset['id'],
+            package_id=dataset['id'],
             my_custom_field='xx',
         )
-        assert_equals(_get_plugin_calls(), 2)  # One for create and one for update
+        assert _get_plugin_calls() == 2  # One for create and one for update
 
         assert not mock_validation.called
 
 
-@with_setup(_setup_function)
+@pytest.mark.usefixtures("validation_setup")
 class TestInterfaceAsync(BaseTestInterfaces):
 
-    @helpers.change_config('ckanext.validation.run_on_create_async', True)
+    @classmethod
+    def _apply_config_changes(cls, cfg):
+        cfg['ckanext.validation.run_on_create_sync'] = False
+        cfg['ckanext.validation.run_on_update_sync'] = False
+
     @mock.patch('ckantoolkit.enqueue_job')
     def test_can_validate_called_on_create_async(self, mock_validation):
-
+        dataset = factories.Dataset()
         helpers.call_action(
             'resource_create',
             url='https://example.com/data.csv',
             format='CSV',
-            package_id=self.test_dataset['id']
+            package_id=dataset['id']
         )
-        assert_equals(_get_plugin_calls(), 1)
+        assert _get_plugin_calls() == 1
 
         assert mock_validation.called
 
-    @helpers.change_config('ckanext.validation.run_on_create_async', True)
     @mock.patch('ckantoolkit.enqueue_job')
     def test_can_validate_called_on_create_async_no_validation(self, mock_validation):
-
+        dataset = factories.Dataset()
         helpers.call_action(
             'resource_create',
             url='https://example.com/data.csv',
             format='CSV',
-            package_id=self.test_dataset['id'],
+            package_id=dataset['id'],
             my_custom_field='xx',
         )
-        assert_equals(_get_plugin_calls(), 1)
+        assert _get_plugin_calls() == 1
 
         assert not mock_validation.called
 
-    @helpers.change_config('ckanext.validation.run_on_create_async', False)
-    @helpers.change_config('ckanext.validation.run_on_update_async', True)
     @mock.patch('ckantoolkit.enqueue_job')
     def test_can_validate_called_on_update_async(self, mock_validation):
-
-        resource = factories.Resource(package_id=self.test_dataset['id'])
+        dataset = factories.Dataset()
+        resource = factories.Resource(package_id=dataset['id'])
         helpers.call_action(
             'resource_update',
             id=resource['id'],
             url='https://example.com/data.csv',
             format='CSV',
-            package_id=self.test_dataset['id']
+            package_id=dataset['id']
         )
-        assert_equals(_get_plugin_calls(), 1)
+        assert _get_plugin_calls() == 1
 
         assert mock_validation.called
 
     @mock.patch('ckantoolkit.enqueue_job')
     def test_can_validate_called_on_update_async_no_validation(self, mock_validation):
-
-        resource = factories.Resource(package_id=self.test_dataset['id'])
+        dataset = factories.Dataset()
+        resource = factories.Resource(package_id=dataset['id'])
         helpers.call_action(
             'resource_update',
             id=resource['id'],
             url='https://example.com/data.csv',
             format='CSV',
-            package_id=self.test_dataset['id'],
+            package_id=dataset['id'],
             my_custom_field='xx',
 
         )
-        assert_equals(_get_plugin_calls(), 1)
+        assert _get_plugin_calls() == 1
 
         assert not mock_validation.called

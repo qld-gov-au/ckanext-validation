@@ -52,7 +52,7 @@ def run_validation(yes, resource, dataset, search):
     resources. You can also pass arbitrary search parameters to filter
     the selected datasets.
     '''
-    common.run_validation(assume_yes=yes, resource_ids=resource, dataset_ids=dataset, search_params=search)
+    common.run_validation(yes, resource, dataset, search)
 
 
 @validation.command()
