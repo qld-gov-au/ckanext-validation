@@ -60,7 +60,7 @@
     {% set existing_value = h.scheming_display_json_value(value, indent=None) if is_json else value %}
     <input type="hidden" id="field-schema" name="schema" value="{{ existing_value }}" />
 
-    {% set type = 'asset' if h.ckan_version().split('.')[1] | int >= 9 else 'resource' %}
+    {% set type = 'asset' if h.is_ckan_29() else 'resource' %}
     {% include 'validation/snippets/validation_resource-schema-form_' ~ type ~ '.html' %}
 
   </div>

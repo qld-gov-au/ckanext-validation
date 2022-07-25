@@ -30,6 +30,7 @@ from ckanext.validation.helpers import (
     validation_extract_report_from_errors,
     dump_json_value,
     bootstrap_version,
+    is_ckan_29,
 )
 from ckanext.validation.validators import (
     resource_schema_validator,
@@ -44,7 +45,7 @@ from ckanext.validation.interfaces import IDataValidation
 log = logging.getLogger(__name__)
 
 
-if t.check_ckan_version(min_version='2.9.0'):
+if is_ckan_29():
     from .plugin_mixins.flask_plugin import MixinPlugin
 else:
     from .plugin_mixins.pylons_plugin import MixinPlugin
@@ -72,7 +73,7 @@ class ValidationPlugin(MixinPlugin, p.SingletonPlugin, DefaultTranslation):
 
     def update_config(self, config_):
         if not tables_exist():
-            if t.check_ckan_version('2.9'):
+            if is_ckan_29():
                 init_command = 'ckan validation init-db'
             else:
                 init_command = 'paster --plugin=ckanext-validation validation init-db'
@@ -123,6 +124,7 @@ Please run the following to create the database tables:
             u'validation_extract_report_from_errors': validation_extract_report_from_errors,
             u'dump_json_value': dump_json_value,
             u'bootstrap_version': bootstrap_version,
+            u'is_ckan_29': is_ckan_29,
         }
 
     # IResourceController
