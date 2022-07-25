@@ -212,7 +212,13 @@ Please run the following to create the database tables:
         updated_resource = self._process_schema_fields(updated_resource)
 
         # the call originates from a resource API, so don't validate the entire package
-        self.packages_to_skip[updated_resource['package_id']] = True
+        package_id = updated_resource.get('package_id')
+        if not package_id:
+            existing_resource = t.get_action('resource_show')(
+                context={'ignore_auth': True}, data_dict={'id': updated_resource['id']})
+            if existing_resource:
+                package_id = existing_resource['package_id']
+        self.packages_to_skip[package_id] = True
 
         if not get_update_mode_from_config() == u'async':
             return updated_resource
