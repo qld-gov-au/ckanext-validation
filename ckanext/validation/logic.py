@@ -1,10 +1,7 @@
 # encoding: utf-8
 
-import datetime
 import logging
 import json
-
-from sqlalchemy.orm.exc import NoResultFound
 from six import string_types
 
 import ckan.plugins as plugins
@@ -12,7 +9,6 @@ import ckan.lib.uploader as uploader
 
 import ckantoolkit as t
 
-from ckanext.validation.model import Validation
 from ckanext.validation.interfaces import IDataValidation
 from ckanext.validation.jobs import run_validation_job
 from ckanext.validation import settings
@@ -21,6 +17,7 @@ from ckanext.validation.utils import (
     get_update_mode_from_config,
     delete_local_uploaded_file,
 )
+from ckanext.validation.validation_status_helper import (ValidationStatusHelper, ValidationJobAlreadyEnqueued)
 
 
 log = logging.getLogger(__name__)
@@ -119,27 +116,13 @@ def resource_validation_run(context, data_dict):
             {u'url': u'Resource must have a valid URL or an uploaded file'})
 
     # Check if there was an existing validation for the resource
-
-    Session = context['model'].Session
-
     try:
-        validation = Session.query(Validation).filter(
-            Validation.resource_id == resource_id).one()
-    except NoResultFound:
-        validation = None
-
-    if validation:
-        # Reset values
-        validation.finished = None
-        validation.report = None
-        validation.error = None
-        validation.created = datetime.datetime.utcnow()
-        validation.status = u'created'
-    else:
-        validation = Validation(resource_id=resource['id'])
-
-    Session.add(validation)
-    Session.commit()
+        session = context['model'].Session
+        ValidationStatusHelper().createValidationJob(session, resource_id)
+    except ValidationJobAlreadyEnqueued:
+        if async_job:
+            log.error("resource_validation_run: ValidationJobAlreadyEnqueued %s", data_dict['resource_id'])
+            return
 
     if async_job:
         package_id = resource['package_id']
@@ -177,13 +160,8 @@ def resource_validation_show(context, data_dict):
     if not data_dict.get(u'resource_id'):
         raise t.ValidationError({u'resource_id': u'Missing value'})
 
-    Session = context['model'].Session
-
-    try:
-        validation = Session.query(Validation).filter(
-            Validation.resource_id == data_dict['resource_id']).one()
-    except NoResultFound:
-        validation = None
+    session = context['model'].Session
+    validation = ValidationStatusHelper().getValidationJob(session, data_dict['resource_id'])
 
     if not validation:
         raise t.ObjectNotFound(
@@ -209,20 +187,14 @@ def resource_validation_delete(context, data_dict):
     if not data_dict.get(u'resource_id'):
         raise t.ValidationError({u'resource_id': u'Missing value'})
 
-    Session = context['model'].Session
-
-    try:
-        validation = Session.query(Validation).filter(
-            Validation.resource_id == data_dict['resource_id']).one()
-    except NoResultFound:
-        validation = None
+    session = context['model'].Session
+    validation = ValidationStatusHelper().getValidationJob(session, data_dict['resource_id'])
 
     if not validation:
         raise t.ObjectNotFound(
             'No validation report exists for this resource')
 
-    Session.delete(validation)
-    Session.commit()
+    ValidationStatusHelper().deleteValidationJob(session, validation)
 
 
 def resource_validation_run_batch(context, data_dict):

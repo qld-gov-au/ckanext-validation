@@ -1,12 +1,10 @@
 # encoding: utf-8
 
 import logging
-import datetime
 import json
 import re
 
 import requests
-from sqlalchemy.orm.exc import NoResultFound
 from goodtables import validate
 from six import string_types
 
@@ -15,13 +13,14 @@ import ckan.lib.uploader as uploader
 
 import ckantoolkit as t
 
-from ckanext.validation.model import Validation
-
+from ckanext.validation.validation_status_helper import (ValidationStatusHelper, ValidationJobDoesNotExist,
+                                                         ValidationJobAlreadyRunning, StatusTypes)
 
 log = logging.getLogger(__name__)
 
 
 def run_validation_job(resource):
+    vsh = ValidationStatusHelper()
     # handle either a resource dict or just an ID
     # ID is more efficient, as resource dicts can be very large
     if isinstance(resource, string_types):
@@ -33,18 +32,17 @@ def run_validation_job(resource):
         log.debug(u'Validating resource: %s', resource_id)
     else:
         log.debug(u'Validating resource dict: %s', resource)
+    validation_record = None
     try:
-        validation = Session.query(Validation).filter(
-            Validation.resource_id == resource_id).one()
-    except NoResultFound:
-        validation = None
-
-    if not validation:
-        validation = Validation(resource_id=resource_id)
-
-    validation.status = u'running'
-    Session.add(validation)
-    Session.commit()
+        validation_record = vsh.updateValidationJobStatus(Session, resource_id, StatusTypes.running)
+    except ValidationJobAlreadyRunning as e:
+        log.error("Won't run enqueued job %s as job is already running or in invalid state: %s", resource['id'], e)
+        return
+    except ValidationJobDoesNotExist:
+        validation_record = vsh.createValidationJob(Session, resource['id'])
+        validation_record = vsh.updateValidationJobStatus(
+            session=Session, resource_id=resource_id,
+            status=StatusTypes.running, validationRecord=validation_record)
 
     options = t.config.get(
         u'ckanext.validation.default_validation_options')
@@ -105,16 +103,12 @@ def run_validation_job(resource):
         report['warnings'][index] = re.sub(r'Table ".*"', 'Table', warning)
 
     if report['table-count'] > 0:
-        validation.status = u'success' if report[u'valid'] else u'failure'
-        validation.report = report
+        status = StatusTypes.success if report[u'valid'] else StatusTypes.failure
+        validation_record = vsh.updateValidationJobStatus(Session, resource['id'], status, report, None, validation_record)
     else:
-        validation.status = u'error'
-        validation.error = {
-            'message': '\n'.join(report['warnings']) or u'No tables found'}
-    validation.finished = datetime.datetime.utcnow()
-
-    Session.add(validation)
-    Session.commit()
+        status = StatusTypes.error
+        error_payload = {'message': '\n'.join(report['warnings']) or u'No tables found'}
+        validation_record = vsh.updateValidationJobStatus(Session, resource['id'], status, None, error_payload, validation_record)
 
     # Store result status in resource
     t.get_action('resource_patch')(
@@ -122,8 +116,8 @@ def run_validation_job(resource):
          'user': t.get_action('get_site_user')({'ignore_auth': True})['name'],
          '_validation_performed': True},
         {'id': resource['id'],
-         'validation_status': validation.status,
-         'validation_timestamp': validation.finished.isoformat()})
+         'validation_status': validation_record.status,
+         'validation_timestamp': validation_record.finished.isoformat()})
 
 
 def _validate_table(source, _format=u'csv', schema=None, **options):
