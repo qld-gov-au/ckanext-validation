@@ -3,13 +3,17 @@
 import json
 import logging
 import os
-import six
+from six import string_types
 
 import ckan.plugins as p
-import ckantoolkit as t
-from ckan.lib.plugins import DefaultTranslation
 from ckan.lib.uploader import ALLOWED_UPLOAD_TYPES, _get_underlying_file
+import ckantoolkit as t
 
+try:
+    from ckan.lib.plugins import DefaultTranslation
+except ImportError:
+    class DefaultTranslation():
+        pass
 
 from ckanext.validation import settings
 from ckanext.validation.model import tables_exist
@@ -27,6 +31,7 @@ from ckanext.validation.helpers import (
     validation_extract_report_from_errors,
     dump_json_value,
     bootstrap_version,
+    is_ckan_29,
 )
 from ckanext.validation.validators import (
     resource_schema_validator,
@@ -41,7 +46,7 @@ from ckanext.validation.interfaces import IDataValidation
 log = logging.getLogger(__name__)
 
 
-if t.check_ckan_version(min_version='2.9.0'):
+if is_ckan_29():
     from .plugin_mixins.flask_plugin import MixinPlugin
 else:
     from .plugin_mixins.pylons_plugin import MixinPlugin
@@ -69,7 +74,7 @@ class ValidationPlugin(MixinPlugin, p.SingletonPlugin, DefaultTranslation):
 
     def update_config(self, config_):
         if not tables_exist():
-            if t.check_ckan_version('2.9'):
+            if is_ckan_29():
                 init_command = 'ckan validation init-db'
             else:
                 init_command = 'paster --plugin=ckanext-validation validation init-db'
@@ -83,7 +88,7 @@ Please run the following to create the database tables:
 
         t.add_template_directory(config_, u'templates')
         t.add_public_directory(config_, u'public')
-        t.add_resource(u'fanstatic', 'ckanext-validation')
+        t.add_resource(u'assets', 'ckanext-validation')
 
     # IActions
 
@@ -116,6 +121,7 @@ Please run the following to create the database tables:
             u'validation_extract_report_from_errors': validation_extract_report_from_errors,
             u'dump_json_value': dump_json_value,
             u'bootstrap_version': bootstrap_version,
+            u'is_ckan_29': is_ckan_29,
         }
 
     # IResourceController
@@ -137,20 +143,16 @@ Please run the following to create the database tables:
         schema_upload = data_dict.pop(u'schema_upload', None)
         schema_url = data_dict.pop(u'schema_url', None)
         schema_json = data_dict.pop(u'schema_json', None)
-        log.debug("Populating schema; schema_upload is [%s], schema_url is [%s], schema_json is [%s]",
-                  schema_upload, schema_url, schema_json)
 
-        if isinstance(schema_upload, ALLOWED_UPLOAD_TYPES):
-            log.debug("Populating schema from schema_upload")
+        if isinstance(schema_upload, ALLOWED_UPLOAD_TYPES) \
+                and schema_upload.filename:
             data_dict[u'schema'] = _get_underlying_file(schema_upload).read()
         elif schema_url:
-            if (not isinstance(schema_url, six.string_types)
+            if (not isinstance(schema_url, string_types)
                     or not schema_url.lower()[:4] == u'http'):
                 raise t.ValidationError({u'schema_url': 'Must be a valid URL'})
-            log.debug("Populating schema from schema_url")
             data_dict[u'schema'] = schema_url
         elif schema_json:
-            log.debug("Populating schema from schema_json")
             data_dict[u'schema'] = schema_json
 
         return data_dict
@@ -186,7 +188,7 @@ Please run the following to create the database tables:
 
     def _handle_validation_for_resource(self, context, resource):
         needs_validation = False
-        if ((
+        if (
             # File uploaded
             resource.get(u'url_type') == u'upload'
             # URL defined
@@ -195,7 +197,7 @@ Please run the following to create the database tables:
             # Make sure format is supported
             resource.get(u'format', u'').lower() in
                 settings.SUPPORTED_FORMATS
-        )):
+        ):
             needs_validation = True
 
         if needs_validation:
@@ -212,7 +214,13 @@ Please run the following to create the database tables:
         updated_resource = self._process_schema_fields(updated_resource)
 
         # the call originates from a resource API, so don't validate the entire package
-        self.packages_to_skip[updated_resource['package_id']] = True
+        package_id = updated_resource.get('package_id')
+        if not package_id:
+            existing_resource = t.get_action('resource_show')(
+                context={'ignore_auth': True}, data_dict={'id': updated_resource['id']})
+            if existing_resource:
+                package_id = existing_resource['package_id']
+        self.packages_to_skip[package_id] = True
 
         if not get_update_mode_from_config() == u'async':
             return updated_resource

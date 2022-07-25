@@ -7,9 +7,8 @@ set -e
 if [ "$VENV_DIR" != "" ]; then
   . ${VENV_DIR}/bin/activate
 fi
-pip install -r "requirements.txt"
-pip install -r "dev-requirements.txt"
-if [ "$CKAN_VERSION" = "2.8.8" ]; then
+pip install -r "requirements.txt" -r "dev-requirements.txt"
+if [ "$CKAN_VERSION" = "ckan-2.8.8" ]; then
     pip install -r "dev-requirements-2.8.txt"
 fi
 python setup.py develop

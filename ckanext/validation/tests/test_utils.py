@@ -3,7 +3,6 @@ import uuid
 import mock
 
 from pyfakefs import fake_filesystem_unittest
-from nose.tools import assert_equals
 
 from ckan.tests.helpers import change_config
 
@@ -18,55 +17,55 @@ class TestConfig(object):
 
     def test_config_defaults(self):
 
-        assert_equals(get_update_mode_from_config(), 'async')
-        assert_equals(get_create_mode_from_config(), 'async')
+        assert get_update_mode_from_config() == 'async'
+        assert get_create_mode_from_config() == 'async'
 
     @change_config('ckanext.validation.run_on_update_sync', True)
     def test_config_update_true_sync(self):
 
-        assert_equals(get_update_mode_from_config(), 'sync')
+        assert get_update_mode_from_config() == 'sync'
 
     @change_config('ckanext.validation.run_on_update_sync', False)
     def test_config_update_false_sync(self):
 
-        assert_equals(get_update_mode_from_config(), 'async')
+        assert get_update_mode_from_config() == 'async'
 
     @change_config('ckanext.validation.run_on_create_sync', True)
     def test_config_create_true_sync(self):
 
-        assert_equals(get_create_mode_from_config(), 'sync')
+        assert get_create_mode_from_config() == 'sync'
 
     @change_config('ckanext.validation.run_on_create_sync', False)
     def test_config_create_false_sync(self):
 
-        assert_equals(get_create_mode_from_config(), 'async')
+        assert get_create_mode_from_config() == 'async'
 
     @change_config('ckanext.validation.run_on_update_async', True)
     def test_config_update_true_async(self):
 
-        assert_equals(get_update_mode_from_config(), 'async')
+        assert get_update_mode_from_config() == 'async'
 
     @change_config('ckanext.validation.run_on_update_async', False)
     def test_config_update_false_async(self):
 
-        assert_equals(get_update_mode_from_config(), None)
+        assert get_update_mode_from_config() is None
 
     @change_config('ckanext.validation.run_on_create_async', True)
     def test_config_create_true_async(self):
 
-        assert_equals(get_create_mode_from_config(), 'async')
+        assert get_create_mode_from_config() == 'async'
 
     @change_config('ckanext.validation.run_on_create_async', False)
     def test_config_create_false_async(self):
 
-        assert_equals(get_create_mode_from_config(), None)
+        assert get_create_mode_from_config() is None
 
     @change_config('ckanext.validation.run_on_update_async', False)
     @change_config('ckanext.validation.run_on_create_async', False)
     def test_config_both_false(self):
 
-        assert_equals(get_update_mode_from_config(), None)
-        assert_equals(get_create_mode_from_config(), None)
+        assert get_update_mode_from_config() is None
+        assert get_create_mode_from_config() is None
 
 
 class TestFiles(object):
@@ -76,11 +75,9 @@ class TestFiles(object):
 
         resource_id = str(uuid.uuid4())
 
-        assert_equals(
-            get_local_upload_path(resource_id),
+        assert get_local_upload_path(resource_id) ==\
             '/doesnt_exist/resources/{}/{}/{}'.format(
                 resource_id[0:3], resource_id[3:6], resource_id[6:])
-        )
 
     @mock_uploads
     def test_delete_upload_file(self, mock_open):
@@ -143,7 +140,7 @@ class TestFiles(object):
         patcher.tearDown()
 
     @mock_uploads
-    def test_delete_passes_if_os_exeception(self, mock_open):
+    def test_delete_passes_if_os_exception(self, mock_open):
 
         resource_id = str(uuid.uuid4())
         path = '/doesnt_exist/resources/{}/{}/{}'.format(

@@ -25,25 +25,25 @@ def init_db():
 
 @validation.command(name='run')
 @click.option(u'-y', u'--yes',
-              help=u'''Automatic yes to prompts. Assume "yes" as answer
-to all prompts and run non-interactively''',
+              help=u'Automatic yes to prompts. Assume "yes" as answer '
+                   u'to all prompts and run non-interactively',
               default=False)
 @click.option('-r', '--resource',
               multiple=True,
-              help=u'''Run data validation on a particular resource (if the format is suitable).
-It can be defined multiple times. Not to be used with -d or -s''')
+              help=u'Run data validation on a particular resource (if the format is suitable).'
+                   u'It can be defined multiple times. Not to be used with -d or -s')
 @click.option('-d', '--dataset',
               multiple=True,
-              help=u'''Run data validation on all resources for a particular dataset (if the format is suitable).
-You can use the dataset id or name, and it can be defined multiple times.
-Not to be used with -r or -s''')
+              help=u'Run data validation on all resources for a particular dataset (if the format is suitable).'
+                   u' You can use the dataset id or name, and it can be defined multiple times. '
+                   u'Not to be used with -r or -s')
 @click.option('-s', '--search',
               default=False,
-              help=u'''Extra search parameters that will be used for getting the datasets to run validation on.
-It must be a JSON object like the one used by the `package_search` API call.
-Supported fields are `q`, `fq` and `fq_list`. Check the documentation for examples.
-Note that when using this you will have to specify the resource formats to target yourself.
-Not to be used with -r or -d.''')
+              help=u'Extra search parameters that will be used for getting the datasets to run '
+                   u'validation on. It must be a JSON object like the one used by the `package_search` API call.'
+                   u' Supported fields are `q`, `fq` and `fq_list`. Check the documentation for examples. '
+                   u'Note that when using this you will have to specify the resource formats to target yourself.'
+                   u' Not to be used with -r or -d.')
 def run_validation(yes, resource, dataset, search):
     '''Start asynchronous data validation on the site resources. If no
     options are provided it will run validation on all resources of
@@ -52,7 +52,7 @@ def run_validation(yes, resource, dataset, search):
     resources. You can also pass arbitrary search parameters to filter
     the selected datasets.
     '''
-    common.run_validation(assume_yes=yes, resource_ids=resource, dataset_ids=dataset, search_params=search)
+    common.run_validation(yes, resource, dataset, search)
 
 
 @validation.command()

@@ -8,5 +8,6 @@
       </div>
 </div>
 
-{% resource 'ckanext-validation/report-form' %}
+{% set type = 'asset' if h.is_ckan_29() else 'resource' %}
+{% include 'validation/snippets/validation_report_form_' ~ type ~ '.html' %}
 

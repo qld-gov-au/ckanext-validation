@@ -105,18 +105,32 @@ report file on the relevant commands.''')
 
         cmd = self.args[0]
         if cmd == 'init-db':
-            common.init_db()
+            self.init_db()
         elif cmd == 'run':
-            common.run_validation(
-                resource_ids=self.options.resource_id,
-                dataset_ids=self.options.dataset_id,
-                search_params=self.options.search_params,
-                assume_yes=self.options.assume_yes
-            )
+            self.run_validation()
+        elif cmd == 'clear':
+            self.clear()
         elif cmd == 'report':
-            common.report(self.options.output_file)
+            self.report()
         elif cmd == 'report-full':
-            common.report(self.options.output_file, full=True)
+            self.report(full=True)
         else:
             self.parser.print_usage()
             sys.exit(1)
+
+    def init_db(self):
+        common.init_db()
+
+    def run_validation(self):
+
+        assume_yes = self.options.assume_yes
+        resource_ids = self.options.resource_id
+        dataset_ids = self.options.dataset_id
+        query = self.options.search_params
+
+        common.run_validation(assume_yes, resource_ids, dataset_ids, query)
+
+    def report(self, full=False):
+
+        output_csv = self.options.output_file
+        common.report(output_csv, full)

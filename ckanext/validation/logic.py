@@ -2,7 +2,7 @@
 
 import logging
 import json
-import six
+from six import string_types
 
 import ckan.plugins as plugins
 import ckan.lib.uploader as uploader
@@ -12,15 +12,36 @@ import ckantoolkit as t
 from ckanext.validation.interfaces import IDataValidation
 from ckanext.validation.jobs import run_validation_job
 from ckanext.validation import settings
-from ckanext.validation.validation_status_helper import (ValidationStatusHelper, ValidationJobAlreadyEnqueued)
 from ckanext.validation.utils import (
     get_create_mode_from_config,
     get_update_mode_from_config,
     delete_local_uploaded_file,
 )
+from ckanext.validation.validation_status_helper import (ValidationStatusHelper, ValidationJobAlreadyEnqueued)
 
 
 log = logging.getLogger(__name__)
+
+
+def enqueue_validation_job(package_id, resource_id):
+    enqueue_args = {
+        'fn': run_validation_job,
+        'title': "run_validation_job: package_id: {} resource: {}".format(package_id, resource_id),
+        'kwargs': {'resource': resource_id},
+    }
+    if t.check_ckan_version('2.8'):
+        ttl = 24 * 60 * 60  # 24 hour ttl.
+        rq_kwargs = {
+            'ttl': ttl
+        }
+        if t.check_ckan_version('2.9'):
+            rq_kwargs['failure_ttl'] = ttl
+        enqueue_args['rq_kwargs'] = rq_kwargs
+    # Optional variable, if not set, default queue is used
+    queue = t.config.get('ckanext.validation.queue', None)
+    if queue:
+        enqueue_args['queue'] = queue
+    t.enqueue_job(**enqueue_args)
 
 
 # Auth
@@ -77,7 +98,7 @@ def resource_validation_run(context, data_dict):
         raise t.ValidationError({u'resource_id': u'Missing value'})
 
     resource = t.get_action(u'resource_show')(
-        {}, {u'id': data_dict[u'resource_id']})
+        {}, {u'id': resource_id})
 
     # TODO: limit to sysadmins
     async_job = data_dict.get(u'async', True)
@@ -97,38 +118,17 @@ def resource_validation_run(context, data_dict):
     # Check if there was an existing validation for the resource
     try:
         session = context['model'].Session
-        ValidationStatusHelper().createValidationJob(session, data_dict['resource_id'])
+        ValidationStatusHelper().createValidationJob(session, resource_id)
     except ValidationJobAlreadyEnqueued:
-        log.error("resource_validation_run: ValidationJobAlreadyEnqueued %s", data_dict['resource_id'])
-        return
+        if async_job:
+            log.error("resource_validation_run: ValidationJobAlreadyEnqueued %s", data_dict['resource_id'])
+            return
 
     if async_job:
         package_id = resource['package_id']
         enqueue_validation_job(package_id, resource_id)
     else:
-        # run_validation_job(resource_id)  # Plan is to only pass resource_id, but tests need to be fixed for this
         run_validation_job(resource)
-
-
-def enqueue_validation_job(package_id, resource_id):
-    enqueue_args = {
-        'fn': run_validation_job,
-        'title': "run_validation_job: package_id: {} resource: {}".format(package_id, resource_id),
-        'kwargs': {'resource': resource_id},
-    }
-    if t.check_ckan_version('2.8'):
-        ttl = 24 * 60 * 60  # 24 hour ttl.
-        rq_kwargs = {
-            'ttl': ttl
-        }
-        if t.check_ckan_version('2.9'):
-            rq_kwargs['failure_ttl'] = ttl
-        enqueue_args['rq_kwargs'] = rq_kwargs
-    # Optional variable, if not set, default queue is used
-    queue = t.config.get('ckanext.validation.queue', None)
-    if queue:
-        enqueue_args['queue'] = queue
-    t.enqueue_job(**enqueue_args)
 
 
 @t.side_effect_free
@@ -250,14 +250,14 @@ def resource_validation_run_batch(context, data_dict):
     count_resources = 0
 
     dataset_ids = data_dict.get('dataset_ids')
-    if isinstance(dataset_ids, six.string_types):
+    if isinstance(dataset_ids, string_types):
         try:
             dataset_ids = json.loads(dataset_ids)
         except ValueError:
             dataset_ids = [dataset_ids]
 
     search_params = data_dict.get('query')
-    if isinstance(search_params, six.string_types):
+    if isinstance(search_params, string_types):
         try:
             search_params = json.loads(search_params)
         except ValueError:
