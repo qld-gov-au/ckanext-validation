@@ -3,6 +3,7 @@
 import datetime
 import io
 import json
+import unittest
 import mock
 
 import pytest
@@ -69,17 +70,17 @@ class TestResourceValidationRun(object):
 
         call_action('resource_validation_run', resource_id=resource['id'])
 
-    # def test_resource_validation_run_starts_job(self):
+    @unittest.skip("TODO debug this later")
+    def test_resource_validation_run_starts_job(self):
+        resource = factories.Resource(format='csv')
 
-    #     resource = factories.Resource(format='csv')
+        jobs = call_action('job_list')
 
-    #     jobs = call_action('job_list')
+        call_action('resource_validation_run', resource_id=resource['id'])
 
-    #     call_action('resource_validation_run', resource_id=resource['id'])
+        jobs_after = call_action('job_list')
 
-    #     jobs_after = call_action('job_list')
-
-    #     assert len(jobs_after) == len(jobs) + 1
+        assert len(jobs_after) == len(jobs) + 1
 
     @mock.patch('ckantoolkit.enqueue_job')
     def test_resource_validation_creates_validation_object(

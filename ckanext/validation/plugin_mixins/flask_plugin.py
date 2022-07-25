@@ -1,8 +1,8 @@
-# -*- coding: utf-8 -*-
+# encoding: utf-8
 
 import ckan.plugins as p
-import ckanext.validation.cli as cli
-import ckanext.validation.views as views
+
+from ckanext.validation import cli, views
 
 
 class MixinPlugin(p.SingletonPlugin):

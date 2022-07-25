@@ -140,7 +140,7 @@ class TestFiles(object):
         patcher.tearDown()
 
     @mock_uploads
-    def test_delete_passes_if_os_exeception(self, mock_open):
+    def test_delete_passes_if_os_exception(self, mock_open):
 
         resource_id = str(uuid.uuid4())
         path = '/doesnt_exist/resources/{}/{}/{}'.format(

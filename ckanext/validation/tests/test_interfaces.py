@@ -132,6 +132,7 @@ class TestInterfaceSync(BaseTestInterfaces):
         assert not mock_validation.called
 
 
+@pytest.mark.usefixtures("validation_setup")
 class TestInterfaceAsync(BaseTestInterfaces):
 
     @classmethod
