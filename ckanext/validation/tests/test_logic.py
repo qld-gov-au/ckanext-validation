@@ -241,6 +241,19 @@ class TestResourceValidationDelete(object):
 @pytest.mark.usefixtures("clean_db", "validation_setup")
 class TestAuth(object):
 
+    def test_run_anon(self):
+
+        resource = factories.Resource()
+
+        context = {
+            'user': None,
+            'model': model
+        }
+
+        with pytest.raises(t.NotAuthorized):
+            call_auth('resource_validation_run', context=context,
+                      resource_id=resource['id'])
+
     def test_run_sysadmin(self):
         resource = factories.Resource()
         sysadmin = factories.Sysadmin()
