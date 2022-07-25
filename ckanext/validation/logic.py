@@ -664,3 +664,16 @@ def _run_sync_validation(resource_id, local_upload=False, new_resource=True):
 
         raise t.ValidationError({
             u'validation': [report]})
+
+
+@t.chained_action
+def package_patch(original_action, context, data_dict):
+    ''' Detect whether resources have been replaced, and if not,
+    place a flag in the context accordingly if save flag is not set
+
+    Note: controllers add default context where save is in request params
+        'save': 'save' in request.params
+    '''
+    if 'save' not in context and 'resources' not in data_dict:
+        context['save'] = True
+    original_action(context, data_dict)

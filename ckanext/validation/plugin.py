@@ -24,6 +24,7 @@ from ckanext.validation.logic import (
     auth_resource_validation_delete, auth_resource_validation_run_batch,
     resource_create as custom_resource_create,
     resource_update as custom_resource_update,
+    package_patch
 )
 from ckanext.validation.helpers import (
     get_validation_badge,
@@ -97,6 +98,7 @@ Please run the following to create the database tables:
             u'resource_validation_show': resource_validation_show,
             u'resource_validation_delete': resource_validation_delete,
             u'resource_validation_run_batch': resource_validation_run_batch,
+            u'package_patch': package_patch,
             u'resource_create': custom_resource_create,
             u'resource_update': custom_resource_update
         }

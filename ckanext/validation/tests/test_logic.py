@@ -736,3 +736,19 @@ class TestValidationOptionsField(object):
         )
 
         assert resource['validation_options'] == json.loads(validation_options)
+
+
+@pytest.mark.usefixtures("clean_db", "validation_setup")
+class TestPackageUpdate(object):
+
+    def test_package_patch_without_resources_sets_context_flag(self):
+        dataset = factories.Dataset()
+        context = {}
+        call_action('package_patch', context=context, id=dataset['id'])
+        assert context.get('save', False)
+
+    def test_package_patch_with_resources_does_not_set_context_flag(self):
+        dataset = factories.Dataset()
+        context = {}
+        call_action('package_patch', context=context, id=dataset['id'], resources=[])
+        assert 'save' not in context
