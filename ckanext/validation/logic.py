@@ -128,7 +128,6 @@ def resource_validation_run(context, data_dict):
         package_id = resource['package_id']
         enqueue_validation_job(package_id, resource_id)
     else:
-        # run_validation_job(resource_id)  # TODO only pass resource_id, tests need to be fixed for this
         run_validation_job(resource)
 
 

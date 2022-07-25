@@ -1,9 +1,8 @@
-[![Tests](https://github.com/qld-gov-au/ckanext-validation/actions/workflows/test.yml/badge.svg)](https://github.com/qld-gov-au/ckanext-validation/actions/workflows/test.yml)
 ==================
 ckanext-validation
 ==================
 
-[![Build Status](https://travis-ci.org/frictionlessdata/ckanext-validation.svg?branch=master)](https://travis-ci.org/frictionlessdata/ckanext-validation)
+[![CI Actions Status](https://github.com/qld-gov-au/ckanext-validation/actions/workflows/Tests/badge.svg)](https://github.com/qld-gov-au/ckanext-validation/actions)
 [![Coverage Status](https://coveralls.io/repos/github/frictionlessdata/ckanext-validation/badge.svg?branch=master)](https://coveralls.io/github/frictionlessdata/ckanext-validation?branch=master)
 
 Data description and validation for CKAN with [Frictionless Data](https://frictionlessdata.io) tools.
@@ -57,7 +56,7 @@ This extension has been tested with CKAN 2.8 and 2.9.
 
 It is strongly recommended to use it alongside [ckanext-scheming](https://github.com/ckan/ckanext-scheming) to define the necessary extra fields in the default CKAN schema. By default, the extension installs ckanext-scheming version 2.1.0.
 
-If you want to use [asynchronous validation](#asynchronous-validation) with background jobs and are using CKAN 2.6 or lower, [ckanext-rq](https://github.com/ckan/ckanext-rq) is also needed. Please refer to both READMEs for installation instructions.
+If you want to use [asynchronous validation](#asynchronous-validation) with background jobs and are using CKAN 2.6 or lower (NOT TESTED!), [ckanext-rq](https://github.com/ckan/ckanext-rq) is also needed. Please refer to both READMEs for installation instructions.
 
 
 ## Installation
