@@ -26,6 +26,7 @@ RUN . ${VENV_DIR}/bin/activate \
     && ((test -f "${VENV_DIR}/src/ckan/requirements-py2.txt" && \
         pip install -r "${VENV_DIR}/src/ckan/requirements-py2.txt") || \
         pip install -r "${VENV_DIR}/src/ckan/requirements.txt") \
+    && pip install -r "${VENV_DIR}/src/ckan/dev-requirements.txt" \
     && ln -s "${VENV_DIR}/src/ckan/who.ini" "${VENV_DIR}/who.ini" \
     && deactivate \
     && ln -s ${APP_DIR}/ckan /usr/lib/ckan \
