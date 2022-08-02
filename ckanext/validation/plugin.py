@@ -32,6 +32,7 @@ from ckanext.validation.helpers import (
     dump_json_value,
     bootstrap_version,
     is_ckan_29,
+    validation_hide_source,
 )
 from ckanext.validation.validators import (
     resource_schema_validator,
@@ -122,6 +123,7 @@ Please run the following to create the database tables:
             u'dump_json_value': dump_json_value,
             u'bootstrap_version': bootstrap_version,
             u'is_ckan_29': is_ckan_29,
+            u'validation_hide_source': validation_hide_source,
         }
 
     # IResourceController

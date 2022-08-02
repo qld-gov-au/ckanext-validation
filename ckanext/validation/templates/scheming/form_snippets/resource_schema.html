@@ -11,6 +11,9 @@
        data-module-is_json="{{ 'true' if is_json else 'false' }}"
        data-module-field_url="schema_url"
        data-module-field_json="schema_json"
+       data-module-hide_upload="{{ h.validation_hide_source("upload")|tojson }}"
+       data-module-hide_url="{{ h.validation_hide_source("url")|tojson }}"
+       data-module-hide_json="{{ h.validation_hide_source("json")|tojson }}"
        >
     <div id="resource-schema-buttons">
       <label class="control-label">{{ _('Data Schema') }}</label>
@@ -64,4 +67,3 @@
     {% include 'validation/snippets/validation_resource-schema-form_' ~ type ~ '.html' %}
 
   </div>
-

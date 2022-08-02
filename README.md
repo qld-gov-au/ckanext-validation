@@ -138,6 +138,20 @@ To prevent the extension from adding the validation badges next to the resources
 
     ckanext.validation.show_badges_in_listings = False
 
+### Disable schema definition sources
+
+Validation schema can be added to the resource using one of the options below:
+
+* Upload a definition
+* Add a link to a remote definition
+* Provide inline JSON-definition
+
+Any of these methods can be hidden from the UI via the following config options:
+
+    ckanext.validation.form.hide_upload_source = True
+    ckanext.validation.form.hide_url_source = True
+    ckanext.validation.form.hide_json_source = True
+
 
 ## How it works
 
@@ -696,7 +710,7 @@ Check the command help for more details:
 
 To run the tests, do:
 
-    pytest --ckan-ini=test.ini ckanext/validation/tests/ 
+    pytest --ckan-ini=test.ini ckanext/validation/tests/
 
 
 ## Copying and License
