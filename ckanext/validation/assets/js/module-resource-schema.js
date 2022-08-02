@@ -14,7 +14,10 @@ this.ckan.module('resource-schema', function($) {
       field_schema: 'schema',
       field_clear: 'clear_upload',
       field_name: 'name',
-      upload_label: ''
+      upload_label: '',
+      hide_upload: false,
+      hide_remote: false,
+      hide_inline: false,
     },
 
     /* Should be changed to true if user modifies resource's name
@@ -196,9 +199,9 @@ this.ckan.module('resource-schema', function($) {
     _showOnlyButtons: function() {
       this.fields.hide();
       this.label.show();
-      this.button_upload.show()
-      this.button_url.show()
-      this.button_json.show()
+      !this.options.hide_upload && this.button_upload.show()
+      !this.options.hide_url && this.button_url.show()
+      !this.options.hide_json && this.button_json.show()
     },
 
     _showOnlyFieldUrl: function() {

@@ -103,3 +103,14 @@ def is_ckan_29():
     Returns False if those are not present.
     """
     return check_ckan_version(min_version='2.9.0')
+
+
+def validation_hide_source(type):
+    """
+    Returns True if the given source type must be hidden on form.
+    Type is one of: upload, url or json.
+    For any unexpected type returns False
+    """
+    return asbool(config.get(
+        "ckanext.validation.form.hide_{}_source".format(type),
+    ))
