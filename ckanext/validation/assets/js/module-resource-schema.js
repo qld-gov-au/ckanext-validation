@@ -34,25 +34,28 @@ this.ckan.module('resource-schema', function($) {
       $.proxyAll(this, /_on/);
       var options = this.options;
 
-      var field_upload = 'input[name="schema_upload"]';
-      var field_url = 'input[name="schema_url"]';
-      var field_json = 'textarea[name="schema_json"]';
+      var field_upload = 'input[name="' + options.field_upload + '"]';
+      var field_url = 'input[name="' + options.field_url + '"]';
+      var field_json = 'textarea[name="' + options.field_json +'"]';
+      var field_schema = 'input[name="' + options.field_schema +'"]';
 
       this.input = $(field_url, this.el);
       this.field_upload = $(field_upload, this.el).parents('.form-group');
       this.field_url = $(field_url, this.el).parents('.form-group');
       this.field_json = $(field_json, this.el).parents('.form-group');
+
       if (!this.field_upload.length) {
         this.field_upload = $(field_upload, this.el).parents('.control-group');
         this.field_url = $(field_url, this.el).parents('.control-group');
         this.field_json = $(field_json, this.el).parents('.control-group');
 
       }
+
       this.field_upload_input = $('input', this.field_upload);
       this.field_url_input = $('input', this.field_url);
       this.field_json_input = $('textarea', this.field_json);
-      this.field_schema_input = $('#field-schema');
-      //this.field_name = this.el.parents('form').find(field_name);
+      this.field_schema_input = $(field_schema);
+
       // this is the location for the upload/link data/image label
       this.buttons_div = $("#resource-schema-buttons");
       this.label = $('label', this.buttons_div);
