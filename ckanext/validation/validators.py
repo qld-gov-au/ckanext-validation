@@ -12,7 +12,7 @@ from ckantoolkit import Invalid, config
 def resource_schema_validator(value, context):
 
     if not value:
-        return
+        return ""
 
     msg = None
 
