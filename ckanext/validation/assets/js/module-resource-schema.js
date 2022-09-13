@@ -39,6 +39,9 @@ this.ckan.module('resource-schema', function($) {
       var field_json = 'textarea[name="' + options.field_json +'"]';
       var field_schema = 'input[name="' + options.field_schema +'"]';
 
+      this.align_block = $(".schema-align")
+      this.field_align = $('#' + options.align_id);
+
       this.input = $(field_url, this.el);
       this.field_upload = $(field_upload, this.el).parents('.form-group');
       this.field_url = $(field_url, this.el).parents('.form-group');
@@ -67,6 +70,7 @@ this.ckan.module('resource-schema', function($) {
         .on('blur', this._onURLBlur);
       this.field_json_input.focus()
         .on('blur', this._onJSONBlur);
+      this.field_json_input.on('input', this._onJsonChange);
 
       // Button to set upload a schema file
       this.button_upload = $('<a href="javascript:;" class="btn btn-default">' +
@@ -197,6 +201,8 @@ this.ckan.module('resource-schema', function($) {
       this.field_json_input.prop('readonly', false);
 
       this.field_schema_input.val('');
+
+      this._markUnaligned();
     },
 
     _showOnlyButtons: function() {
@@ -243,6 +249,10 @@ this.ckan.module('resource-schema', function($) {
       this._showOnlyFieldUrl();
     },
 
+    _onJsonChange: function() {
+        this._markUnaligned();
+    },
+
     _fileNameFromUpload: function(url) {
       // If it's a local CKAN image return the entire URL.
       if (/^\/base\/images/.test(url)) {
@@ -259,6 +269,9 @@ this.ckan.module('resource-schema', function($) {
       return url; // filename
     },
 
-
+    _markUnaligned: function() {
+        this.align_block.removeClass('hidden');
+        this.field_align.prop('checked', false);
+    }
   };
 });
