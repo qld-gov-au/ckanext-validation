@@ -81,14 +81,9 @@ class ValidationPlugin(MixinPlugin, p.SingletonPlugin, DefaultTranslation):
 
         # if it's a sync mode, it's better run it before creation, because
         # the uploaded file will be here
-        import ipdb
-        ipdb.set_trace()
         if utils.get_create_mode() == "sync" \
             and utils._is_resource_requires_validation(context, data_dict):
             utils._validate_resource(context, data_dict, new_resource=True)
-            import ipdb
-            ipdb.set_trace()
-            pass
 
     def after_create(self, context, data_dict):
         if utils._is_dataset(data_dict):
