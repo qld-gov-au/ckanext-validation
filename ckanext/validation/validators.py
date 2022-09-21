@@ -7,7 +7,14 @@ from six import string_types, binary_type
 from ckantoolkit import Invalid, config
 
 
-# Input validators
+def _get_validators():
+    validators = (
+        resource_schema_validator,
+        validation_options_validator,
+    )
+
+    return {"{}".format(func.__name__): func for func in validators}
+
 
 def resource_schema_validator(value, context):
 

@@ -33,6 +33,7 @@ def run_validation_job(resource):
     else:
         log.debug(u'Validating resource dict: %s', resource)
     validation_record = None
+
     try:
         validation_record = vsh.updateValidationJobStatus(Session, resource_id, StatusTypes.running)
     except ValidationJobAlreadyRunning as e:
