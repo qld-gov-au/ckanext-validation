@@ -73,8 +73,12 @@ def process_schema_fields(data_dict):
     return data_dict
 
 
+def _get_missing_fields_from_current(current, new):
+    new['package_id'] = current['package_id']
+
+
 def _validate_resource(context, data_dict, new_resource=False):
-    mode = get_update_mode() if new_resource else get_create_mode()
+    mode = get_create_mode() if new_resource else get_update_mode()
 
     if mode == "sync":
         run_sync_validation(data_dict)
@@ -92,12 +96,12 @@ def run_sync_validation(resource_data):
     Args:
         resource_data (dict): new/updated resource data
     """
-    schema = resource_data['schema']
+    schema = resource_data.get('schema')
 
     if asbool(resource_data.get('align_default_schema')):
         schema = _get_default_schema(resource_data["package_id"])
 
-    if isinstance(schema, string_types):
+    if schema and isinstance(schema, string_types):
         schema = json.loads(schema)
 
     _format = resource_data.get('format', '').lower()
@@ -129,8 +133,10 @@ def run_sync_validation(resource_data):
 
         raise tk.ValidationError({u'validation': [report]})
     else:
-        resource_data['validation_status'] = StatusTypes.success
-        resource_data['validation_timestamp'] = str(dt.now())
+        _table_count = report.get('table-count', 0) > 0
+
+        resource_data['validation_status'] = StatusTypes.success if _table_count else ""
+        resource_data['validation_timestamp'] = str(dt.now()) if _table_count else ""
         resource_data['_success_validation'] = True
 
 
@@ -202,10 +208,12 @@ def _is_resource_requires_validation(context, data_dict):
         log.info("Missing schema. Skipping validation")
         return False
 
+    if not data_dict.get(u'format'):
+        return False
+
     for plugin in plugins.PluginImplementations(IDataValidation):
         if not plugin.can_validate(context, data_dict):
-            log.debug('Skipping validation for resource {}'.format(
-                data_dict["id"]))
+            log.debug('Skipping validation for new resource')
             return False
 
     res_format = data_dict.get(u'format', u'').lower()
@@ -234,10 +242,14 @@ def _is_updated_resource_requires_validation(context, old_resource,
                                              new_resource):
     res_id = new_resource["id"]
     is_creation = not old_resource
+
     schema = new_resource.get(u'schema')
 
     if not schema:
         log.info("Missing resource schema. Skipping validation")
+        return False
+
+    if not new_resource.get(u'format'):
         return False
 
     for plugin in plugins.PluginImplementations(IDataValidation):
@@ -248,16 +260,17 @@ def _is_updated_resource_requires_validation(context, old_resource,
     if new_resource.get(u'upload'):
         return True
 
-    if new_resource.get(u'upload'):
-        return True
-
     if is_creation:
         return True
 
     if new_resource.get(u'url') != old_resource.get(u'url'):
         return True
 
-    if new_resource.get(u'schema') != old_resource.get(u'schema'):
+    new_schema = new_resource.get(u'schema')
+    if new_schema and new_schema != old_resource.get(u'schema'):
+        return True
+
+    if asbool(new_resource.get('align_default_schema')):
         return True
 
     old_format = old_resource.get(u'format', u'').lower()

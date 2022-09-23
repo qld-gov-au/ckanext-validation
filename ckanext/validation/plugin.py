@@ -74,9 +74,6 @@ class ValidationPlugin(MixinPlugin, p.SingletonPlugin, DefaultTranslation):
     # IResourceController
 
     def before_create(self, context, data_dict):
-        if utils._is_dataset(data_dict):
-            return
-
         data_dict = utils.process_schema_fields(data_dict)
 
         # if it's a sync mode, it's better run it before creation, because
@@ -85,52 +82,67 @@ class ValidationPlugin(MixinPlugin, p.SingletonPlugin, DefaultTranslation):
             and utils._is_resource_requires_validation(context, data_dict):
             utils._validate_resource(context, data_dict, new_resource=True)
 
+    # IResourceController & IPackageController
+
     def after_create(self, context, data_dict):
-        if utils._is_dataset(data_dict):
-            return
+        resources = data_dict.get(
+            'resources', []) if utils._is_dataset(data_dict) else [data_dict]
 
-        # if it's an async mode, it's better run it here, because the actual
-        # file is uploaded at this stage, so background job could easily access it
-        if utils.get_create_mode() == "async" \
-            and utils._is_resource_requires_validation(context, data_dict):
-            utils._validate_resource(context, data_dict, new_resource=True)
+        for resource in resources:
+            # if it's an async mode, it's better run it here, because the actual
+            # file is uploaded at this stage, so background job could easily access it
+            if utils.get_create_mode() == "async" \
+                and utils._is_resource_requires_validation(context, resource):
+                utils._validate_resource(context, resource, new_resource=True)
 
-        if data_dict.pop('_success_validation', False):
-            utils._create_success_validation_job(data_dict["id"])
+            if resource.pop('_success_validation', False):
+                utils._create_success_validation_job(resource["id"])
 
     def before_update(self, context, current_resource, updated_resource):
-        if utils._is_dataset(updated_resource):
-            return
-
         # avoid circular update, because validation job calls `resource_patch`
         # (which calls package_update)
-        if context.pop('_validation_performed', None):
+        if context.get('_validation_performed'):
             return
 
         updated_resource = utils.process_schema_fields(updated_resource)
+        utils._get_missing_fields_from_current(current_resource, updated_resource)
 
         # if it's a sync mode, it's better run it before updating, because
         # the new uploaded file will be here
-        if utils.get_update_mode() == "sync" \
-            and utils._is_updated_resource_requires_validation(
+        if utils.get_update_mode() == "sync":
+            if utils._is_updated_resource_requires_validation(
                 context, current_resource, updated_resource):
-            utils._validate_resource(context, updated_resource)
+                utils._validate_resource(context, updated_resource)
+            else:
+                log.info("Skipping validation for resource {}".format(updated_resource["id"]))
+        else:
+            # if it's an async mode, gather ID's and use it in `after_update`
+            context.setdefault("_resources_to_validate", [])
+
+            if utils._is_updated_resource_requires_validation(
+                    context, current_resource, updated_resource):
+                context['_resources_to_validate'].append(
+                    updated_resource["id"])
 
     def after_update(self, context, data_dict):
-        if utils._is_dataset(data_dict):
-            return
-
         if context.pop('_validation_performed', None):
             return
 
-        # if it's an async mode, it's better run it here, because the actual new
-        # file is uploaded at this stage, so background job could easily access it
-        if utils.get_update_mode() == "async" \
-            and utils._is_resource_requires_validation(context, data_dict):
-            utils._validate_resource(context, data_dict, new_resource=True)
+        resources = data_dict.get(
+            'resources', []) if utils._is_dataset(data_dict) else [data_dict]
 
-        if data_dict.pop('_success_validation', False):
-            utils._create_success_validation_job(data_dict["id"])
+        for resource in resources:
+            if resource.pop('_success_validation', False):
+                continue
+
+            if not utils._is_dataset(
+                    data_dict) and resource["id"] not in context.get(
+                        '_resources_to_validate', []):
+                continue
+
+            if utils.get_update_mode() == "async" \
+                and utils._is_resource_requires_validation(context, resource):
+                utils._validate_resource(context, resource)
 
     # IPackageController
 

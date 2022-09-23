@@ -17,7 +17,7 @@ class TestResourceSchemaValidator(object):
 
         schema = ''
 
-        assert resource_schema_validator(schema, {}) is None
+        assert resource_schema_validator(schema, {}) is ''
 
     def test_resource_schema_invalid_json_string(self):
 

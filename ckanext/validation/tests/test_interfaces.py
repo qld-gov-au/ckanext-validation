@@ -1,5 +1,6 @@
 # encoding: utf-8
 
+import responses
 import mock
 import pytest
 
@@ -7,7 +8,7 @@ from ckan import plugins as p
 from ckan.tests import helpers, factories
 
 from ckanext.validation.interfaces import IDataValidation
-from ckanext.validation.tests.helpers import VALID_REPORT
+from ckanext.validation.tests.helpers import VALID_REPORT, VALID_CSV
 
 
 class TestPlugin(p.SingletonPlugin):
@@ -63,7 +64,7 @@ class TestInterfaceSync(BaseTestInterfaces):
         cfg['ckanext.validation.run_on_create_sync'] = True
         cfg['ckanext.validation.run_on_update_sync'] = True
 
-    @mock.patch('ckanext.validation.jobs.validate',
+    @mock.patch('ckanext.validation.utils.validate',
                 return_value=VALID_REPORT)
     def test_can_validate_called_on_create_sync(self, mock_validation):
         dataset = factories.Dataset()
@@ -91,23 +92,25 @@ class TestInterfaceSync(BaseTestInterfaces):
 
         assert not mock_validation.called
 
-    @mock.patch('ckanext.validation.jobs.validate',
-                return_value=VALID_REPORT)
-    def test_can_validate_called_on_update_sync(self, mock_validation):
+
+    def test_can_validate_called_on_update_sync(self, mocked_responses):
         dataset = factories.Dataset()
         resource = factories.Resource(package_id=dataset['id'])
+
+        url = 'https://example.com/data.csv'
+        mocked_responses.add(responses.GET, url, body=VALID_CSV)
+
         helpers.call_action(
             'resource_update',
             id=resource['id'],
-            url='https://example.com/data.csv',
+            url=url,
             format='CSV',
             package_id=dataset['id']
         )
         assert _get_plugin_calls() == 2  # One for create and one for update
 
-        assert mock_validation.called
 
-    @mock.patch('ckanext.validation.jobs.validate')
+    @mock.patch('ckanext.validation.utils.validate')
     def test_can_validate_called_on_update_sync_no_validation(self, mock_validation):
         dataset = factories.Dataset()
         resource = factories.Resource(package_id=dataset['id'])
@@ -124,7 +127,7 @@ class TestInterfaceSync(BaseTestInterfaces):
         assert not mock_validation.called
 
 
-@pytest.mark.usefixtures("validation_setup")
+@pytest.mark.usefixtures("clean_db", "validation_setup")
 class TestInterfaceAsync(BaseTestInterfaces):
 
     @classmethod
@@ -132,7 +135,7 @@ class TestInterfaceAsync(BaseTestInterfaces):
         cfg['ckanext.validation.run_on_create_sync'] = False
         cfg['ckanext.validation.run_on_update_sync'] = False
 
-    @mock.patch('ckantoolkit.enqueue_job')
+    @mock.patch('ckan.plugins.toolkit.enqueue_job')
     def test_can_validate_called_on_create_async(self, mock_validation):
         dataset = factories.Dataset()
         helpers.call_action(
@@ -141,11 +144,11 @@ class TestInterfaceAsync(BaseTestInterfaces):
             format='CSV',
             package_id=dataset['id']
         )
-        assert _get_plugin_calls() == 1
+        assert _get_plugin_calls() == 2
 
         assert mock_validation.called
 
-    @mock.patch('ckantoolkit.enqueue_job')
+    @mock.patch('ckan.plugins.toolkit.enqueue_job')
     def test_can_validate_called_on_create_async_no_validation(self, mock_validation):
         dataset = factories.Dataset()
         helpers.call_action(
@@ -155,11 +158,11 @@ class TestInterfaceAsync(BaseTestInterfaces):
             package_id=dataset['id'],
             my_custom_field='xx',
         )
-        assert _get_plugin_calls() == 1
+        assert _get_plugin_calls() == 2
 
         assert not mock_validation.called
 
-    @mock.patch('ckantoolkit.enqueue_job')
+    @mock.patch('ckan.plugins.toolkit.enqueue_job')
     def test_can_validate_called_on_update_async(self, mock_validation):
         dataset = factories.Dataset()
         resource = factories.Resource(package_id=dataset['id'])
@@ -170,14 +173,15 @@ class TestInterfaceAsync(BaseTestInterfaces):
             format='CSV',
             package_id=dataset['id']
         )
-        assert _get_plugin_calls() == 1
 
+        assert _get_plugin_calls() == 5
         assert mock_validation.called
 
-    @mock.patch('ckantoolkit.enqueue_job')
+    @mock.patch('ckan.plugins.toolkit.enqueue_job')
     def test_can_validate_called_on_update_async_no_validation(self, mock_validation):
         dataset = factories.Dataset()
         resource = factories.Resource(package_id=dataset['id'])
+
         helpers.call_action(
             'resource_update',
             id=resource['id'],
@@ -187,6 +191,6 @@ class TestInterfaceAsync(BaseTestInterfaces):
             my_custom_field='xx',
 
         )
-        assert _get_plugin_calls() == 1
 
         assert not mock_validation.called
+        assert _get_plugin_calls() == 4

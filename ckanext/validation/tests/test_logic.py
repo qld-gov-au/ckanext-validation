@@ -7,6 +7,7 @@ import unittest
 import mock
 
 import pytest
+import responses
 
 from ckan import model
 from ckan.tests.helpers import (
@@ -18,7 +19,7 @@ import ckantoolkit as t
 
 from ckanext.validation.model import Validation
 from ckanext.validation.tests.helpers import (
-    VALID_CSV, INVALID_CSV, VALID_REPORT,
+    VALID_CSV, INVALID_CSV, VALID_REPORT, SCHEMA,
     mock_uploads, MockFieldStorage
 )
 
@@ -58,32 +59,19 @@ class TestResourceValidationRun(object):
                 u'Resource must have a valid URL or an uploaded file'} ==\
             err.value.error_dict
 
-    @mock.patch('ckantoolkit.enqueue_job')
+    @mock.patch('ckan.plugins.toolkit.enqueue_job')
     def test_resource_validation_with_url(self, mock_enqueue_job):
         resource = factories.Resource(url='http://example.com', format='csv')
 
         call_action('resource_validation_run', resource_id=resource['id'])
 
-    @mock.patch('ckantoolkit.enqueue_job')
+    @mock.patch('ckan.plugins.toolkit.enqueue_job')
     def test_resource_validation_with_upload(self, mock_enqueue_job):
         resource = factories.Resource(url='', url_type='upload', format='csv')
 
         call_action('resource_validation_run', resource_id=resource['id'])
 
-    @unittest.skip("TODO debug this later")
-    def test_resource_validation_run_starts_job(self):
-        resource = factories.Resource(format='csv')
-
-        jobs = call_action('job_list')
-
-        # ensure we are in async mode
-        call_action('resource_validation_run', {u'resource_id': resource['id'], u'async': True})
-
-        jobs_after = call_action('job_list')
-
-        assert len(jobs_after) == len(jobs) + 1
-
-    @mock.patch('ckantoolkit.enqueue_job')
+    @mock.patch('ckan.plugins.toolkit.enqueue_job')
     def test_resource_validation_creates_validation_object(
             self, mock_enqueue_job):
         resource = factories.Resource(format='csv')
@@ -101,7 +89,7 @@ class TestResourceValidationRun(object):
         assert validation.error is None
 
     @change_config('ckanext.validation.run_on_create_async', False)
-    @mock.patch('ckantoolkit.enqueue_job')
+    @mock.patch('ckan.plugins.toolkit.enqueue_job')
     def test_resource_validation_resets_existing_validation_object(
             self, mock_enqueue_job):
 
@@ -430,7 +418,8 @@ class TestResourceValidationOnCreate(FunctionalTestBase):
                     'resource_create',
                     package_id=dataset['id'],
                     format='CSV',
-                    upload=mock_upload
+                    upload=mock_upload,
+                    url_type='upload'
                 )
 
         assert 'validation' in e.value.error_dict
@@ -455,7 +444,9 @@ class TestResourceValidationOnCreate(FunctionalTestBase):
                     'resource_create',
                     package_id=dataset['id'],
                     format='CSV',
-                    upload=mock_upload
+                    upload=mock_upload,
+                    url_type='upload',
+                    schema=SCHEMA
                 )
 
         validation_count_after = model.Session.query(Validation).count()
@@ -464,9 +455,9 @@ class TestResourceValidationOnCreate(FunctionalTestBase):
 
     @mock_uploads
     def test_validation_passes_on_upload(self, mock_open):
-        invalid_file = io.BytesIO(VALID_CSV)
+        valid_file = io.BytesIO(VALID_CSV)
 
-        mock_upload = MockFieldStorage(invalid_file, 'invalid.csv')
+        mock_upload = MockFieldStorage(valid_file, 'valid.csv')
 
         dataset = factories.Dataset()
 
@@ -477,17 +468,18 @@ class TestResourceValidationOnCreate(FunctionalTestBase):
                 'resource_create',
                 package_id=dataset['id'],
                 format='CSV',
-                upload=mock_upload
+                upload=mock_upload,
+                url_type='upload',
+                schema=SCHEMA
             )
 
         assert resource['validation_status'] == 'success'
         assert 'validation_timestamp' in resource
 
-    @mock.patch('ckanext.validation.jobs.validate',
-                return_value=VALID_REPORT)
-    def test_validation_passes_with_url(self, mock_validate):
 
+    def test_validation_passes_with_url(self, mocked_responses):
         url = 'https://example.com/valid.csv'
+        mocked_responses.add(responses.GET, url, body=VALID_CSV)
 
         dataset = factories.Dataset()
 
@@ -534,7 +526,8 @@ class TestResourceValidationOnUpdate(FunctionalTestBase):
                     'resource_update',
                     id=dataset['resources'][0]['id'],
                     format='CSV',
-                    upload=mock_upload
+                    upload=mock_upload,
+                    url_type='upload'
                 )
 
         assert 'validation' in e.value.error_dict
@@ -542,14 +535,10 @@ class TestResourceValidationOnUpdate(FunctionalTestBase):
         assert 'Row 2 has a missing value in column 4' in str(e.value)
 
     @mock_uploads
+    @pytest.mark.ckan_config('ckanext.validation.run_on_create_sync', True)
     def test_validation_fails_no_validation_object_stored(self, mock_open):
 
-        dataset = factories.Dataset(resources=[
-            {
-                'url': 'https://example.com/data.csv'
-            }
-        ])
-
+        dataset = factories.Dataset()
         invalid_file = io.BytesIO(INVALID_CSV)
 
         mock_upload = MockFieldStorage(invalid_file, 'invalid.csv')
@@ -557,17 +546,17 @@ class TestResourceValidationOnUpdate(FunctionalTestBase):
         invalid_stream = io.BufferedReader(io.BytesIO(INVALID_CSV))
 
         with mock.patch('io.open', return_value=invalid_stream):
-
             with pytest.raises(t.ValidationError):
                 call_action(
-                    'resource_update',
-                    id=dataset['resources'][0]['id'],
+                    'resource_create',
+                    package_id=dataset['id'],
                     format='CSV',
-                    upload=mock_upload
+                    upload=mock_upload,
+                    url_type='upload',
+                    schema=SCHEMA
                 )
 
         validation_count_after = model.Session.query(Validation).count()
-
         assert validation_count_after == 0
 
     @mock_uploads
@@ -579,7 +568,7 @@ class TestResourceValidationOnUpdate(FunctionalTestBase):
             }
         ])
 
-        valid_file = io.BytesIO(INVALID_CSV)
+        valid_file = io.BytesIO(VALID_CSV)
 
         mock_upload = MockFieldStorage(valid_file, 'valid.csv')
 
@@ -591,15 +580,17 @@ class TestResourceValidationOnUpdate(FunctionalTestBase):
                 'resource_update',
                 id=dataset['resources'][0]['id'],
                 format='CSV',
-                upload=mock_upload
+                upload=mock_upload,
+                url_type='upload',
+                schema=SCHEMA
             )
 
         assert resource['validation_status'] == 'success'
         assert 'validation_timestamp' in resource
 
-    @mock.patch('ckanext.validation.jobs.validate',
-                return_value=VALID_REPORT)
-    def test_validation_passes_with_url(self, mock_validate):
+    def test_validation_passes_with_url(self, mocked_responses):
+        url = 'https://example.com/some.other.csv'
+        mocked_responses.add(responses.GET, url, body=VALID_CSV)
 
         dataset = factories.Dataset(resources=[
             {
@@ -611,7 +602,7 @@ class TestResourceValidationOnUpdate(FunctionalTestBase):
             'resource_update',
             id=dataset['resources'][0]['id'],
             format='CSV',
-            url='https://example.com/some.other.csv',
+            url=url,
         )
 
         assert resource['validation_status'] == 'success'

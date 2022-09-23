@@ -2,6 +2,8 @@
 
 import io
 import json
+
+import responses
 import mock
 import pytest
 from six import ensure_binary
@@ -15,8 +17,8 @@ from ckanext.validation.model import Validation
 from ckanext.validation.jobs import (
     run_validation_job, uploader, Session, requests)
 from ckanext.validation.tests.helpers import (
-    VALID_REPORT, INVALID_REPORT, ERROR_REPORT, VALID_REPORT_LOCAL_FILE,
-    mock_uploads, MockFieldStorage
+    VALID_REPORT, INVALID_REPORT, ERROR_REPORT, VALID_REPORT_LOCAL_FILE, VALID_CSV,
+    INVALID_CSV, SCHEMA, mock_uploads, MockFieldStorage
 )
 
 
@@ -108,12 +110,12 @@ class TestValidationJob(object):
             http_session='Some_Session',
             schema=None)
 
-    @mock.patch('ckanext.validation.jobs.validate',
-                return_value=VALID_REPORT)
-    def test_job_run_valid_stores_validation_object(self, mock_validate):
+    def test_job_run_valid_stores_validation_object(self, mocked_responses):
+        url = 'http://example.com/file.csv'
 
+        mocked_responses.add(responses.GET, url, body=VALID_CSV)
         resource = factories.Resource(
-            url='http://example.com/file.csv', format='csv')
+            url=url, format='csv')
 
         run_validation_job(resource)
 
@@ -121,15 +123,18 @@ class TestValidationJob(object):
             Validation.resource_id == resource['id']).one()
 
         assert validation.status == 'success'
-        assert validation.report == VALID_REPORT
+        assert validation.report['error-count'] == 0
+        assert validation.report['table-count'] == 1
+        assert validation.report['tables'][0]['source'] == url
         assert validation.finished
 
-    @mock.patch('ckanext.validation.jobs.validate',
-                return_value=INVALID_REPORT)
-    def test_job_run_invalid_stores_validation_object(self, mock_validate):
+
+    def test_job_run_invalid_stores_validation_object(self, mocked_responses):
+        url = 'http://example.com/file.csv'
+        mocked_responses.add(responses.GET, url, body=INVALID_CSV)
 
         resource = factories.Resource(
-            url='http://example.com/file.csv', format='csv')
+            url=url, format='csv', schema=SCHEMA)
 
         run_validation_job(resource)
 
@@ -137,7 +142,9 @@ class TestValidationJob(object):
             Validation.resource_id == resource['id']).one()
 
         assert validation.status == 'failure'
-        assert validation.report == INVALID_REPORT
+        assert validation.report['error-count'] == 4
+        assert validation.report['table-count'] == 1
+        assert validation.report['tables'][0]['source'] == url
         assert validation.finished
 
     @mock.patch('ckanext.validation.jobs.validate',

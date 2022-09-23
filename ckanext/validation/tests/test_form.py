@@ -3,6 +3,8 @@
 import datetime
 import io
 import json
+
+import responses
 import mock
 import pytest
 import unittest
@@ -17,7 +19,7 @@ from ckan.tests.helpers import (
 )
 
 from ckanext.validation.tests.helpers import (
-    VALID_CSV, INVALID_CSV, mock_uploads, MockFieldStorage
+    VALID_CSV, INVALID_CSV, SCHEMA, mock_uploads, MockFieldStorage
 )
 
 if check_ckan_version('2.9'):
@@ -468,7 +470,9 @@ class TestResourceValidationOnCreateForm(FunctionalTestBase):
 
         params = {
             'name': 'test_resource_form_create_valid',
-            'url': 'https://example.com/data.csv'
+            'url': 'https://example.com/data.csv',
+            'schema': json.dumps(SCHEMA),
+            'format': 'csv'
         }
 
         with mock.patch('io.open', return_value=valid_stream):
@@ -531,7 +535,8 @@ class TestResourceValidationOnUpdateForm(FunctionalTestBase):
 
         params = {
             'name': 'test_resource_form_update_valid',
-            'url': 'https://example.com/data.csv'
+            'url': 'https://example.com/data.csv',
+            'format': 'csv'
         }
         resource_id = dataset['resources'][0]['id']
 
@@ -614,7 +619,8 @@ class TestResourceValidationFieldsPersisted(FunctionalTestBase):
         params = {
             'name': 'test_resource_form_fields_are_persisted',
             'description': 'test desc',
-            'url': 'https://example.com/data.csv'
+            'url': 'https://example.com/data.csv',
+            'format': 'csv'
         }
 
         valid_stream = io.BufferedReader(io.BytesIO(VALID_CSV))

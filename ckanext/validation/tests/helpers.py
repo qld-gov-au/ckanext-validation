@@ -23,6 +23,34 @@ VALID_CSV = b'''a,b,c,d
 1,2,3,4
 '''
 
+SCHEMA = {
+    "fields": [
+        {
+            "type": "integer",
+            "name": "a",
+            "format": "default"
+        },
+        {
+            "type": "integer",
+            "name": "b",
+            "format": "default"
+        },
+        {
+            "type": "integer",
+            "name": "c",
+            "format": "default"
+        },
+        {
+            "type": "integer",
+            "name": "d",
+            "format": "default"
+        }
+    ],
+    "missingValues": [
+        ""
+    ]
+}
+
 VALID_REPORT = {
     'error-count': 0,
     'table-count': 1,

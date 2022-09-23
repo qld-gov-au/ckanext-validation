@@ -22,7 +22,7 @@ def _assert_validation_enqueued(mock_enqueue, resource_id):
 class TestResourceControllerHooksUpdate(object):
 
     @change_config('ckanext.validation.run_on_create_async', False)
-    @mock.patch('ckantoolkit.enqueue_job')
+    @mock.patch('ckan.plugins.toolkit.enqueue_job')
     def test_validation_does_not_run_on_other_fields(self, mock_enqueue):
 
         resource = {'format': 'CSV'}
@@ -36,7 +36,7 @@ class TestResourceControllerHooksUpdate(object):
         mock_enqueue.assert_not_called()
 
     @change_config('ckanext.validation.run_on_create_async', False)
-    @mock.patch('ckantoolkit.enqueue_job')
+    @mock.patch('ckan.plugins.toolkit.enqueue_job')
     def test_validation_does_not_run_on_other_formats(self, mock_enqueue):
 
         resource = {'format': 'PDF'}
@@ -48,7 +48,7 @@ class TestResourceControllerHooksUpdate(object):
         mock_enqueue.assert_not_called()
 
     @change_config('ckanext.validation.run_on_create_async', False)
-    @mock.patch('ckantoolkit.enqueue_job')
+    @mock.patch('ckan.plugins.toolkit.enqueue_job')
     def test_validation_run_on_upload(self, mock_enqueue):
 
         resource = {
@@ -64,7 +64,7 @@ class TestResourceControllerHooksUpdate(object):
         _assert_validation_enqueued(mock_enqueue, dataset['resources'][0]['id'])
 
     @change_config('ckanext.validation.run_on_create_async', False)
-    @mock.patch('ckantoolkit.enqueue_job')
+    @mock.patch('ckan.plugins.toolkit.enqueue_job')
     def test_validation_run_on_url_change(self, mock_enqueue):
 
         resource = {'format': 'CSV', 'url': 'https://some.url'}
@@ -78,7 +78,7 @@ class TestResourceControllerHooksUpdate(object):
         _assert_validation_enqueued(mock_enqueue, dataset['resources'][0]['id'])
 
     @change_config('ckanext.validation.run_on_create_async', False)
-    @mock.patch('ckantoolkit.enqueue_job')
+    @mock.patch('ckan.plugins.toolkit.enqueue_job')
     def test_validation_run_on_schema_change(self, mock_enqueue):
 
         resource = {
@@ -105,7 +105,7 @@ class TestResourceControllerHooksUpdate(object):
         _assert_validation_enqueued(mock_enqueue, dataset['resources'][0]['id'])
 
     @change_config('ckanext.validation.run_on_create_async', False)
-    @mock.patch('ckantoolkit.enqueue_job')
+    @mock.patch('ckan.plugins.toolkit.enqueue_job')
     def test_validation_run_on_format_change(self, mock_enqueue):
         resource = factories.Resource()
 
@@ -117,7 +117,7 @@ class TestResourceControllerHooksUpdate(object):
 
     @change_config('ckanext.validation.run_on_create_async', False)
     @change_config('ckanext.validation.run_on_update_async', False)
-    @mock.patch('ckantoolkit.enqueue_job')
+    @mock.patch('ckan.plugins.toolkit.enqueue_job')
     def test_validation_does_not_run_when_config_false(self, mock_enqueue):
         resource = factories.Resource(format='CSV')
 
@@ -131,20 +131,20 @@ class TestResourceControllerHooksUpdate(object):
 @pytest.mark.usefixtures("clean_db", "validation_setup")
 class TestResourceControllerHooksCreate(object):
 
-    @mock.patch('ckantoolkit.enqueue_job')
+    @mock.patch('ckan.plugins.toolkit.enqueue_job')
     def test_validation_does_not_run_on_other_formats(self, mock_enqueue):
         factories.Resource(format='PDF')
 
         mock_enqueue.assert_not_called()
 
-    @mock.patch('ckantoolkit.enqueue_job')
+    @mock.patch('ckan.plugins.toolkit.enqueue_job')
     @change_config('ckanext.validation.run_on_update_async', False)
     def test_validation_run_with_upload(self, mock_enqueue):
         resource = factories.Resource(format='CSV', url_type='upload')
 
         _assert_validation_enqueued(mock_enqueue, resource['id'])
 
-    @mock.patch('ckantoolkit.enqueue_job')
+    @mock.patch('ckan.plugins.toolkit.enqueue_job')
     @change_config('ckanext.validation.run_on_update_async', False)
     def test_validation_run_with_url(self, mock_enqueue):
         resource = factories.Resource(format='CSV', url='http://some.data')
@@ -153,7 +153,7 @@ class TestResourceControllerHooksCreate(object):
 
     @change_config('ckanext.validation.run_on_create_async', False)
     @change_config('ckanext.validation.run_on_update_async', False)
-    @mock.patch('ckantoolkit.enqueue_job')
+    @mock.patch('ckan.plugins.toolkit.enqueue_job')
     def test_validation_does_not_run_when_config_false(self, mock_enqueue):
         dataset = factories.Dataset()
 
@@ -171,21 +171,21 @@ class TestResourceControllerHooksCreate(object):
 @pytest.mark.usefixtures("clean_db", "validation_setup")
 class TestPackageControllerHooksCreate(object):
 
-    @mock.patch('ckantoolkit.enqueue_job')
+    @mock.patch('ckan.plugins.toolkit.enqueue_job')
     def test_validation_does_not_run_on_other_formats(self, mock_enqueue):
         factories.Dataset(resources=[{'format': 'PDF'}])
 
         mock_enqueue.assert_not_called()
 
     @change_config('ckanext.validation.run_on_create_async', False)
-    @mock.patch('ckantoolkit.enqueue_job')
+    @mock.patch('ckan.plugins.toolkit.enqueue_job')
     def test_validation_does_not_run_when_config_false(self, mock_enqueue):
         factories.Dataset(resources=[
             {'format': 'CSV', 'url': 'http://some.data'}])
 
         mock_enqueue.assert_not_called()
 
-    @mock.patch('ckantoolkit.enqueue_job')
+    @mock.patch('ckan.plugins.toolkit.enqueue_job')
     def test_validation_run_with_upload(self, mock_enqueue):
         resource = {
             'id': 'test-resource-id',
@@ -196,7 +196,7 @@ class TestPackageControllerHooksCreate(object):
 
         _assert_validation_enqueued(mock_enqueue, resource['id'])
 
-    @mock.patch('ckantoolkit.enqueue_job')
+    @mock.patch('ckan.plugins.toolkit.enqueue_job')
     def test_validation_run_with_url(self, mock_enqueue):
         resource = {
             'id': 'test-resource-id',
@@ -207,7 +207,7 @@ class TestPackageControllerHooksCreate(object):
 
         _assert_validation_enqueued(mock_enqueue, resource['id'])
 
-    @mock.patch('ckantoolkit.enqueue_job')
+    @mock.patch('ckan.plugins.toolkit.enqueue_job')
     def test_validation_run_only_supported_formats(self, mock_enqueue):
 
         resource1 = {
@@ -230,7 +230,7 @@ class TestPackageControllerHooksCreate(object):
 class TestPackageControllerHooksUpdate(object):
 
     @change_config('ckanext.validation.run_on_create_async', False)
-    @mock.patch('ckantoolkit.enqueue_job')
+    @mock.patch('ckan.plugins.toolkit.enqueue_job')
     def test_validation_runs_with_url(self, mock_enqueue):
 
         resource = {
@@ -244,12 +244,12 @@ class TestPackageControllerHooksUpdate(object):
 
         dataset['resources'][0]['url'] = 'http://some.other.data'
 
-        call_action('package_update', {}, **dataset)
+        call_action('package_update', **dataset)
 
         _assert_validation_enqueued(mock_enqueue, resource['id'])
 
     @change_config('ckanext.validation.run_on_create_async', False)
-    @mock.patch('ckantoolkit.enqueue_job')
+    @mock.patch('ckan.plugins.toolkit.enqueue_job')
     def test_validation_runs_with_upload(self, mock_enqueue):
 
         resource = {
@@ -268,7 +268,7 @@ class TestPackageControllerHooksUpdate(object):
         _assert_validation_enqueued(mock_enqueue, resource['id'])
 
     @change_config('ckanext.validation.run_on_create_async', False)
-    @mock.patch('ckantoolkit.enqueue_job')
+    @mock.patch('ckan.plugins.toolkit.enqueue_job')
     def test_validation_does_not_run_on_other_formats(self, mock_enqueue):
 
         resource = {
@@ -287,13 +287,13 @@ class TestPackageControllerHooksUpdate(object):
         mock_enqueue.assert_not_called()
 
     @change_config('ckanext.validation.run_on_create_async', False)
-    @mock.patch('ckantoolkit.enqueue_job')
+    @mock.patch('ckan.plugins.toolkit.enqueue_job')
     def test_validation_run_only_supported_formats(self, mock_enqueue):
 
         resource1 = {
             'id': 'test-resource-id-1',
             'format': 'CSV',
-            'url': 'http://some.data'
+            'url': 'http://some.data',
         }
         resource2 = {
             'id': 'test-resource-id-2',
@@ -313,7 +313,7 @@ class TestPackageControllerHooksUpdate(object):
 
     @change_config('ckanext.validation.run_on_create_async', False)
     @change_config('ckanext.validation.run_on_update_async', False)
-    @mock.patch('ckantoolkit.enqueue_job')
+    @mock.patch('ckan.plugins.toolkit.enqueue_job')
     def test_validation_does_not_run_when_config_false(self, mock_enqueue):
 
         resource = {
@@ -324,19 +324,5 @@ class TestPackageControllerHooksUpdate(object):
         dataset = factories.Dataset(resources=[resource])
 
         call_action('package_update', {}, **dataset)
-
-        mock_enqueue.assert_not_called()
-
-    @change_config('ckanext.validation.run_on_create_async', False)
-    @mock.patch('ckantoolkit.enqueue_job')
-    def test_validation_does_not_run_when_editing_via_web_form(self, mock_enqueue):
-        resource = {
-            'id': 'test-resource-id',
-            'format': 'CSV',
-            'url': 'http://some.data'
-        }
-        dataset = factories.Dataset(resources=[resource])
-
-        call_action('package_update', context={'save': True}, **dataset)
 
         mock_enqueue.assert_not_called()
