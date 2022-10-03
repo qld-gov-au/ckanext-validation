@@ -89,7 +89,7 @@ ON CKAN <= 2.8:
 
 Once installed, add the `validation` plugin to the `ckan.plugins` configuration option in your INI file:
 
-    ckan.plugins = ... validation
+    ckan.plugins = ... validation validation_resource validation_package
 
 *Note:* if using CKAN 2.6 or lower and [asynchronous validation](#asynchronous-validation), also add the `rq` plugin ([see Versions supported and requirements](#versions-supported-and-requirements)) to `ckan.plugins`.
 
@@ -110,11 +110,8 @@ Use the following to configure which queue async jobs are added to
 
 Use the following configuration options to choose the [operation modes](#operation-modes):
 
-	ckanext.validation.run_on_create_async = True|False (Defaults to True)
-	ckanext.validation.run_on_update_async = True|False (Defaults to True)
-
-	ckanext.validation.run_on_create_sync = True|False (Defaults to False)
-	ckanext.validation.run_on_update_sync = True|False (Defaults to False)
+    ckanext.validation.default_create_mode = async|sync (Defaults to "sync")
+    ckanext.validation.default_update_mode = async|sync (Defaults to "sync")
 
 ### Formats to validate
 
@@ -330,7 +327,7 @@ Clicking the link on the error message will bring up a modal window with the val
 
 ![Modal window with report](https://i.imgur.com/hx7WSqX.png)
 
-Use `ckanext.validation.run_on_create_sync` and `ckanext.validation.run_on_update_sync` to enable this mode (See [Configuration](#configuration)).
+Set `ckanext.validation.default_create_mode` and `ckanext.validation.default_update_mode`  to `sync` to enable this mode (See [Configuration](#configuration)).
 
 
 ### Changes in the metadata schema
@@ -379,7 +376,8 @@ Additionally, two read-only fields are added to resources:
 
 The plugin provides the `IDataValidation` interface so other plugins can modify its behaviour.
 
-Currently it only provides the `can_validate()` method, that plugins can use to determine if a specific resource should be validated or not:
+It provides three methods: `can_validate()`, `set_create_mode()` and `set_update_mode()`.
+The `can_validate()` method help plugins to determine if a specific resource should be validated or not:
 
 ```
 class IDataValidation(Interface):
@@ -420,6 +418,40 @@ class IDataValidation(Interface):
 
         '''
         return True
+```
+
+The `set_create_mode()` and `set_update_mode()` are quite similar, the only difference is that the first one defiens the create mode, and the second one defiens the update mode. Plugins could implement it and determine whether specific resource must be validated synchronously or asynchronously. This can be useful, for example, when certain resources are too difficult to validate synchronously.
+
+```
+class IDataValidation(Interface):
+    def set_update_mode(self, context, data_dict, current_mode):
+        '''
+        When implemented, this call can be used to control whether the
+        data validation for a specific rseource should be in async or sync mode.
+
+        Implementations will receive a context object, the data_dict of
+        the resource and a current_mode
+
+        It must return a validation mode, either `sync` or `async` string.
+
+        Here is an example implementation:
+
+
+        from ckan import plugins as p
+
+        from ckanext.validation.interfaces import IDataValidation
+
+
+        class MyPlugin(p.SingletonPlugin):
+
+            p.implements(IDataValidation, inherit=True)
+
+            def set_update_mode(self, context, data_dict, current_mode):
+
+                if data_dict.get('validate_sync'):
+                    return "sync"
+        '''
+        return current_mode
 ```
 
 ## Action functions
