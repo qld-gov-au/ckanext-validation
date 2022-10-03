@@ -96,7 +96,7 @@ Feature: Resource validation
         And I should see a validation timestamp
 
 
-    Scenario: As an editor, I updating a resource with an invalid CSV and see a validation error
+    Scenario: As an editor, I can update a resource with an invalid CSV and see a validation error
         Given "TestOrgEditor" as the persona
         When I log in
         And I open the new resource form for dataset "warandpeace"

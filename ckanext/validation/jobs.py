@@ -13,6 +13,7 @@ import ckan.lib.uploader as uploader
 
 import ckantoolkit as t
 
+import ckanext.validation.utils as utils
 from ckanext.validation.validation_status_helper import (ValidationStatusHelper, ValidationJobDoesNotExist,
                                                          ValidationJobAlreadyRunning, StatusTypes)
 
@@ -45,19 +46,7 @@ def run_validation_job(resource):
             session=Session, resource_id=resource_id,
             status=StatusTypes.running, validationRecord=validation_record)
 
-    options = t.config.get(
-        u'ckanext.validation.default_validation_options')
-    if options:
-        options = json.loads(options)
-    else:
-        options = {}
-
-    resource_options = resource.get(u'validation_options')
-    if resource_options and isinstance(resource_options, string_types):
-        resource_options = json.loads(resource_options)
-    if resource_options:
-        options.update(resource_options)
-
+    options = utils.get_resource_validation_options(resource)
     dataset = t.get_action('package_show')(
         {'ignore_auth': True}, {'id': resource['package_id']})
 
@@ -76,7 +65,7 @@ def run_validation_job(resource):
                 s.headers.update({
                     u'Authorization': t.config.get(
                         u'ckanext.validation.pass_auth_header_value',
-                        _get_site_user_api_key())
+                        utils.get_site_user_api_key())
                 })
 
                 options[u'http_session'] = s
@@ -86,11 +75,7 @@ def run_validation_job(resource):
 
     schema = resource.get(u'schema')
     if schema and isinstance(schema, string_types):
-        if schema.startswith('http'):
-            r = requests.get(schema)
-            schema = r.json()
-        else:
-            schema = json.loads(schema)
+        schema = json.loads(schema)
 
     _format = resource[u'format'].lower()
 
@@ -135,11 +120,3 @@ def _validate_table(source, _format=u'csv', schema=None, **options):
     log.debug(u'Validating source: %s', source)
 
     return report
-
-
-def _get_site_user_api_key():
-
-    site_user_name = t.get_action('get_site_user')({'ignore_auth': True}, {})
-    site_user = t.get_action('get_site_user')(
-        {'ignore_auth': True}, {'id': site_user_name})
-    return site_user['apikey']

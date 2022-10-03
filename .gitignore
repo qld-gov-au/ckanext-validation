@@ -99,3 +99,6 @@ ENV/
 
 # generated from template
 Dockerfile.ckan
+
+# bdd tests
+/test/screenshots

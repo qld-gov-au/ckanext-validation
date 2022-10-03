@@ -1,6 +1,8 @@
 # encoding: utf-8
 import json
+from urlparse import urlparse
 
+from six import string_types
 from ckantoolkit import url_for, _, config, asbool,\
     literal, check_ckan_version
 
@@ -13,6 +15,7 @@ def _get_helpers():
         bootstrap_version,
         is_ckan_29,
         validation_hide_source,
+        is_url_valid
     )
 
     return {"{}".format(func.__name__): func for func in validators}
@@ -127,3 +130,16 @@ def validation_hide_source(type):
     return asbool(config.get(
         "ckanext.validation.form.hide_{}_source".format(type),
     ))
+
+
+def is_url_valid(url):
+    """Basic checks for url validity"""
+    if not isinstance(url, string_types):
+        return False
+
+    try:
+        tokens = urlparse(url)
+    except ValueError:
+        return False
+
+    return all([getattr(tokens, attr) for attr in ('scheme', 'netloc')])

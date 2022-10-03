@@ -6,9 +6,8 @@ from ckantoolkit import Invalid
 
 from ckan.tests.helpers import change_config
 
-from ckanext.validation.validators import (
-    resource_schema_validator, validation_options_validator
-)
+from ckanext.validation.validators import (resource_schema_validator,
+                                           validation_options_validator)
 
 
 class TestResourceSchemaValidator(object):

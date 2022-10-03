@@ -1,3 +1,5 @@
+# encoding: utf-8
+
 import os
 import logging
 import json
@@ -5,40 +7,43 @@ from io import BytesIO
 from datetime import datetime as dt
 
 import requests
+from requests.exceptions import RequestException
 from goodtables import validate
 from six import string_types
 
 import ckan.plugins.toolkit as tk
 import ckan.plugins as plugins
+import ckan.lib.uploader as uploader
 from ckan.model import Session
-from ckan.common import asbool, config
-from ckan.lib.uploader import (ALLOWED_UPLOAD_TYPES, _get_underlying_file,
-                               get_resource_uploader, ResourceUpload)
 
-import ckanext.validation.settings as settings
+import ckanext.validation.settings as s
 from ckanext.validation.interfaces import IDataValidation
-from ckanext.validation.jobs import run_validation_job, _get_site_user_api_key
 from ckanext.validation.validation_status_helper import ValidationStatusHelper, StatusTypes
+from ckanext.validation.helpers import is_url_valid
 
 log = logging.getLogger(__name__)
 
 
-def get_update_mode():
-    if asbool(config.get(u'ckanext.validation.run_on_update_sync', False)):
-        return u'sync'
-    elif asbool(config.get(u'ckanext.validation.run_on_update_async', True)):
-        return u'async'
-    else:
-        return None
+def get_update_mode(context, resource_data):
+    mode = tk.config.get(s.UPDATE_MODE, s.DEFAULT_UPDATE_MODE)
+
+    for plugin in plugins.PluginImplementations(IDataValidation):
+        mode = plugin.set_update_mode(context, resource_data, mode)
+
+    assert mode in s.SUPPORTED_MODS, u"Mode '{}' is not supported".format(mode)
+
+    return mode
 
 
-def get_create_mode():
-    if asbool(config.get(u'ckanext.validation.run_on_create_sync', False)):
-        return u'sync'
-    elif asbool(config.get(u'ckanext.validation.run_on_create_async', True)):
-        return u'async'
-    else:
-        return None
+def get_create_mode(context, resource_data):
+    mode = tk.config.get(s.CREATE_MODE, s.DEFAULT_CREATE_MODE)
+
+    for plugin in plugins.PluginImplementations(IDataValidation):
+        mode = plugin.set_create_mode(context, resource_data, mode)
+
+    assert mode in s.SUPPORTED_MODS, u"Mode '{}' is not supported".format(mode)
+
+    return mode
 
 
 def process_schema_fields(data_dict):
@@ -59,33 +64,41 @@ def process_schema_fields(data_dict):
     schema_url = data_dict.pop(u'schema_url', None)
     schema_json = data_dict.pop(u'schema_json', None)
 
-    if isinstance(schema_upload, ALLOWED_UPLOAD_TYPES) \
+    if schema_upload and isinstance(schema_upload, uploader.ALLOWED_UPLOAD_TYPES) \
             and schema_upload.filename:
-        data_dict[u'schema'] = _get_underlying_file(schema_upload).read()
+        data_dict[u'schema'] = uploader._get_underlying_file(
+            schema_upload).read()
+
     elif schema_url:
-        if (not isinstance(schema_url, string_types)
-                or not schema_url.lower()[:4] == u'http'):
+        if not is_url_valid(schema_url):
             raise tk.ValidationError({u'schema_url': ['Must be a valid URL']})
-        data_dict[u'schema'] = schema_url
+
+        resp = requests.get(schema_url)
+
+        try:
+            schema = resp.json()
+        except (ValueError, RequestException):
+            raise tk.ValidationError(
+                {u'schema_url': ['Can\'t read a valid schema from url']})
+
+        data_dict[u'schema'] = schema
+
     elif schema_json:
         data_dict[u'schema'] = schema_json
 
     return data_dict
 
 
-def _get_missing_fields_from_current(current, new):
-    new['package_id'] = current['package_id']
+def validate_resource(context, data_dict, new_resource=False):
+    create_mode = get_create_mode(context, data_dict)
+    update_mode = get_update_mode(context, data_dict)
 
+    mode = create_mode if new_resource else update_mode
 
-def _validate_resource(context, data_dict, new_resource=False):
-    mode = get_create_mode() if new_resource else get_update_mode()
-
-    if mode == "sync":
+    if mode == s.SYNC_MODE:
         run_sync_validation(data_dict)
-    elif mode == "async":
+    elif mode == s.ASYNC_MODE:
         run_async_validation(data_dict["id"])
-    else:
-        log.error("Validation mod isn't set. Skipping validation")
 
 
 def run_sync_validation(resource_data):
@@ -98,23 +111,24 @@ def run_sync_validation(resource_data):
     """
     schema = resource_data.get('schema')
 
-    if asbool(resource_data.get('align_default_schema')):
+    if tk.asbool(resource_data.get('align_default_schema')):
         schema = _get_default_schema(resource_data["package_id"])
 
     if schema and isinstance(schema, string_types):
-        schema = json.loads(schema)
+        schema = schema if is_url_valid(schema) else json.loads(schema)
 
     _format = resource_data.get('format', '').lower()
-    options = _get_resource_validation_options(resource_data)
+    options = get_resource_validation_options(resource_data)
+
     new_file = resource_data.get('upload')
 
     if new_file:
         source = _get_new_file_stream(new_file)
     else:
         if resource_data.get('url_type') == u'upload':
-            upload = get_resource_uploader(resource_data)
+            upload = uploader.get_resource_uploader(resource_data)
 
-            if isinstance(upload, ResourceUpload):
+            if isinstance(upload, uploader.ResourceUpload):
                 source = upload.get_path(resource_data["id"])
             else:
                 source = resource_data['url']
@@ -123,7 +137,7 @@ def run_sync_validation(resource_data):
 
     report = validate(source,
                       format=_format,
-                      schema=schema,
+                      schema=schema or None,
                       http_session=_get_session(resource_data),
                       **options)
 
@@ -135,45 +149,28 @@ def run_sync_validation(resource_data):
     else:
         _table_count = report.get('table-count', 0) > 0
 
-        resource_data['validation_status'] = StatusTypes.success if _table_count else ""
-        resource_data['validation_timestamp'] = str(dt.now()) if _table_count else ""
+        resource_data[
+            'validation_status'] = StatusTypes.success if _table_count else ""
+        resource_data['validation_timestamp'] = str(
+            dt.now()) if _table_count else ""
         resource_data['_success_validation'] = True
-
-
-def _get_resource_validation_options(resource_data):
-    options = config.get(u'ckanext.validation.default_validation_options')
-
-    if options:
-        options = json.loads(options)
-    else:
-        options = {}
-
-    resource_options = resource_data.get(u'validation_options')
-
-    if resource_options and isinstance(resource_options, string_types):
-        resource_options = json.loads(resource_options)
-
-    if resource_options:
-        options.update(resource_options)
-
-    return options
 
 
 def _get_session(resource_data):
     dataset = tk.get_action('package_show')({
-        'ignore_auth': True
+        'user': get_site_user()['name']
     }, {
         'id': resource_data['package_id']
     })
 
-    pass_auth_header = asbool(
-        config.get(u'ckanext.validation.pass_auth_header', True))
+    pass_auth_header = tk.asbool(
+        tk.config.get(s.PASS_AUTH_HEADER, s.PASS_AUTH_HEADER_DEFAULT))
+
     if dataset[u'private'] and pass_auth_header:
         _session = requests.Session()
         _session.headers.update({
             u'Authorization':
-            config.get(u'ckanext.validation.pass_auth_header_value',
-                       _get_site_user_api_key())
+            tk.config.get(s.PASS_AUTH_HEADER_VALUE, get_site_user_api_key())
         })
 
         return _session
@@ -197,29 +194,22 @@ def run_async_validation(resource_id):
             resource_id, e))
 
 
-def _is_resource_requires_validation(context, data_dict):
-    """Check if new resource requires validation"""
-    schema = data_dict.get(u'schema')
-
-    if asbool(data_dict.get('align_default_schema')):
-        schema = _get_default_schema(data_dict["package_id"])
-
-    if not schema:
-        log.info("Missing schema. Skipping validation")
-        return False
-
-    if not data_dict.get(u'format'):
-        return False
-
+def is_resource_could_be_validated(context, data_dict):
+    """Check if new resource could be validated"""
     for plugin in plugins.PluginImplementations(IDataValidation):
         if not plugin.can_validate(context, data_dict):
             log.debug('Skipping validation for new resource')
             return False
 
+    if not data_dict.get(u'format'):
+        log.info("Missing resource format. Skipping validation")
+        return False
+
     res_format = data_dict.get(u'format', u'').lower()
-    supportable_format = res_format in settings.SUPPORTED_FORMATS
+    supportable_format = res_format in s.SUPPORTED_FORMATS
 
     if supportable_format and (data_dict.get(u'url_type') == u'upload'
+                               or data_dict.get(u'upload')
                                or data_dict.get(u'url')):
         return True
 
@@ -238,58 +228,58 @@ def _get_default_schema(package_id):
     return dataset.get(u'default_data_schema')
 
 
-def _is_updated_resource_requires_validation(context, old_resource,
-                                             new_resource):
+def is_resource_requires_validation(context, old_resource, new_resource):
+    """Compares current resource data with updated resource data to understand
+    do we need to re-validate it"""
     res_id = new_resource["id"]
-    is_creation = not old_resource
-
     schema = new_resource.get(u'schema')
-
-    if not schema:
-        log.info("Missing resource schema. Skipping validation")
-        return False
-
-    if not new_resource.get(u'format'):
-        return False
+    schema_aligned = tk.asbool(new_resource.get('align_default_schema'))
 
     for plugin in plugins.PluginImplementations(IDataValidation):
         if not plugin.can_validate(context, new_resource):
-            log.debug('Skipping validation for resource {}'.format(res_id))
+            log.debug(u"Skipping validation for resource {}".format(res_id))
             return False
 
-    if new_resource.get(u'upload'):
-        return True
+    if not new_resource.get(u'format'):
+        log.info(u"Missing resource format. Skipping validation")
+        return False
 
-    if is_creation:
+    if new_resource.get(u'upload'):
+        log.info(u"New resource file. Validation required")
         return True
 
     if new_resource.get(u'url') != old_resource.get(u'url'):
+        log.info(u"New resource url. Validation required")
         return True
 
-    new_schema = new_resource.get(u'schema')
-    if new_schema and new_schema != old_resource.get(u'schema'):
-        return True
-
-    if asbool(new_resource.get('align_default_schema')):
+    if (schema != old_resource.get(u'schema')) or schema_aligned:
+        log.info("Schema has been updated. Validation required")
         return True
 
     old_format = old_resource.get(u'format', u'').lower()
     new_format = new_resource.get(u'format', u'').lower()
     is_format_changed = new_format != old_format
-    if is_format_changed and new_format in settings.SUPPORTED_FORMATS:
+
+    if is_format_changed and new_format in s.SUPPORTED_FORMATS:
+        log.info("Format has been changed. Validation required")
+        return True
+
+    if (old_resource.get(u'validation_options') !=
+            new_resource.get(u'validation_options')):
+        log.info("Validation options have been updated. Validation required")
         return True
 
     return False
 
 
-def _is_dataset(data_dict):
-    """Checks if data_dict is dataset"""
+def is_dataset(data_dict):
+    """Checks if data_dict is dataset dict"""
     return (u'creator_user_id' in data_dict or u'owner_org' in data_dict
             or u'resources' in data_dict
             or data_dict.get(u'type') == u'dataset')
 
 
-def _create_success_validation_job(resource_id):
+def create_success_validation_job(resource_id):
     """Create a success job after validation passed
     We have to do it, because at the resource creation stage we don't have
     a resource_id, so first we are validating file and if it's valid - we are
@@ -302,3 +292,35 @@ def _create_success_validation_job(resource_id):
                                            resource_id=resource_id,
                                            status=StatusTypes.success,
                                            validationRecord=record)
+
+
+def get_resource_validation_options(resource_data):
+    """Prepares resource validation options by combining the default ones
+    and specific ones from `validation_options` field.
+
+    Args:
+        resource_data (dict): resource data
+
+    Returns:
+        dict: validation options dict
+    """
+    options = json.loads(s.DEFAULT_VALIDATION_OPTIONS)
+    resource_options = resource_data.get(u'validation_options')
+
+    if resource_options and isinstance(resource_options, string_types):
+        resource_options = json.loads(resource_options)
+
+    if resource_options:
+        options.update(resource_options)
+
+    return options
+
+
+def get_site_user():
+    context = {'ignore_auth': True}
+    site_user_name = tk.get_action('get_site_user')(context, {})
+    return tk.get_action('get_site_user')(context, {'id': site_user_name})
+
+
+def get_site_user_api_key():
+    return get_site_user()['apikey']

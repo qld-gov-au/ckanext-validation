@@ -1,58 +1,42 @@
+import pytest
+
 from ckan.tests.helpers import change_config
 
-from ckanext.validation.utils import (get_create_mode, get_update_mode)
+import ckanext.validation.settings as settings
+from ckanext.validation.utils import get_create_mode, get_update_mode
 
-
-class TestConfig(object):
+class TestConfigValidationMode(object):
 
     def test_config_defaults(self):
 
-        assert get_update_mode() == 'async'
-        assert get_create_mode() == 'async'
+        assert get_update_mode({}, {}) == settings.SYNC_MODE
+        assert get_create_mode({}, {}) == settings.SYNC_MODE
 
-    @change_config('ckanext.validation.run_on_update_sync', True)
-    def test_config_update_true_sync(self):
+    @change_config(settings.CREATE_MODE, settings.ASYNC_MODE)
+    def test_set_async_as_default_create_mode(self):
 
-        assert get_update_mode() == 'sync'
+        assert get_create_mode({}, {}) == settings.ASYNC_MODE
 
-    @change_config('ckanext.validation.run_on_update_sync', False)
-    def test_config_update_false_sync(self):
+    @change_config(settings.UPDATE_MODE, settings.ASYNC_MODE)
+    def test_set_async_as_default_update_mode(self):
 
-        assert get_update_mode() == 'async'
+        assert get_update_mode({}, {}) == settings.ASYNC_MODE
 
-    @change_config('ckanext.validation.run_on_create_sync', True)
-    def test_config_create_true_sync(self):
+    @change_config(settings.CREATE_MODE, settings.SYNC_MODE)
+    @change_config(settings.UPDATE_MODE, settings.SYNC_MODE)
+    def test_set_sync_as_default_both_create_and_update(self):
 
-        assert get_create_mode() == 'sync'
+        assert get_create_mode({}, {}) == settings.SYNC_MODE
+        assert get_update_mode({}, {}) == settings.SYNC_MODE
 
-    @change_config('ckanext.validation.run_on_create_sync', False)
-    def test_config_create_false_sync(self):
+    @change_config(settings.CREATE_MODE, 'partial')
+    def test_set_not_supported_create_mode(self):
 
-        assert get_create_mode() == 'async'
+        with pytest.raises(AssertionError, match="Mode 'partial' is not supported"):
+            assert get_create_mode({}, {}) == settings.SYNC_MODE
 
-    @change_config('ckanext.validation.run_on_update_async', True)
-    def test_config_update_true_async(self):
+    @change_config(settings.UPDATE_MODE, 'partial')
+    def test_set_not_supported_update_mode(self):
 
-        assert get_update_mode() == 'async'
-
-    @change_config('ckanext.validation.run_on_update_async', False)
-    def test_config_update_false_async(self):
-
-        assert get_update_mode() is None
-
-    @change_config('ckanext.validation.run_on_create_async', True)
-    def test_config_create_true_async(self):
-
-        assert get_create_mode() == 'async'
-
-    @change_config('ckanext.validation.run_on_create_async', False)
-    def test_config_create_false_async(self):
-
-        assert get_create_mode() is None
-
-    @change_config('ckanext.validation.run_on_update_async', False)
-    @change_config('ckanext.validation.run_on_create_async', False)
-    def test_config_both_false(self):
-
-        assert get_update_mode() is None
-        assert get_create_mode() is None
+        with pytest.raises(AssertionError, match="Mode 'partial' is not supported"):
+            assert get_update_mode({}, {}) == settings.SYNC_MODE

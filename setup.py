@@ -10,7 +10,7 @@ setup(
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # http://packaging.python.org/en/latest/tutorial.html#version
-    version='0.0.8',
+    version='0.1.0',
 
     description='Data description and validation for CKAN with Frictionless Data tools.',
 
@@ -73,7 +73,9 @@ setup(
     # pip to create the appropriate form of executable for the target platform.
     entry_points={
         'ckan.plugins': [
-            'validation=ckanext.validation.plugin:ValidationPlugin'
+            'validation=ckanext.validation.plugin:ValidationPlugin',
+            'validation_resource=ckanext.validation.plugin:ValidationResourcePlugin',
+            'validation_package=ckanext.validation.plugin:ValidationPackagePlugin'
         ],
         'ckan.test_plugins': [
             'test_validation_plugin = ckanext.validation.tests.test_interfaces:TestPlugin',

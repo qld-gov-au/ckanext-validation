@@ -3,9 +3,8 @@
 import logging
 import json
 
+import ckantoolkit as tk
 from six import string_types
-
-import ckan.plugins.toolkit as tk
 
 from ckanext.validation.jobs import run_validation_job
 from ckanext.validation import settings
@@ -16,13 +15,14 @@ from ckanext.validation.validation_status_helper import (
 log = logging.getLogger(__name__)
 
 
-def _get_actions():
+def get_actions():
     validators = (
         resource_validation_run,
         resource_validation_show,
         resource_validation_delete,
         resource_validation_run_batch,
         package_patch,
+        resource_show
     )
 
     return {"{}".format(func.__name__): func for func in validators}
@@ -404,3 +404,18 @@ def package_patch(original_action, context, data_dict):
     if 'save' not in context and 'resources' not in data_dict:
         context['save'] = True
     original_action(context, data_dict)
+
+
+@tk.side_effect_free
+@tk.chained_action
+def resource_show(next_func, context, data_dict):
+    """Throws away _success_validation flag, that we are using to prevent
+    multiple validations of resource in different interface methods
+    """
+    if context.get('ignore_auth'):
+        return next_func(context, data_dict)
+
+    data_dict = next_func(context, data_dict)
+
+    data_dict.pop('_success_validation', None)
+    return data_dict

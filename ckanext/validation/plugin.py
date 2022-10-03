@@ -4,18 +4,18 @@ import json
 import logging
 import os
 
-import ckan.plugins.toolkit as tk
+import ckantoolkit as tk
+
 import ckan.plugins as p
 from ckan.lib.plugins import DefaultTranslation
 
-from ckanext.validation import settings
+import ckanext.validation.settings as s
 from ckanext.validation.model import tables_exist
 from ckanext.validation.helpers import _get_helpers, is_ckan_29
-from ckanext.validation.validators import _get_validators
+from ckanext.validation import validators
 from ckanext.validation import utils
-from ckanext.validation.interfaces import IDataValidation
-from ckanext.validation.logic.action import _get_actions
-from ckanext.validation.logic.auth import _get_auth_functions
+from ckanext.validation.logic import action
+from ckanext.validation.logic import auth
 
 log = logging.getLogger(__name__)
 
@@ -29,8 +29,6 @@ class ValidationPlugin(MixinPlugin, p.SingletonPlugin, DefaultTranslation):
     p.implements(p.IConfigurer)
     p.implements(p.IActions)
     p.implements(p.IAuthFunctions)
-    p.implements(p.IResourceController, inherit=True)
-    p.implements(p.IPackageController, inherit=True)
     p.implements(p.ITemplateHelpers)
     p.implements(p.IValidators)
     p.implements(p.ITranslation, inherit=True)
@@ -44,12 +42,16 @@ class ValidationPlugin(MixinPlugin, p.SingletonPlugin, DefaultTranslation):
 
     def update_config(self, config_):
         if not tables_exist():
-            log.critical(u'''
-                The validation extension requires a database setup.
-                Validation pages will not be enabled.
-                Please run the following to create the database tables:
-                ckan validation init-db
-                ''')
+            if is_ckan_29():
+                init_command = 'ckan validation init-db'
+            else:
+                init_command = 'paster --plugin=ckanext-validation validation init-db'
+            log.critical(
+                u'''
+The validation extension requires a database setup.
+Validation pages will not be enabled.
+Please run the following to create the database tables:
+    %s''', init_command)
         else:
             log.debug(u'Validation tables exist')
 
@@ -59,92 +61,122 @@ class ValidationPlugin(MixinPlugin, p.SingletonPlugin, DefaultTranslation):
     # IActions
 
     def get_actions(self):
-        return _get_actions()
+        return action.get_actions()
 
     # IAuthFunctions
 
     def get_auth_functions(self):
-        return _get_auth_functions()
+        return auth.get_auth_functions()
 
     # ITemplateHelpers
 
     def get_helpers(self):
         return _get_helpers()
 
+    # IValidators
+
+    def get_validators(self):
+        return validators.get_validators()
+
+
+class ValidationResourcePlugin(p.SingletonPlugin):
+    p.implements(p.IResourceController, inherit=True)
+
     # IResourceController
 
     def before_create(self, context, data_dict):
+        context['_resource_validation'] = True
+
         data_dict = utils.process_schema_fields(data_dict)
 
-        # if it's a sync mode, it's better run it before creation, because
-        # the uploaded file will be here
-        if utils.get_create_mode() == "sync" \
-            and utils._is_resource_requires_validation(context, data_dict):
-            utils._validate_resource(context, data_dict, new_resource=True)
+        if utils.get_create_mode(context, data_dict) == s.ASYNC_MODE:
+            return
 
-    # IResourceController & IPackageController
+        if utils.is_resource_could_be_validated(context, data_dict):
+            utils.validate_resource(context, data_dict, new_resource=True)
 
     def after_create(self, context, data_dict):
-        resources = data_dict.get(
-            'resources', []) if utils._is_dataset(data_dict) else [data_dict]
+        if data_dict.pop('_success_validation', False):
+            return utils.create_success_validation_job(data_dict["id"])
 
-        for resource in resources:
-            # if it's an async mode, it's better run it here, because the actual
-            # file is uploaded at this stage, so background job could easily access it
-            if utils.get_create_mode() == "async" \
-                and utils._is_resource_requires_validation(context, resource):
-                utils._validate_resource(context, resource, new_resource=True)
+        if utils.get_create_mode(context, data_dict) == s.SYNC_MODE:
+            return
 
-            if resource.pop('_success_validation', False):
-                utils._create_success_validation_job(resource["id"])
+        if utils.is_resource_could_be_validated(context, data_dict):
+            utils.validate_resource(context, data_dict, new_resource=True)
 
     def before_update(self, context, current_resource, updated_resource):
+        context['_resource_validation'] = True
         # avoid circular update, because validation job calls `resource_patch`
         # (which calls package_update)
         if context.get('_validation_performed'):
             return
 
         updated_resource = utils.process_schema_fields(updated_resource)
-        utils._get_missing_fields_from_current(current_resource, updated_resource)
+        validation_requires = utils.is_resource_requires_validation(
+            context, current_resource, updated_resource)
+
+        if not validation_requires:
+            updated_resource['_do_not_validate'] = True
+            return
 
         # if it's a sync mode, it's better run it before updating, because
         # the new uploaded file will be here
-        if utils.get_update_mode() == "sync":
-            if utils._is_updated_resource_requires_validation(
-                context, current_resource, updated_resource):
-                utils._validate_resource(context, updated_resource)
-            else:
-                log.info("Skipping validation for resource {}".format(updated_resource["id"]))
+        if utils.get_update_mode(context, updated_resource) == s.SYNC_MODE:
+            utils.validate_resource(context, updated_resource)
         else:
             # if it's an async mode, gather ID's and use it in `after_update`
+            # because only here we are able to compare current data with new
             context.setdefault("_resources_to_validate", [])
 
-            if utils._is_updated_resource_requires_validation(
-                    context, current_resource, updated_resource):
+            if validation_requires:
                 context['_resources_to_validate'].append(
                     updated_resource["id"])
 
     def after_update(self, context, data_dict):
-        if context.pop('_validation_performed', None):
+        context.pop('_resource_validation', None)
+
+        if context.pop('_validation_performed', None) \
+            or data_dict.pop(u'_do_not_validate', False) \
+            or data_dict.pop('_success_validation', False):
             return
 
-        resources = data_dict.get(
-            'resources', []) if utils._is_dataset(data_dict) else [data_dict]
+        validation_possible = utils.is_resource_could_be_validated(
+            context, data_dict)
 
-        for resource in resources:
-            if resource.pop('_success_validation', False):
+        if not validation_possible:
+            return
+
+        if data_dict["id"] not in context.get('_resources_to_validate', []):
+            return
+
+        utils.validate_resource(context, data_dict)
+
+        context.pop('_resources_to_validate', None)
+
+
+class ValidationPackagePlugin(p.SingletonPlugin):
+    p.implements(p.IPackageController, inherit=True)
+
+    def after_create(self, context, data_dict):
+        for resource in data_dict.get(u'resources', []):
+            if utils.is_resource_could_be_validated(context, resource):
+                utils.validate_resource(context, resource)
+
+    def after_update(self, context, data_dict):
+        if context.pop('_validation_performed', None) \
+            or context.pop('_resource_validation', None):
+            return
+
+        for resource in data_dict.get('resources', []):
+            if resource.pop(u'_do_not_validate', False) \
+                or resource.pop('_success_validation', False):
                 continue
 
-            if not utils._is_dataset(
-                    data_dict) and resource["id"] not in context.get(
-                        '_resources_to_validate', []):
+            if not utils.is_resource_could_be_validated(context, resource):
                 continue
 
-            if utils.get_update_mode() == "async" \
-                and utils._is_resource_requires_validation(context, resource):
-                utils._validate_resource(context, resource)
-
-    # IPackageController
+            utils.validate_resource(context, resource)
 
     def before_index(self, index_dict):
 
@@ -158,8 +190,3 @@ class ValidationPlugin(MixinPlugin, p.SingletonPlugin, DefaultTranslation):
             index_dict['vocab_validation_status'] = res_status
 
         return index_dict
-
-    # IValidators
-
-    def get_validators(self):
-        return _get_validators()

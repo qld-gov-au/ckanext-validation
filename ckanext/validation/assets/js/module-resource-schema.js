@@ -188,6 +188,8 @@ this.ckan.module('resource-schema', function($) {
       this._updateUrlLabel(this._('Data Schema'));
 
       this.label_url.text(this._('Data Schema URL'))
+
+      this._markUnaligned();
     },
 
     /* Event listener for resetting the JSON text field back to the blank state

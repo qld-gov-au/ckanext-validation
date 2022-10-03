@@ -1,7 +1,7 @@
 import ckan.plugins.toolkit as tk
 
 
-def _get_auth_functions():
+def get_auth_functions():
     validators = (
         resource_validation_run,
         resource_validation_delete,

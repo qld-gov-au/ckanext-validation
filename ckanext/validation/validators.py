@@ -7,7 +7,7 @@ from six import string_types, binary_type
 from ckantoolkit import Invalid, config
 
 
-def _get_validators():
+def get_validators():
     validators = (
         resource_schema_validator,
         validation_options_validator,
