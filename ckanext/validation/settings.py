@@ -1,15 +1,8 @@
 # encoding: utf-8
 
-from ckantoolkit import config
-
-# TODO: configurable
+SUPPORTED_FORMATS = u"ckanext.validation.formats"
 DEFAULT_SUPPORTED_FORMATS = [u'csv', u'xls', u'xlsx']
-
-SUPPORTED_FORMATS = config.get(
-    u'ckanext.validation.formats', DEFAULT_SUPPORTED_FORMATS)
-DEFAULT_VALIDATION_OPTIONS = config.get(
-    u'ckanext.validation.default_validation_options', '{}'
-)
+DEFAULT_VALIDATION_OPTIONS = "ckanext.validation.default_validation_options"
 
 SYNC_MODE = u"sync"
 ASYNC_MODE = u"async"

@@ -6,11 +6,11 @@ import json
 import ckantoolkit as tk
 from six import string_types
 
+import ckanext.validation.utils as utils
 from ckanext.validation.jobs import run_validation_job
 from ckanext.validation import settings
 from ckanext.validation.validation_status_helper import (
     ValidationStatusHelper, ValidationJobAlreadyEnqueued)
-
 
 log = logging.getLogger(__name__)
 
@@ -22,7 +22,7 @@ def get_actions():
         resource_validation_delete,
         resource_validation_run_batch,
         package_patch,
-        resource_show
+        resource_show,
     )
 
     return {"{}".format(func.__name__): func for func in validators}
@@ -54,12 +54,14 @@ def resource_validation_run(context, data_dict):
     # TODO: limit to sysadmins
     async_job = data_dict.get(u'async', True)
 
+    supported_formats = utils.get_supported_formats()
+
     # Ensure format is supported
-    if not resource.get(u'format', u'').lower() in settings.SUPPORTED_FORMATS:
+    if not resource.get(u'format', u'').lower() in supported_formats:
         raise tk.ValidationError({
             u'format':
             u'Unsupported resource format.'
-            u'Must be one of {}'.format(u','.join(settings.SUPPORTED_FORMATS))
+            u'Must be one of {}'.format(u','.join(supported_formats))
         })
 
     # Ensure there is a URL or file upload
@@ -262,9 +264,8 @@ def resource_validation_run_batch(context, data_dict):
                     continue
 
                 for resource in dataset['resources']:
-
-                    if (not resource.get(u'format', u'').lower()
-                            in settings.SUPPORTED_FORMATS):
+                    res_format = resource.get(u'format', u'').lower()
+                    if res_format not in utils.get_supported_formats():
                         continue
 
                     try:

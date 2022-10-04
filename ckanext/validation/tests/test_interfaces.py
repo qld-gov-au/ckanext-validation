@@ -75,7 +75,7 @@ class TestInterfaceSync(BaseTestInterfaces):
         assert not mock_validation.called
 
     def test_can_validate_called_on_update_sync(self, mock_validation, resource_factory):
-        """Plugin must be called 2 times for ASYNC mode.
+        """Plugin must be called 2 times for SYNC mode.
         1. resource before_create on resource create
         2. resource before_update on resource update
         """
@@ -93,7 +93,7 @@ class TestInterfaceSync(BaseTestInterfaces):
 
     def test_can_validate_called_on_update_sync_no_validation(
             self, mock_validation, resource_factory):
-        """Plugin must be called 2 times for ASYNC mode.
+        """Plugin must be called 2 times for SYNC mode.
         1. resource before_create on resource create
         2. resource before_update on resource update
         """

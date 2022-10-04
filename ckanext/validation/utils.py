@@ -7,11 +7,12 @@ from io import BytesIO
 from datetime import datetime as dt
 
 import requests
+import ckantoolkit as tk
 from requests.exceptions import RequestException
 from goodtables import validate
+from tabulator.config import PARSERS
 from six import string_types
 
-import ckan.plugins.toolkit as tk
 import ckan.plugins as plugins
 import ckan.lib.uploader as uploader
 from ckan.model import Session
@@ -206,7 +207,7 @@ def is_resource_could_be_validated(context, data_dict):
         return False
 
     res_format = data_dict.get(u'format', u'').lower()
-    supportable_format = res_format in s.SUPPORTED_FORMATS
+    supportable_format = res_format in get_supported_formats()
 
     if supportable_format and (data_dict.get(u'url_type') == u'upload'
                                or data_dict.get(u'upload')
@@ -260,7 +261,7 @@ def is_resource_requires_validation(context, old_resource, new_resource):
     new_format = new_resource.get(u'format', u'').lower()
     is_format_changed = new_format != old_format
 
-    if is_format_changed and new_format in s.SUPPORTED_FORMATS:
+    if is_format_changed and new_format in get_supported_formats():
         log.info("Format has been changed. Validation required")
         return True
 
@@ -304,7 +305,7 @@ def get_resource_validation_options(resource_data):
     Returns:
         dict: validation options dict
     """
-    options = json.loads(s.DEFAULT_VALIDATION_OPTIONS)
+    options = get_default_validation_options()
     resource_options = resource_data.get(u'validation_options')
 
     if resource_options and isinstance(resource_options, string_types):
@@ -324,3 +325,32 @@ def get_site_user():
 
 def get_site_user_api_key():
     return get_site_user()['apikey']
+
+
+def get_supported_formats():
+    """Returns a list of supported formats to validate.
+    We use a tabulator to parse the file contents, so only those formats for
+    which a parser exists are supported
+
+    Returns:
+        list[str]: supported format list
+    """
+    supported_formats = [
+        _format.lower()
+        for _format in tk.aslist(tk.config.get(s.SUPPORTED_FORMATS))
+    ]
+
+    for _format in supported_formats:
+        assert _format in PARSERS, "Format {} is not supported".format(_format)
+
+    return supported_formats or s.DEFAULT_SUPPORTED_FORMATS
+
+
+def get_default_validation_options():
+    """Return a default validation options
+
+    Returns:
+        dict[str, Any]: validation options dictionary
+    """
+    default_options = tk.config.get(s.DEFAULT_VALIDATION_OPTIONS)
+    return json.loads(default_options) if default_options else {}

@@ -6,6 +6,8 @@ from six import string_types, binary_type
 
 from ckantoolkit import Invalid, config
 
+from ckanext.validation.utils import get_default_validation_options
+
 
 def get_validators():
     validators = (
@@ -75,12 +77,9 @@ def validation_options_validator(value, context):
     `scheming_valid_json_object` has been run).
     '''
 
-    default_options = config.get(
-        'ckanext.validation.default_validation_options')
+    default_options = get_default_validation_options()
 
     if default_options:
-        default_options = json.loads(default_options)
-
         provided_options = json.loads(value)
 
         default_options.update(provided_options)
