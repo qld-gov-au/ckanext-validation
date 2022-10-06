@@ -110,8 +110,8 @@ Use the following to configure which queue async jobs are added to
 
 Use the following configuration options to choose the [operation modes](#operation-modes):
 
-    ckanext.validation.default_create_mode = async|sync (Defaults to "sync")
-    ckanext.validation.default_update_mode = async|sync (Defaults to "sync")
+    ckanext.validation.run_on_update_async = `True` (Defaults to `False`)
+    ckanext.validation.run_on_create_async = `True` (Defaults to `False`)
 
 ### Formats to validate
 
@@ -310,8 +310,6 @@ ON CKAN <= 2.8:
 
     paster jobs worker -c /path/to/ini/file
 
-Use `ckanext.validation.run_on_create_async` and `ckanext.validation.run_on_update_async` to enable this mode (See [Configuration](#configuration)).
-
 
 #### Synchronous validation
 
@@ -326,8 +324,6 @@ When using the UI form, validation errors will be displayed as normal CKAN valid
 Clicking the link on the error message will bring up a modal window with the validation report rendered:
 
 ![Modal window with report](https://i.imgur.com/hx7WSqX.png)
-
-Set `ckanext.validation.default_create_mode` and `ckanext.validation.default_update_mode`  to `sync` to enable this mode (See [Configuration](#configuration)).
 
 
 ### Changes in the metadata schema

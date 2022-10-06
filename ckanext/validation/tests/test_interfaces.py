@@ -4,10 +4,10 @@ import mock
 import pytest
 
 from ckan import plugins as p
-from ckan.tests import helpers, factories
+from ckan.tests.helpers import call_action
 
-import ckanext.validation.settings as settings
-import ckanext.validation.tests.helpers as validation_helpers
+import ckanext.validation.tests.helpers as helpers
+from ckanext.validation import settings
 from ckanext.validation.interfaces import IDataValidation
 
 
@@ -23,18 +23,18 @@ class TestPlugin(p.SingletonPlugin):
     def can_validate(self, context, data_dict):
         self.calls += 1
 
-        if data_dict.get('do_not_validate') == True:
+        if data_dict.get('do_not_validate'):
             return False
 
         return True
 
     def set_create_mode(self, context, data_dict, current_mode):
         is_async = data_dict.get('async')
-        return settings.ASYNC_MODE if is_async == True else current_mode
+        return settings.ASYNC_MODE if is_async else current_mode
 
     def set_update_mode(self, context, data_dict, current_mode):
         is_async = data_dict.get('async')
-        return settings.ASYNC_MODE if is_async == True else current_mode
+        return settings.ASYNC_MODE if is_async else current_mode
 
 
 def _get_plugin_calls():
@@ -50,11 +50,11 @@ class BaseTestInterfaces(object):
 
 
 @pytest.mark.usefixtures("clean_db", "validation_setup")
-@mock.patch(validation_helpers.MOCK_SYNC_VALIDATE,
-            return_value=validation_helpers.VALID_REPORT)
+@mock.patch(helpers.MOCK_SYNC_VALIDATE, return_value=helpers.VALID_REPORT)
 class TestInterfaceSync(BaseTestInterfaces):
 
-    def test_can_validate_called_on_create_sync(self, mock_validation, resource_factory):
+    def test_can_validate_called_on_create_sync(self, mock_validation,
+                                                resource_factory):
         """Plugin must be called once for SYNC mode on create
         1. resource before_create
         """
@@ -74,7 +74,8 @@ class TestInterfaceSync(BaseTestInterfaces):
 
         assert not mock_validation.called
 
-    def test_can_validate_called_on_update_sync(self, mock_validation, resource_factory):
+    def test_can_validate_called_on_update_sync(self, mock_validation,
+                                                resource_factory):
         """Plugin must be called 2 times for SYNC mode.
         1. resource before_create on resource create
         2. resource before_update on resource update
@@ -86,7 +87,7 @@ class TestInterfaceSync(BaseTestInterfaces):
         resource['format'] = 'CSV'
         resource['url'] = 'https://example.com/data.csv'
 
-        helpers.call_action('resource_update', **resource)
+        call_action('resource_update', **resource)
 
         assert mock_validation.called
         assert _get_plugin_calls() == 2
@@ -101,16 +102,16 @@ class TestInterfaceSync(BaseTestInterfaces):
         assert _get_plugin_calls() == 1
 
         resource['format'] = 'TTF'
-        helpers.call_action('resource_update', **resource)
+        call_action('resource_update', **resource)
 
         assert _get_plugin_calls() == 2
         assert not mock_validation.called
 
 
 @pytest.mark.usefixtures("clean_db", "validation_setup")
-@pytest.mark.ckan_config(settings.CREATE_MODE, settings.ASYNC_MODE)
-@pytest.mark.ckan_config(settings.UPDATE_MODE, settings.ASYNC_MODE)
-@mock.patch(validation_helpers.MOCK_ENQUEUE_JOB)
+@pytest.mark.ckan_config(settings.ASYNC_UPDATE_KEY, True)
+@pytest.mark.ckan_config(settings.ASYNC_CREATE_KEY, True)
+@mock.patch(helpers.MOCK_ENQUEUE_JOB)
 class TestInterfaceAsync(BaseTestInterfaces):
 
     def test_can_validate_called_on_create_async(self, mock_validation,
@@ -148,7 +149,7 @@ class TestInterfaceAsync(BaseTestInterfaces):
 
         resource['format'] = 'CSV'
 
-        helpers.call_action('resource_update', **resource)
+        call_action('resource_update', **resource)
 
         assert _get_plugin_calls() == 3
         assert mock_validation.called
@@ -167,7 +168,7 @@ class TestInterfaceAsync(BaseTestInterfaces):
         assert _get_plugin_calls() == 1
 
         resource['format'] = "TTF"
-        helpers.call_action('resource_update', **resource)
+        call_action('resource_update', **resource)
 
         assert _get_plugin_calls() == 2
         assert not mock_validation.called

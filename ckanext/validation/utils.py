@@ -5,6 +5,7 @@ import logging
 import json
 from io import BytesIO
 from datetime import datetime as dt
+from cgi import FieldStorage
 
 import requests
 import ckantoolkit as tk
@@ -17,6 +18,8 @@ import ckan.plugins as plugins
 import ckan.lib.uploader as uploader
 from ckan.model import Session
 
+from ckanext.data_qld.utils import is_api_call
+
 import ckanext.validation.settings as s
 from ckanext.validation.interfaces import IDataValidation
 from ckanext.validation.validation_status_helper import ValidationStatusHelper, StatusTypes
@@ -26,23 +29,29 @@ log = logging.getLogger(__name__)
 
 
 def get_update_mode(context, resource_data):
-    mode = tk.config.get(s.UPDATE_MODE, s.DEFAULT_UPDATE_MODE)
+    is_async = tk.asbool(tk.config.get(s.ASYNC_UPDATE_KEY))
+
+    mode = s.ASYNC_MODE if is_async else s.SYNC_MODE
 
     for plugin in plugins.PluginImplementations(IDataValidation):
         mode = plugin.set_update_mode(context, resource_data, mode)
 
-    assert mode in s.SUPPORTED_MODS, u"Mode '{}' is not supported".format(mode)
+    assert mode in s.SUPPORTED_MODES, u"Mode '{}' is not supported".format(
+        mode)
 
     return mode
 
 
 def get_create_mode(context, resource_data):
-    mode = tk.config.get(s.CREATE_MODE, s.DEFAULT_CREATE_MODE)
+    is_async = tk.asbool(tk.config.get(s.ASYNC_CREATE_KEY))
+
+    mode = s.ASYNC_MODE if is_async else s.SYNC_MODE
 
     for plugin in plugins.PluginImplementations(IDataValidation):
         mode = plugin.set_create_mode(context, resource_data, mode)
 
-    assert mode in s.SUPPORTED_MODS, u"Mode '{}' is not supported".format(mode)
+    assert mode in s.SUPPORTED_MODES, u"Mode '{}' is not supported".format(
+        mode)
 
     return mode
 
@@ -65,8 +74,7 @@ def process_schema_fields(data_dict):
     schema_url = data_dict.pop(u'schema_url', None)
     schema_json = data_dict.pop(u'schema_json', None)
 
-    if schema_upload and isinstance(schema_upload, uploader.ALLOWED_UPLOAD_TYPES) \
-            and schema_upload.filename:
+    if is_uploaded_file(schema_upload):
         data_dict[u'schema'] = uploader._get_underlying_file(
             schema_upload).read()
 
@@ -74,9 +82,8 @@ def process_schema_fields(data_dict):
         if not is_url_valid(schema_url):
             raise tk.ValidationError({u'schema_url': ['Must be a valid URL']})
 
-        resp = requests.get(schema_url)
-
         try:
+            resp = requests.get(schema_url)
             schema = resp.json()
         except (ValueError, RequestException):
             raise tk.ValidationError(
@@ -123,7 +130,7 @@ def run_sync_validation(resource_data):
 
     new_file = resource_data.get('upload')
 
-    if new_file:
+    if is_uploaded_file(new_file):
         source = _get_new_file_stream(new_file)
     else:
         if resource_data.get('url_type') == u'upload':
@@ -178,6 +185,9 @@ def _get_session(resource_data):
 
 
 def _get_new_file_stream(file):
+    if isinstance(file, FieldStorage):
+        file = file.file
+
     stream = BytesIO(file.read())
     file.seek(0, os.SEEK_END)
 
@@ -235,6 +245,12 @@ def is_resource_requires_validation(context, old_resource, new_resource):
     res_id = new_resource["id"]
     schema = new_resource.get(u'schema')
     schema_aligned = tk.asbool(new_resource.get('align_default_schema'))
+
+    if schema_aligned and is_api_call():
+        raise tk.ValidationError({
+            u'align_default_schema':
+            [tk._(u"This field couldn't be updated via API")]
+        })
 
     for plugin in plugins.PluginImplementations(IDataValidation):
         if not plugin.can_validate(context, new_resource):
@@ -337,7 +353,7 @@ def get_supported_formats():
     """
     supported_formats = [
         _format.lower()
-        for _format in tk.aslist(tk.config.get(s.SUPPORTED_FORMATS))
+        for _format in tk.aslist(tk.config.get(s.SUPPORTED_FORMATS_KEY))
     ]
 
     for _format in supported_formats:
@@ -352,5 +368,10 @@ def get_default_validation_options():
     Returns:
         dict[str, Any]: validation options dictionary
     """
-    default_options = tk.config.get(s.DEFAULT_VALIDATION_OPTIONS)
+    default_options = tk.config.get(s.DEFAULT_VALIDATION_OPTIONS_KEY)
     return json.loads(default_options) if default_options else {}
+
+
+def is_uploaded_file(upload):
+    return isinstance(upload,
+                      uploader.ALLOWED_UPLOAD_TYPES) and upload.filename

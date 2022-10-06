@@ -2,3 +2,6 @@ ckantoolkit>=0.0.3
 goodtables==1.5.1
 six>=1.13.0
 -e git+https://github.com/ckan/ckanext-scheming.git@release-2.1.0#egg=ckanext-scheming
+responses
+factory-boy==2.1.1
+faker==3.0.1

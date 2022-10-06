@@ -20,8 +20,8 @@ def _assert_validation_enqueued(mock_enqueue, resource_id):
 
 
 @pytest.mark.usefixtures("clean_db", "validation_setup")
-@pytest.mark.ckan_config(s.UPDATE_MODE, s.ASYNC_MODE)
-@pytest.mark.ckan_config(s.CREATE_MODE, s.ASYNC_MODE)
+@pytest.mark.ckan_config(s.ASYNC_UPDATE_KEY, True)
+@pytest.mark.ckan_config(s.ASYNC_CREATE_KEY, True)
 @mock.patch(helpers.MOCK_ENQUEUE_JOB, return_value=True)
 class TestResourceControllerHooksUpdate(object):
 
@@ -54,7 +54,8 @@ class TestResourceControllerHooksUpdate(object):
 
     def test_validation_run_on_upload(self, mock_enqueue, resource_factory):
         """Validation must be triggered during update on upload new file"""
-        mock_upload = helpers.MockFieldStorage(io.BytesIO(helpers.VALID_CSV), 'valid.csv')
+        mock_upload = helpers.MockFileStorage(io.BytesIO(helpers.VALID_CSV),
+                                              'valid.csv')
 
         resource = resource_factory(format="pdf")
 
@@ -102,8 +103,8 @@ class TestResourceControllerHooksUpdate(object):
 
         _assert_validation_enqueued(mock_enqueue, resource['id'])
 
-    def test_validation_run_on_validation_options_change(self, mock_enqueue,
-                                             resource_factory):
+    def test_validation_run_on_validation_options_change(
+            self, mock_enqueue, resource_factory):
         """Validation must be triggered during update on changing
         validation_options"""
         resource = resource_factory(format="PDF")
@@ -119,8 +120,8 @@ class TestResourceControllerHooksUpdate(object):
 
 
 @pytest.mark.usefixtures("clean_db", "validation_setup")
-@pytest.mark.ckan_config(s.UPDATE_MODE, s.ASYNC_MODE)
-@pytest.mark.ckan_config(s.CREATE_MODE, s.ASYNC_MODE)
+@pytest.mark.ckan_config(s.ASYNC_UPDATE_KEY, True)
+@pytest.mark.ckan_config(s.ASYNC_CREATE_KEY, True)
 @mock.patch(helpers.MOCK_ENQUEUE_JOB)
 class TestResourceControllerHooksCreate(object):
 
@@ -141,8 +142,8 @@ class TestResourceControllerHooksCreate(object):
 
 
 @pytest.mark.usefixtures("clean_db", "validation_setup")
-@pytest.mark.ckan_config(s.UPDATE_MODE, s.ASYNC_MODE)
-@pytest.mark.ckan_config(s.CREATE_MODE, s.ASYNC_MODE)
+@pytest.mark.ckan_config(s.ASYNC_UPDATE_KEY, True)
+@pytest.mark.ckan_config(s.ASYNC_CREATE_KEY, True)
 @mock.patch(helpers.MOCK_ENQUEUE_JOB)
 class TestPackageControllerHooksCreate(object):
 
@@ -195,8 +196,8 @@ class TestPackageControllerHooksCreate(object):
 
 
 @pytest.mark.usefixtures("clean_db", "validation_setup")
-@pytest.mark.ckan_config(s.UPDATE_MODE, s.ASYNC_MODE)
-@pytest.mark.ckan_config(s.CREATE_MODE, s.ASYNC_MODE)
+@pytest.mark.ckan_config(s.ASYNC_UPDATE_KEY, True)
+@pytest.mark.ckan_config(s.ASYNC_CREATE_KEY, True)
 @mock.patch(helpers.MOCK_ENQUEUE_JOB, return_value=True)
 class TestPackageControllerHooksUpdate(object):
 

@@ -11,9 +11,9 @@
        data-module-is_json="{{ 'true' if is_json else 'false' }}"
        data-module-field_url="schema_url"
        data-module-field_json="schema_json"
-       data-module-hide_upload="{{ h.validation_hide_source("upload")|tojson }}"
-       data-module-hide_url="{{ h.validation_hide_source("url")|tojson }}"
-       data-module-hide_json="{{ h.validation_hide_source("json")|tojson }}"
+       data-module-hide_upload="{{ h.dump_json(h.validation_hide_source("upload")) }}"
+       data-module-hide_url="{{ h.dump_json(h.validation_hide_source("url")) }}"
+       data-module-hide_json="{{ h.dump_json(h.validation_hide_source("json")) }}"
        data-module-align_id="field-align_default_schema"
        >
     <div id="resource-schema-buttons">

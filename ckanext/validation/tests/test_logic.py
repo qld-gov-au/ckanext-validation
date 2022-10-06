@@ -11,7 +11,8 @@ import pytest
 import ckantoolkit as tk
 
 from ckan.model import Session
-from ckan.tests.helpers import call_action, change_config
+from ckan import model
+from ckan.tests.helpers import call_action, call_auth
 from ckan.tests import factories
 
 from ckanext.validation.model import Validation
@@ -20,7 +21,7 @@ from ckanext.validation.tests.helpers import (
     INVALID_CSV,
     SCHEMA,
     VALID_REPORT,
-    MockFieldStorage,
+    MockFileStorage,
 )
 
 
@@ -62,7 +63,8 @@ class TestResourceValidationRun(object):
 
         call_action('resource_validation_run', resource_id=resource['id'])
 
-    def test_resource_validation_with_upload(self, mocked_responses, resource_factory):
+    def test_resource_validation_with_upload(self, mocked_responses,
+                                             resource_factory):
         resource = resource_factory()
 
         call_action('resource_validation_run', resource_id=resource['id'])
@@ -218,7 +220,7 @@ class TestResourceValidationOnCreate(object):
 
     def test_validation_fails_on_upload(self):
         """We shouldn't be able to create a resource with an invalid file"""
-        mock_upload = MockFieldStorage(io.BytesIO(INVALID_CSV), 'invalid.csv')
+        mock_upload = MockFileStorage(io.BytesIO(INVALID_CSV), 'invalid.csv')
 
         dataset = factories.Dataset()
 
@@ -238,7 +240,7 @@ class TestResourceValidationOnCreate(object):
         """If the validation failed - no validation entity should be saved in database"""
         dataset = factories.Dataset()
 
-        mock_upload = MockFieldStorage(io.BytesIO(INVALID_CSV), 'invalid.csv')
+        mock_upload = MockFileStorage(io.BytesIO(INVALID_CSV), 'invalid.csv')
 
         with pytest.raises(tk.ValidationError):
             call_action('resource_create',
@@ -253,7 +255,7 @@ class TestResourceValidationOnCreate(object):
     def test_validation_passes_on_upload(self):
         dataset = factories.Dataset()
 
-        mock_upload = MockFieldStorage(io.BytesIO(VALID_CSV), 'valid.csv')
+        mock_upload = MockFileStorage(io.BytesIO(VALID_CSV), 'valid.csv')
 
         resource = call_action('resource_create',
                                package_id=dataset['id'],
@@ -288,7 +290,7 @@ class TestResourceValidationOnUpdate(object):
         dataset = factories.Dataset()
         resource = resource_factory(package_id=dataset["id"], schema="")
 
-        mock_upload = MockFieldStorage(io.BytesIO(INVALID_CSV), 'invalid.csv')
+        mock_upload = MockFileStorage(io.BytesIO(INVALID_CSV), 'invalid.csv')
 
         with pytest.raises(tk.ValidationError) as e:
             call_action('resource_update',
@@ -306,7 +308,7 @@ class TestResourceValidationOnUpdate(object):
             self, resource_factory):
         dataset = factories.Dataset()
 
-        mock_upload = MockFieldStorage(six.BytesIO(INVALID_CSV), 'valid.csv')
+        mock_upload = MockFileStorage(six.BytesIO(INVALID_CSV), 'valid.csv')
 
         with pytest.raises(tk.ValidationError):
             resource_factory(package_id=dataset['id'], upload=mock_upload)
@@ -319,7 +321,7 @@ class TestResourceValidationOnUpdate(object):
 
         assert 'validation_status' not in resource
 
-        mock_upload = MockFieldStorage(six.BytesIO(VALID_CSV), 'valid.csv')
+        mock_upload = MockFileStorage(six.BytesIO(VALID_CSV), 'valid.csv')
 
         resource = call_action('resource_update',
                                id=resource['id'],
@@ -390,8 +392,8 @@ class TestSchemaFields(object):
                         schema_url='not-a-url')
 
     def test_schema_upload_field(self, mocked_report):
-        schema_upload = MockFieldStorage(six.BytesIO(json.dumps(SCHEMA)),
-                                         'schema.json')
+        schema_upload = MockFileStorage(six.BytesIO(json.dumps(SCHEMA)),
+                                        'schema.json')
 
         dataset = factories.Dataset()
 
@@ -463,3 +465,140 @@ class TestPackageUpdate(object):
                     id=dataset['id'],
                     resources=[])
         assert 'save' not in context
+
+
+@pytest.mark.usefixtures("clean_db", "validation_setup")
+class TestAuth(object):
+
+    def test_run_anon(self):
+
+        resource = factories.Resource()
+
+        context = {'user': None, 'model': model}
+
+        with pytest.raises(tk.NotAuthorized):
+            call_auth('resource_validation_run',
+                      context=context,
+                      resource_id=resource['id'])
+
+    def test_run_sysadmin(self):
+        resource = factories.Resource()
+        sysadmin = factories.Sysadmin()
+
+        context = {'user': sysadmin['name'], 'model': model}
+
+        assert call_auth('resource_validation_run',
+                         context=context,
+                         resource_id=resource['id'])
+
+    def test_run_non_auth_user(self):
+        user = factories.User()
+        org = factories.Organization()
+        dataset = factories.Dataset(owner_org=org['id'],
+                                    resources=[factories.Resource()])
+
+        context = {'user': user['name'], 'model': model}
+
+        with pytest.raises(tk.NotAuthorized):
+            call_auth('resource_validation_run',
+                      context=context,
+                      resource_id=dataset['resources'][0]['id'])
+
+    def test_run_auth_user(self):
+        user = factories.User()
+        org = factories.Organization(users=[{
+            'name': user['name'],
+            'capacity': 'editor'
+        }])
+        dataset = factories.Dataset(owner_org=org['id'],
+                                    resources=[factories.Resource()])
+
+        context = {'user': user['name'], 'model': model}
+
+        assert call_auth('resource_validation_run',
+                         context=context,
+                         resource_id=dataset['resources'][0]['id'])
+
+    def test_delete_anon(self):
+        resource = factories.Resource()
+
+        context = {'user': None, 'model': model}
+
+        with pytest.raises(tk.NotAuthorized):
+            call_auth('resource_validation_delete',
+                      context=context,
+                      resource_id=resource['id'])
+
+    def test_delete_sysadmin(self):
+        resource = factories.Resource()
+        sysadmin = factories.Sysadmin()
+
+        context = {'user': sysadmin['name'], 'model': model}
+
+        assert call_auth('resource_validation_delete',
+                         context=context,
+                         resource_id=resource['id'])
+
+    def test_delete_non_auth_user(self):
+        user = factories.User()
+        org = factories.Organization()
+        dataset = factories.Dataset(owner_org=org['id'],
+                                    resources=[factories.Resource()])
+
+        context = {'user': user['name'], 'model': model}
+
+        with pytest.raises(tk.NotAuthorized):
+            call_auth('resource_validation_delete',
+                      context=context,
+                      resource_id=dataset['resources'][0]['id'])
+
+    def test_delete_auth_user(self):
+        user = factories.User()
+        org = factories.Organization(users=[{
+            'name': user['name'],
+            'capacity': 'editor'
+        }])
+        dataset = factories.Dataset(owner_org=org['id'],
+                                    resources=[factories.Resource()])
+
+        context = {'user': user['name'], 'model': model}
+
+        assert call_auth('resource_validation_delete',
+                         context=context,
+                         resource_id=dataset['resources'][0]['id'])
+
+    def test_show_anon(self):
+        resource = factories.Resource()
+
+        context = {'user': None, 'model': model}
+
+        assert call_auth('resource_validation_show',
+                         context=context,
+                         resource_id=resource['id'])
+
+    def test_show_anon_public_dataset(self):
+        user = factories.User()
+        org = factories.Organization()
+        dataset = factories.Dataset(owner_org=org['id'],
+                                    resources=[factories.Resource()],
+                                    private=False)
+
+        context = {'user': user['name'], 'model': model}
+
+        assert call_auth('resource_validation_show',
+                         context=context,
+                         resource_id=dataset['resources'][0]['id'])
+
+    def test_show_anon_private_dataset(self):
+        user = factories.User()
+        org = factories.Organization()
+        dataset = factories.Dataset(owner_org=org['id'],
+                                    resources=[factories.Resource()],
+                                    private=True)
+
+        context = {'user': user['name'], 'model': model}
+
+        with pytest.raises(tk.NotAuthorized):
+            call_auth('resource_validation_run',
+                      context=context,
+                      resource_id=dataset['resources'][0]['id'])

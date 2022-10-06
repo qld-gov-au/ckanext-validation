@@ -1,7 +1,7 @@
 # encoding: utf-8
 import json
-from urlparse import urlparse
 
+from six.moves.urllib.parse import urlparse
 from six import string_types
 from ckantoolkit import url_for, _, config, asbool,\
     literal, check_ckan_version

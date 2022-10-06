@@ -4,14 +4,17 @@ import pytest
 import factory
 import responses
 import six
-from pytest_factoryboy import register
+from faker import Faker
 
 import ckan.plugins.toolkit as tk
 from ckan.lib import uploader
 from ckan.tests import factories
 
 from ckanext.validation.model import create_tables, tables_exist
-from ckanext.validation.tests.helpers import VALID_CSV, MockFieldStorage, SCHEMA
+from ckanext.validation.tests.helpers import VALID_CSV, MockFileStorage, SCHEMA
+
+
+fake = Faker()
 
 
 @pytest.fixture
@@ -43,13 +46,21 @@ def mocked_responses():
 
 
 class ResourceFactory(factories.Resource):
-    id = factory.Faker("uuid4")
-    description = factory.Faker("sentence")
-    schema = factory.LazyFunction(lambda: json.dumps(SCHEMA))
+    id = fake.uuid4()
+    description = fake.sentence()
+    schema = factory.LazyAttribute(lambda _: json.dumps(SCHEMA))
     format = "CSV"
     url = None
     url_type = "upload"
-    upload = factory.LazyFunction(
-        lambda: MockFieldStorage(six.BytesIO(VALID_CSV), 'data.csv'))
+    upload = factory.LazyAttribute(
+        lambda _: MockFileStorage(six.BytesIO(VALID_CSV), 'data.csv'))
 
-register(ResourceFactory, "resource")
+
+@pytest.fixture
+def resource_factory():
+    return ResourceFactory
+
+
+@pytest.fixture
+def resource():
+    return ResourceFactory()

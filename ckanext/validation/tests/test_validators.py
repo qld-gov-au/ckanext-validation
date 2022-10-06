@@ -6,7 +6,7 @@ from ckantoolkit import Invalid
 
 from ckan.tests.helpers import change_config
 
-import ckanext.validation.settings as settings
+from ckanext.validation import settings
 from ckanext.validation.validators import (resource_schema_validator,
                                            validation_options_validator)
 
@@ -98,7 +98,7 @@ class TestValidationOptionsValidator(object):
 
         assert validation_options_validator(value, {}) == value
 
-    @change_config(settings.DEFAULT_VALIDATION_OPTIONS,
+    @change_config(settings.DEFAULT_VALIDATION_OPTIONS_KEY,
                    '{"delimiter":";"}')
     def test_default_validation_options(self):
 
@@ -107,7 +107,7 @@ class TestValidationOptionsValidator(object):
         assert validation_options_validator(value, {}) ==\
             '{"delimiter": ";", "headers": 3}'
 
-    @change_config(settings.DEFAULT_VALIDATION_OPTIONS,
+    @change_config(settings.DEFAULT_VALIDATION_OPTIONS_KEY,
                    '{"delimiter":";", "headers":2}')
     def test_default_validation_optionsi_does_not_override(self):
 

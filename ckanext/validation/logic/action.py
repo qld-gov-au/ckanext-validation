@@ -6,7 +6,7 @@ import json
 import ckantoolkit as tk
 from six import string_types
 
-import ckanext.validation.utils as utils
+from ckanext.validation import utils
 from ckanext.validation.jobs import run_validation_job
 from ckanext.validation import settings
 from ckanext.validation.validation_status_helper import (
@@ -96,11 +96,17 @@ def enqueue_validation_job(package_id, resource_id):
         'title': job_title,
         'kwargs': {
             'resource': resource_id,
-        },
-        'rq_kwargs': {
-            'timeout': 24 * 60 * 60  # 24 hour ttl.
         }
     }
+
+    if tk.check_ckan_version('2.8'):
+        ttl = 24 * 60 * 60  # 24 hour ttl.
+        rq_kwargs = {
+            'ttl': ttl
+        }
+        if tk.check_ckan_version('2.9'):
+            rq_kwargs['failure_ttl'] = ttl
+        enqueue_args['rq_kwargs'] = rq_kwargs
 
     # Optional variable, if not set, default queue is used
     queue = tk.config.get('ckanext.validation.queue', None)

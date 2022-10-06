@@ -44,10 +44,8 @@ NEW_SCHEMA = {
 }
 
 VALID_REPORT = {
-    'error-count':
-    0,
-    'table-count':
-    1,
+    'error-count': 0,
+    'table-count': 1,
     'tables': [{
         'error-count': 0,
         'errors': [],
@@ -57,10 +55,8 @@ VALID_REPORT = {
         'time': 0.007,
         'valid': True
     }],
-    'time':
-    0.009,
-    'valid':
-    True,
+    'time': 0.009,
+    'valid': True,
     'warnings': []
 }
 
@@ -103,10 +99,8 @@ ERROR_REPORT = {
 }
 
 VALID_REPORT_LOCAL_FILE = {
-    'error-count':
-    0,
-    'table-count':
-    1,
+    'error-count': 0,
+    'table-count': 1,
     'tables': [{
         'error-count': 0,
         'errors': [],
@@ -116,19 +110,17 @@ VALID_REPORT_LOCAL_FILE = {
         'time': 0.007,
         'valid': True
     }],
-    'time':
-    0.009,
-    'valid':
-    True,
+    'time': 0.009,
+    'valid': True,
     'warnings': []
 }
 
 if check_ckan_version('2.9'):
-    from werkzeug.datastructures import FileStorage as MockFieldStorage
+    from werkzeug.datastructures import FileStorage as MockFileStorage
 else:
     import cgi
 
-    class MockFieldStorage(cgi.FieldStorage):
+    class MockFileStorage(cgi.FieldStorage):
 
         def __init__(self, fp, filename):
 

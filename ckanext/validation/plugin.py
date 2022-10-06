@@ -137,8 +137,8 @@ class ValidationResourcePlugin(p.SingletonPlugin):
         context.pop('_resource_validation', None)
 
         if context.pop('_validation_performed', None) \
-            or data_dict.pop(u'_do_not_validate', False) \
-            or data_dict.pop('_success_validation', False):
+                or data_dict.pop(u'_do_not_validate', False) \
+                or data_dict.pop('_success_validation', False):
             return
 
         validation_possible = utils.is_resource_could_be_validated(
@@ -165,12 +165,12 @@ class ValidationPackagePlugin(p.SingletonPlugin):
 
     def after_update(self, context, data_dict):
         if context.pop('_validation_performed', None) \
-            or context.pop('_resource_validation', None):
+                or context.pop('_resource_validation', None):
             return
 
         for resource in data_dict.get('resources', []):
             if resource.pop(u'_do_not_validate', False) \
-                or resource.pop('_success_validation', False):
+                    or resource.pop('_success_validation', False):
                 continue
 
             if not utils.is_resource_could_be_validated(context, resource):
