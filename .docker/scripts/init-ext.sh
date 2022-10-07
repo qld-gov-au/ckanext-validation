@@ -7,6 +7,11 @@ set -e
 install_requirements () {
     PROJECT_DIR=$1
     shift
+
+    if [ "$CKAN_VERSION" = "2.9-py2" ]; then
+        PYTHON_VERSION=""
+    fi
+
     # Identify the best match requirements file, ignore the others.
     # If there is one specific to our Python version, use that.
     for filename_pattern in "$@"; do
