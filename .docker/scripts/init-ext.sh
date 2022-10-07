@@ -9,7 +9,7 @@ install_requirements () {
     shift
 
     if [ "$CKAN_VERSION" = "2.9-py2" ]; then
-        PYTHON_VERSION=""
+        PYTHON_VERSION=py3
     fi
 
     # Identify the best match requirements file, ignore the others.
