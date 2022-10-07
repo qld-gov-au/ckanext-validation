@@ -4,7 +4,7 @@ import json
 import tableschema
 from six import string_types, binary_type
 
-from ckantoolkit import Invalid, config
+from ckantoolkit import Invalid
 
 from ckanext.validation.utils import get_default_validation_options
 

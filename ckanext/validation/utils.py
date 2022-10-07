@@ -281,8 +281,8 @@ def is_resource_requires_validation(context, old_resource, new_resource):
         log.info("Format has been changed. Validation required")
         return True
 
-    if (old_resource.get(u'validation_options') !=
-            new_resource.get(u'validation_options')):
+    if (old_resource.get(u'validation_options')
+            != new_resource.get(u'validation_options')):
         log.info("Validation options have been updated. Validation required")
         return True
 
