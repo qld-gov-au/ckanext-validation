@@ -77,7 +77,8 @@ def _post(app, url, params, upload=None):
 
             for entry in upload:
                 params[entry[field_name]] = MockFileStorage(
-                    six.BytesIO(entry[file_data]), entry[file_name])
+                    six.BytesIO(six.ensure_binary(entry[file_data])),
+                    entry[file_name])
 
         kwargs = {
             'url': url,
