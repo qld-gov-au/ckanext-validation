@@ -455,9 +455,7 @@ class TestResourceValidationFieldsPersisted(object):
             'schema': json.dumps(SCHEMA)
         }
 
-        resp = _post(app,
-                     EDIT_RESOURCE_URL.format(dataset['id'], resource['id']),
-                     params)
+        _post(app, EDIT_RESOURCE_URL.format(dataset['id'], resource['id']), params)
 
         resource = call_action('resource_show', id=resource['id'])
 

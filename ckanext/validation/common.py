@@ -245,8 +245,7 @@ def report(output_csv, full=False):
                         outputs['tabular_resources'] += 1
 
                         if resource.get('validation_status'):
-                            outputs['resources_' +
-                                    resource['validation_status']] += 1
+                            outputs['resources_' + resource['validation_status']] += 1
 
                         if resource.get('validation_status') in (
                                 'failure', 'error'):

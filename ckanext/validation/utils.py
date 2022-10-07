@@ -18,8 +18,6 @@ import ckan.plugins as plugins
 import ckan.lib.uploader as uploader
 from ckan.model import Session
 
-from ckanext.data_qld.utils import is_api_call
-
 import ckanext.validation.settings as s
 from ckanext.validation.interfaces import IDataValidation
 from ckanext.validation.validation_status_helper import ValidationStatusHelper, StatusTypes
@@ -281,12 +279,22 @@ def is_resource_requires_validation(context, old_resource, new_resource):
         log.info("Format has been changed. Validation required")
         return True
 
-    if (old_resource.get(u'validation_options') !=
-            new_resource.get(u'validation_options')):
+    if (old_resource.get(u'validation_options')
+            != new_resource.get(u'validation_options')):
         log.info("Validation options have been updated. Validation required")
         return True
 
     return False
+
+
+def is_api_call():
+    controller, action = tk.get_endpoint()
+
+    resource_edit = ((controller == "resource" and action == "edit")
+                     or (controller == "package" and action == "resource_edit"))
+    resource_create = action == "new_resource"
+
+    return False if (resource_edit or resource_create) else True
 
 
 def is_dataset(data_dict):
