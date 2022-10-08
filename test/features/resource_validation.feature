@@ -39,13 +39,14 @@ Feature: Resource validation
         And I attach the file "test.csv" to "upload"
         And I fill in "description" with "Testing validation options"
         And I attach the file "test_schema.json" to "schema_upload"
-        And I fill in "validation_options" with "{"headers": 2}"
+        And I fill in "validation_options" with "{"headers": 1}"
+        And I execute the script "document.getElementById('field-format').value='CSV'"
         And I press the element with xpath "//button[contains(@class, 'btn-primary')]"
         Then I should see "Test validation options"
 
         When I click the link with text that contains "Test validation options"
         And I click the link with text that contains "Manage"
-        Then I should see text containing quotes `"headers": 2`
+        Then I should see text containing quotes `"headers": 1`
 
         When I click the link with text that contains "Test validation options"
         And I click the link with text that contains "Manage"
