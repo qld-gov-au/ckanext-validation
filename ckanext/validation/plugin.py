@@ -154,6 +154,9 @@ class ValidationResourcePlugin(p.SingletonPlugin):
 
         context.pop('_resources_to_validate', None)
 
+    def before_delete(self, context, resource, resources):
+        context['_resource_validation'] = True
+
 
 class ValidationPackagePlugin(p.SingletonPlugin):
     p.implements(p.IPackageController, inherit=True)
