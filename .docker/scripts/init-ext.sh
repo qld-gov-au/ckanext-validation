@@ -9,7 +9,7 @@ install_requirements () {
     shift
 
     if [ "$CKAN_VERSION" = "2.9-py2" ]; then
-        filename="$PROJECT_DIR/${filename_pattern}-py2-2.9.txt"
+        filename="$PROJECT_DIR/dev-requirements-py2-2.9.txt"
         if [ -f "$filename" ]; then
             pip install -r "$filename"
             return 0
