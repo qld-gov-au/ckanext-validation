@@ -9,7 +9,11 @@ install_requirements () {
     shift
 
     if [ "$CKAN_VERSION" = "2.9-py2" ]; then
-        PYTHON_VERSION=py3
+        filename="$PROJECT_DIR/${filename_pattern}-py2-2.9.txt"
+        if [ -f "$filename" ]; then
+            pip install -r "$filename"
+            return 0
+        fi
     fi
 
     # Identify the best match requirements file, ignore the others.
