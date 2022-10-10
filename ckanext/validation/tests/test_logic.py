@@ -392,8 +392,8 @@ class TestSchemaFields(object):
                         schema_url='not-a-url')
 
     def test_schema_upload_field(self, mocked_report):
-        schema_upload = MockFileStorage(six.BytesIO(json.dumps(SCHEMA)),
-                                        'schema.json')
+        schema_upload = MockFileStorage(
+            six.BytesIO(six.ensure_binary(json.dumps(SCHEMA))), 'schema.json')
 
         dataset = factories.Dataset()
 
