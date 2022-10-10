@@ -11,5 +11,5 @@ pytest-ckan
 pytest-cov
 selenium==3.141.0
 splinter>=0.13.0,<0.17
-responses
+responses==0.17.0
 faker==3.0.1
