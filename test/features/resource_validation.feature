@@ -112,4 +112,7 @@ Feature: Resource validation
         And I attach the file "invalid.csv" to "upload"
         And I press the element with xpath "//button[contains(@class, 'btn-primary')]"
         And I should see "The form contains invalid entries"
-        And I should see "error-count"
+        And I should see "There are validation issues with this file"
+        Then I click the link with text that contains "report"
+        And I should see "Non-Matching Header"
+        Then I should see "Data Validation Report"
