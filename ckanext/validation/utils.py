@@ -131,15 +131,11 @@ def run_sync_validation(resource_data):
     if is_uploaded_file(new_file):
         source = _get_new_file_stream(new_file)
     else:
-        if resource_data.get('url_type') == u'upload':
-            upload = uploader.get_resource_uploader(resource_data)
-
-            if isinstance(upload, uploader.ResourceUpload):
-                source = upload.get_path(resource_data["id"])
-            else:
-                source = resource_data['url']
-        else:
+        if is_url_valid(resource_data['url']):
             source = resource_data['url']
+        else:
+            upload = uploader.get_resource_uploader(resource_data)
+            source = upload.get_path(resource_data["id"])
 
     report = validate(source,
                       format=_format,
