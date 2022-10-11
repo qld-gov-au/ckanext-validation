@@ -8,14 +8,6 @@ install_requirements () {
     PROJECT_DIR=$1
     shift
 
-    if [ "$CKAN_VERSION" = "2.9-py2" ]; then
-        filename="$PROJECT_DIR/dev-requirements-py2-2.9.txt"
-        if [ -f "$filename" ]; then
-            pip install -r "$filename"
-            return 0
-        fi
-    fi
-
     # Identify the best match requirements file, ignore the others.
     # If there is one specific to our Python version, use that.
     for filename_pattern in "$@"; do
@@ -36,10 +28,19 @@ install_requirements () {
 
 . ${APP_DIR}/scripts/activate
 
-install_requirements . dev-requirements requirements-dev
+
+if [ "$CKAN_VERSION" = "2.9-py2" ]; then
+    install_requirements . dev-requirements-2.9-py2
+elif [  "$CKAN_VERSION" = "2.8"  ]; then
+    install_requirements . dev-requirements-py2
+else
+    install_requirements . dev-requirements
+fi
+
 for extension in . `ls -d $SRC_DIR/ckanext-*`; do
     install_requirements $extension requirements pip-requirements
 done
+
 pip install -e .
 installed_name=$(grep '^\s*name=' setup.py |sed "s|[^']*'\([-a-zA-Z0-9]*\)'.*|\1|")
 
