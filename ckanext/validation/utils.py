@@ -3,6 +3,7 @@
 import os
 import logging
 import json
+from six import ensure_str
 from io import BytesIO
 from datetime import datetime as dt
 from cgi import FieldStorage
@@ -73,8 +74,8 @@ def process_schema_fields(data_dict):
     schema_json = data_dict.pop(u'schema_json', None)
 
     if is_uploaded_file(schema_upload):
-        data_dict[u'schema'] = uploader._get_underlying_file(
-            schema_upload).read()
+        data_dict[u'schema'] = ensure_str(uploader._get_underlying_file(
+            schema_upload).read())
 
     elif schema_url:
         if not is_url_valid(schema_url):
