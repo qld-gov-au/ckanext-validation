@@ -90,7 +90,11 @@ def run_validation_job(resource):
 
     schema = resource.get(u'schema')
     if schema and isinstance(schema, string_types):
-        schema = json.loads(schema)
+        if schema.startswith('http'):
+            r = requests.get(schema)
+            schema = r.json()
+        else:
+            schema = json.loads(schema)
 
     _format = resource[u'format'].lower()
 
