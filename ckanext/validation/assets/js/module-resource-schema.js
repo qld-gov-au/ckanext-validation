@@ -14,7 +14,10 @@ this.ckan.module('resource-schema', function($) {
       field_schema: 'schema',
       field_clear: 'clear_upload',
       field_name: 'name',
-      upload_label: ''
+      upload_label: '',
+      hide_upload: false,
+      hide_remote: false,
+      hide_inline: false,
     },
 
     /* Should be changed to true if user modifies resource's name
@@ -31,25 +34,31 @@ this.ckan.module('resource-schema', function($) {
       $.proxyAll(this, /_on/);
       var options = this.options;
 
-      var field_upload = 'input[name="schema_upload"]';
-      var field_url = 'input[name="schema_url"]';
-      var field_json = 'textarea[name="schema_json"]';
+      var field_upload = 'input[name="' + options.field_upload + '"]';
+      var field_url = 'input[name="' + options.field_url + '"]';
+      var field_json = 'textarea[name="' + options.field_json +'"]';
+      var field_schema = 'input[name="' + options.field_schema +'"]';
+
+      this.align_block = $(".schema-align")
+      this.field_align = $('#' + options.align_id);
 
       this.input = $(field_url, this.el);
       this.field_upload = $(field_upload, this.el).parents('.form-group');
       this.field_url = $(field_url, this.el).parents('.form-group');
       this.field_json = $(field_json, this.el).parents('.form-group');
+
       if (!this.field_upload.length) {
         this.field_upload = $(field_upload, this.el).parents('.control-group');
         this.field_url = $(field_url, this.el).parents('.control-group');
         this.field_json = $(field_json, this.el).parents('.control-group');
 
       }
+
       this.field_upload_input = $('input', this.field_upload);
       this.field_url_input = $('input', this.field_url);
       this.field_json_input = $('textarea', this.field_json);
-      this.field_schema_input = $('#field-schema');
-      //this.field_name = this.el.parents('form').find(field_name);
+      this.field_schema_input = $(field_schema);
+
       // this is the location for the upload/link data/image label
       this.buttons_div = $("#resource-schema-buttons");
       this.label = $('label', this.buttons_div);
@@ -61,6 +70,7 @@ this.ckan.module('resource-schema', function($) {
         .on('blur', this._onURLBlur);
       this.field_json_input.focus()
         .on('blur', this._onJSONBlur);
+      this.field_json_input.on('input', this._onJsonChange);
 
       // Button to set upload a schema file
       this.button_upload = $('<a href="javascript:;" class="btn btn-default">' +
@@ -178,6 +188,8 @@ this.ckan.module('resource-schema', function($) {
       this._updateUrlLabel(this._('Data Schema'));
 
       this.label_url.text(this._('Data Schema URL'))
+
+      this._markUnaligned();
     },
 
     /* Event listener for resetting the JSON text field back to the blank state
@@ -191,14 +203,16 @@ this.ckan.module('resource-schema', function($) {
       this.field_json_input.prop('readonly', false);
 
       this.field_schema_input.val('');
+
+      this._markUnaligned();
     },
 
     _showOnlyButtons: function() {
       this.fields.hide();
       this.label.show();
-      this.button_upload.show()
-      this.button_url.show()
-      this.button_json.show()
+      !this.options.hide_upload && this.button_upload.show()
+      !this.options.hide_url && this.button_url.show()
+      !this.options.hide_json && this.button_json.show()
     },
 
     _showOnlyFieldUrl: function() {
@@ -237,6 +251,10 @@ this.ckan.module('resource-schema', function($) {
       this._showOnlyFieldUrl();
     },
 
+    _onJsonChange: function() {
+        this._markUnaligned();
+    },
+
     _fileNameFromUpload: function(url) {
       // If it's a local CKAN image return the entire URL.
       if (/^\/base\/images/.test(url)) {
@@ -253,6 +271,9 @@ this.ckan.module('resource-schema', function($) {
       return url; // filename
     },
 
-
+    _markUnaligned: function() {
+        this.align_block.removeClass('hidden');
+        this.field_align.prop('checked', false);
+    }
   };
 });

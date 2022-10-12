@@ -7,14 +7,18 @@ import re
 import requests
 from goodtables import validate
 from six import string_types
-
-from ckan.model import Session
-import ckan.lib.uploader as uploader
-
 import ckantoolkit as t
 
-from ckanext.validation.validation_status_helper import (ValidationStatusHelper, ValidationJobDoesNotExist,
-                                                         ValidationJobAlreadyRunning, StatusTypes)
+import ckan.lib.uploader as uploader
+from ckan.model import Session
+
+from ckanext.validation import utils
+from ckanext.validation.validation_status_helper import (
+    ValidationStatusHelper,
+    ValidationJobDoesNotExist,
+    ValidationJobAlreadyRunning,
+    StatusTypes,
+)
 
 log = logging.getLogger(__name__)
 
@@ -25,7 +29,11 @@ def run_validation_job(resource):
     # ID is more efficient, as resource dicts can be very large
     if isinstance(resource, string_types):
         log.debug(u'run_validation_job: calling resource_show: %s', resource)
-        resource = t.get_action('resource_show')({'ignore_auth': True}, {'id': resource})
+        resource = t.get_action('resource_show')({
+            'ignore_auth': True
+        }, {
+            'id': resource
+        })
 
     resource_id = resource.get('id')
     if resource_id:
@@ -33,32 +41,29 @@ def run_validation_job(resource):
     else:
         log.debug(u'Validating resource dict: %s', resource)
     validation_record = None
+
     try:
-        validation_record = vsh.updateValidationJobStatus(Session, resource_id, StatusTypes.running)
+        validation_record = vsh.updateValidationJobStatus(
+            Session, resource_id, StatusTypes.running)
     except ValidationJobAlreadyRunning as e:
-        log.error("Won't run enqueued job %s as job is already running or in invalid state: %s", resource['id'], e)
+        log.error(
+            "Won't run enqueued job %s as job is already running or in invalid state: %s",
+            resource['id'], e)
         return
     except ValidationJobDoesNotExist:
         validation_record = vsh.createValidationJob(Session, resource['id'])
         validation_record = vsh.updateValidationJobStatus(
-            session=Session, resource_id=resource_id,
-            status=StatusTypes.running, validationRecord=validation_record)
+            session=Session,
+            resource_id=resource_id,
+            status=StatusTypes.running,
+            validationRecord=validation_record)
 
-    options = t.config.get(
-        u'ckanext.validation.default_validation_options')
-    if options:
-        options = json.loads(options)
-    else:
-        options = {}
-
-    resource_options = resource.get(u'validation_options')
-    if resource_options and isinstance(resource_options, string_types):
-        resource_options = json.loads(resource_options)
-    if resource_options:
-        options.update(resource_options)
-
-    dataset = t.get_action('package_show')(
-        {'ignore_auth': True}, {'id': resource['package_id']})
+    options = utils.get_resource_validation_options(resource)
+    dataset = t.get_action('package_show')({
+        'ignore_auth': True
+    }, {
+        'id': resource['package_id']
+    })
 
     source = None
     if resource.get(u'url_type') == u'upload':
@@ -73,9 +78,9 @@ def run_validation_job(resource):
             if dataset[u'private'] and pass_auth_header:
                 s = requests.Session()
                 s.headers.update({
-                    u'Authorization': t.config.get(
-                        u'ckanext.validation.pass_auth_header_value',
-                        _get_site_user_api_key())
+                    u'Authorization':
+                    t.config.get(u'ckanext.validation.pass_auth_header_value',
+                                 utils.get_site_user_api_key())
                 })
 
                 options[u'http_session'] = s
@@ -85,11 +90,7 @@ def run_validation_job(resource):
 
     schema = resource.get(u'schema')
     if schema and isinstance(schema, string_types):
-        if schema.startswith('http'):
-            r = requests.get(schema)
-            schema = r.json()
-        else:
-            schema = json.loads(schema)
+        schema = json.loads(schema)
 
     _format = resource[u'format'].lower()
 
@@ -103,21 +104,32 @@ def run_validation_job(resource):
         report['warnings'][index] = re.sub(r'Table ".*"', 'Table', warning)
 
     if report['table-count'] > 0:
-        status = StatusTypes.success if report[u'valid'] else StatusTypes.failure
-        validation_record = vsh.updateValidationJobStatus(Session, resource['id'], status, report, None, validation_record)
+        status = StatusTypes.success if report[
+            u'valid'] else StatusTypes.failure
+        validation_record = vsh.updateValidationJobStatus(
+            Session, resource['id'], status, report, None, validation_record)
     else:
         status = StatusTypes.error
-        error_payload = {'message': '\n'.join(report['warnings']) or u'No tables found'}
-        validation_record = vsh.updateValidationJobStatus(Session, resource['id'], status, None, error_payload, validation_record)
+        error_payload = {
+            'message': '\n'.join(report['warnings']) or u'No tables found'
+        }
+        validation_record = vsh.updateValidationJobStatus(
+            Session, resource['id'], status, None, error_payload,
+            validation_record)
 
     # Store result status in resource
     t.get_action('resource_patch')(
-        {'ignore_auth': True,
-         'user': t.get_action('get_site_user')({'ignore_auth': True})['name'],
-         '_validation_performed': True},
-        {'id': resource['id'],
-         'validation_status': validation_record.status,
-         'validation_timestamp': validation_record.finished.isoformat()})
+        {
+            'ignore_auth': True,
+            'user': t.get_action('get_site_user')({
+                'ignore_auth': True
+            })['name'],
+            '_validation_performed': True
+        }, {
+            'id': resource['id'],
+            'validation_status': validation_record.status,
+            'validation_timestamp': validation_record.finished.isoformat()
+        })
 
 
 def _validate_table(source, _format=u'csv', schema=None, **options):
@@ -129,16 +141,12 @@ def _validate_table(source, _format=u'csv', schema=None, **options):
         proxy = t.config.get('ckan.download_proxy')
         log.debug(u'Download resource for validation via proxy: %s', proxy)
         http_session.proxies.update({'http': proxy, 'https': proxy})
-    report = validate(source, format=_format, schema=schema, http_session=http_session, **options)
+    report = validate(source,
+                      format=_format,
+                      schema=schema,
+                      http_session=http_session,
+                      **options)
 
     log.debug(u'Validating source: %s', source)
 
     return report
-
-
-def _get_site_user_api_key():
-
-    site_user_name = t.get_action('get_site_user')({'ignore_auth': True}, {})
-    site_user = t.get_action('get_site_user')(
-        {'ignore_auth': True}, {'id': site_user_name})
-    return site_user['apikey']

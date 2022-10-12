@@ -11,7 +11,7 @@ from ckantoolkit import (c, NotAuthorized,
                          check_ckan_version)
 
 from ckanext.validation import settings
-from ckanext.validation.logic import _search_datasets
+from ckanext.validation.logic.action import _search_datasets
 from ckanext.validation.model import create_tables, tables_exist
 
 
@@ -34,7 +34,8 @@ def validation(resource_id, id=None):
 
         package_id = resource[u'package_id']
         if id and id != package_id:
-            raise ObjectNotFound("Resource {} not found in package {}".format(resource_id, id))
+            raise ObjectNotFound(
+                "Resource {} not found in package {}".format(resource_id, id))
 
         dataset = get_action(u'package_show')(
             {u'user': c.user},
@@ -249,7 +250,8 @@ def report(output_csv, full=False):
                         if resource.get('validation_status') in (
                                 'failure', 'error'):
                             if full:
-                                row_counts = _process_row_full(dataset, resource, writer)
+                                row_counts = _process_row_full(
+                                    dataset, resource, writer)
                                 if not row_counts:
                                     continue
                                 for code, count in six.iteritems(row_counts):

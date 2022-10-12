@@ -4,15 +4,24 @@ import json
 import tableschema
 from six import string_types, binary_type
 
-from ckantoolkit import Invalid, config
+from ckantoolkit import Invalid
+
+from ckanext.validation.utils import get_default_validation_options
 
 
-# Input validators
+def get_validators():
+    validators = (
+        resource_schema_validator,
+        validation_options_validator,
+    )
+
+    return {"{}".format(func.__name__): func for func in validators}
+
 
 def resource_schema_validator(value, context):
 
     if not value:
-        return
+        return ""
 
     msg = None
 
@@ -68,12 +77,9 @@ def validation_options_validator(value, context):
     `scheming_valid_json_object` has been run).
     '''
 
-    default_options = config.get(
-        'ckanext.validation.default_validation_options')
+    default_options = get_default_validation_options()
 
     if default_options:
-        default_options = json.loads(default_options)
-
         provided_options = json.loads(value)
 
         default_options.update(provided_options)

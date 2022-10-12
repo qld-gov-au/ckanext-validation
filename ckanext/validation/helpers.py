@@ -1,8 +1,24 @@
 # encoding: utf-8
 import json
 
+from six.moves.urllib.parse import urlparse
+from six import string_types
 from ckantoolkit import url_for, _, config, asbool,\
     literal, check_ckan_version
+
+
+def _get_helpers():
+    validators = (
+        get_validation_badge,
+        validation_extract_report_from_errors,
+        dump_json_value,
+        bootstrap_version,
+        is_ckan_29,
+        validation_hide_source,
+        is_url_valid
+    )
+
+    return {"{}".format(func.__name__): func for func in validators}
 
 
 def get_validation_badge(resource, in_listing=False):
@@ -103,3 +119,27 @@ def is_ckan_29():
     Returns False if those are not present.
     """
     return check_ckan_version(min_version='2.9.0')
+
+
+def validation_hide_source(type):
+    """
+    Returns True if the given source type must be hidden on form.
+    Type is one of: upload, url or json.
+    For any unexpected type returns False
+    """
+    return asbool(config.get(
+        "ckanext.validation.form.hide_{}_source".format(type),
+    ))
+
+
+def is_url_valid(url):
+    """Basic checks for url validity"""
+    if not isinstance(url, string_types):
+        return False
+
+    try:
+        tokens = urlparse(url)
+    except ValueError:
+        return False
+
+    return all([getattr(tokens, attr) for attr in ('scheme', 'netloc')])
