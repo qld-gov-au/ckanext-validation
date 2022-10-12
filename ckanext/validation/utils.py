@@ -1,6 +1,5 @@
 # encoding: utf-8
 
-import os
 import logging
 import json
 from six import ensure_str
@@ -184,7 +183,7 @@ def _get_new_file_stream(file):
         file = file.file
 
     stream = BytesIO(file.read())
-    file.seek(0, os.SEEK_END)
+    file.seek(0)
 
     return stream
 
