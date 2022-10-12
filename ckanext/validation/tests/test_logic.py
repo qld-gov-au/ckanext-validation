@@ -353,6 +353,18 @@ class TestResourceValidationOnUpdate(object):
         assert resource['validation_status'] == 'success'
         assert 'validation_timestamp' in resource
 
+    def test_validation_passes_with_schema_as_url(self, mocked_responses,
+                                                  resource_factory):
+        schema_url = 'https://example.com/schema.json'
+
+        mocked_responses.add(responses.GET, schema_url, json=SCHEMA)
+
+        resource = resource_factory(schema=schema_url)
+
+        assert resource['schema'] == schema_url
+        assert resource['validation_status'] == 'success'
+        assert 'validation_timestamp' in resource
+
 
 @pytest.mark.usefixtures("clean_db", "validation_setup")
 @mock.patch('ckanext.validation.utils.validate', return_value=VALID_REPORT)
@@ -372,7 +384,7 @@ class TestSchemaFields(object):
 
     def test_schema_url_field(self, mocked_report, mocked_responses):
         schema_url = 'https://example.com/schema.json'
-        mocked_responses.add('GET', schema_url, json=SCHEMA)
+        mocked_responses.add(responses.GET, schema_url, json=SCHEMA)
 
         dataset = factories.Dataset()
 
