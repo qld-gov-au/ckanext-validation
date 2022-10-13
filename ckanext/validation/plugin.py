@@ -179,6 +179,9 @@ class ValidationPackagePlugin(p.SingletonPlugin):
 
             utils.validate_resource(context, resource)
 
+    def after_delete(self, context, pkg_dict):
+        context['_resource_validation'] = True
+
     def before_index(self, index_dict):
 
         res_status = []
