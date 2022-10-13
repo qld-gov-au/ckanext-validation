@@ -79,12 +79,17 @@ Please run the following to create the database tables:
         return validators.get_validators()
 
 
-class ValidationResourcePlugin(p.SingletonPlugin):
+# class ValidationResourcePlugin(p.SingletonPlugin):
     p.implements(p.IResourceController, inherit=True)
 
     # IResourceController
 
+    # CKAN < 2.10
     def before_create(self, context, data_dict):
+        return self.before_resource_create(context, data_dict)
+
+    # CKAN >= 2.10
+    def before_resource_create(self, context, data_dict):
         context['_resource_validation'] = True
 
         data_dict = utils.process_schema_fields(data_dict)
@@ -95,7 +100,22 @@ class ValidationResourcePlugin(p.SingletonPlugin):
         if utils.is_resource_could_be_validated(context, data_dict):
             utils.validate_resource(context, data_dict, new_resource=True)
 
+    def _data_dict_is_dataset(self, data_dict):
+        return (
+            u'creator_user_id' in data_dict
+            or u'owner_org' in data_dict
+            or u'resources' in data_dict
+            or data_dict.get(u'type') == u'dataset')
+
+    # CKAN < 2.10
     def after_create(self, context, data_dict):
+        if (self._data_dict_is_dataset(data_dict)):
+            return self.after_dataset_create(context, data_dict)
+        else:
+            return self.after_resource_create(context, data_dict)
+
+    # CKAN >= 2.10
+    def after_resource_create(self, context, data_dict):
         if data_dict.pop('_success_validation', False):
             return utils.create_success_validation_job(data_dict["id"])
 
@@ -105,7 +125,12 @@ class ValidationResourcePlugin(p.SingletonPlugin):
         if utils.is_resource_could_be_validated(context, data_dict):
             utils.validate_resource(context, data_dict, new_resource=True)
 
+    # CKAN < 2.10
     def before_update(self, context, current_resource, updated_resource):
+        return self.before_resource_update(context, current_resource, updated_resource)
+
+    # CKAN >= 2.10
+    def before_resource_update(self, context, current_resource, updated_resource):
         context['_resource_validation'] = True
         # avoid circular update, because validation job calls `resource_patch`
         # (which calls package_update)
@@ -133,7 +158,15 @@ class ValidationResourcePlugin(p.SingletonPlugin):
                 context['_resources_to_validate'].append(
                     updated_resource["id"])
 
+    # CKAN < 2.10
     def after_update(self, context, data_dict):
+        if (self._data_dict_is_dataset(data_dict)):
+            return self.after_dataset_update(context, data_dict)
+        else:
+            return self.after_resource_update(context, data_dict)
+
+    # CKAN >= 2.10
+    def after_resource_update(self, context, data_dict):
         context.pop('_resource_validation', None)
 
         if context.pop('_validation_performed', None) \
@@ -154,19 +187,34 @@ class ValidationResourcePlugin(p.SingletonPlugin):
 
         context.pop('_resources_to_validate', None)
 
+    # CKAN < 2.10
     def before_delete(self, context, resource, resources):
+        return self.before_resource_delete(context, resource, resources)
+
+    # CKAN >= 2.10
+    def before_resource_delete(self, context, resource, resources):
         context['_resource_validation'] = True
 
 
-class ValidationPackagePlugin(p.SingletonPlugin):
+# class ValidationPackagePlugin(p.SingletonPlugin):
     p.implements(p.IPackageController, inherit=True)
 
-    def after_create(self, context, data_dict):
+    # # CKAN < 2.10
+    # def after_create(self, context, data_dict):
+    #     return self.after_dataset_create(context, data_dict)
+
+    # CKAN >= 2.10
+    def after_dataset_create(self, context, data_dict):
         for resource in data_dict.get(u'resources', []):
             if utils.is_resource_could_be_validated(context, resource):
                 utils.validate_resource(context, resource)
 
-    def after_update(self, context, data_dict):
+    # CKAN < 2.10
+    # def after_update(self, context, data_dict):
+    #     return self.after_dataset_update(context, data_dict)
+
+    # CKAN >= 2.10
+    def after_dataset_update(self, context, data_dict):
         if context.pop('_validation_performed', None) \
                 or context.pop('_resource_validation', None):
             return
@@ -181,7 +229,13 @@ class ValidationPackagePlugin(p.SingletonPlugin):
 
             utils.validate_resource(context, resource)
 
+    # CKAN < 2.10
     def before_index(self, index_dict):
+        if (self._data_dict_is_dataset(index_dict)):
+            return self.before_dataset_index(index_dict)
+
+    # CKAN >= 2.10
+    def before_dataset_index(self, index_dict):
 
         res_status = []
         dataset_dict = json.loads(index_dict['validated_data_dict'])
