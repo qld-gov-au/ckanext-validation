@@ -130,6 +130,7 @@ class TestInterfaceSync(BaseTestInterfaces):
 
         assert not mock_validation.called
 
+
 @pytest.mark.usefixtures("clean_db", "validation_setup", "with_plugins")
 @pytest.mark.ckan_config("ckan.plugins", "validation test_validation_plugin scheming_datasets")
 class TestInterfaceAsync(BaseTestInterfaces):
@@ -140,7 +141,7 @@ class TestInterfaceAsync(BaseTestInterfaces):
         cfg['ckanext.validation.run_on_update_sync'] = False
 
     @pytest.mark.ckan_config('ckanext.validation.run_on_create_async', True)
-    @mock.patch('ckanext.validation.logic.enqueue_job')
+    @mock.patch('ckanext.validation.logic.action.enqueue_job')
     def test_can_validate_called_on_create_async(self, mock_validation):
 
         dataset = factories.Dataset()
@@ -155,7 +156,7 @@ class TestInterfaceAsync(BaseTestInterfaces):
         assert mock_validation.called
 
     @pytest.mark.ckan_config('ckanext.validation.run_on_create_async', True)
-    @mock.patch('ckanext.validation.logic.enqueue_job')
+    @mock.patch('ckanext.validation.logic.action.enqueue_job')
     def test_can_validate_called_on_create_async_no_validation(self, mock_validation):
 
         dataset = factories.Dataset()
@@ -172,7 +173,7 @@ class TestInterfaceAsync(BaseTestInterfaces):
 
     @pytest.mark.ckan_config('ckanext.validation.run_on_create_async', False)
     @pytest.mark.ckan_config('ckanext.validation.run_on_update_async', True)
-    @mock.patch('ckanext.validation.logic.enqueue_job')
+    @mock.patch('ckanext.validation.logic.action.enqueue_job')
     def test_can_validate_called_on_update_async(self, mock_validation):
 
         dataset = factories.Dataset()
@@ -190,7 +191,7 @@ class TestInterfaceAsync(BaseTestInterfaces):
 
     @pytest.mark.ckan_config('ckanext.validation.run_on_create_async', False)
     @pytest.mark.ckan_config('ckanext.validation.run_on_update_async', True)
-    @mock.patch('ckanext.validation.logic.enqueue_job')
+    @mock.patch('ckanext.validation.logic.action.enqueue_job')
     def test_can_validate_called_on_update_async_no_validation(self, mock_validation):
 
         dataset = factories.Dataset()

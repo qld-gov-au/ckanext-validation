@@ -11,13 +11,15 @@ import ckantoolkit as t
 
 from ckanext.validation import settings
 from ckanext.validation.model import tables_exist
-from ckanext.validation.logic import (
+from ckanext.validation.logic.action import (
     resource_validation_run, resource_validation_show,
     resource_validation_delete, resource_validation_run_batch,
-    auth_resource_validation_run, auth_resource_validation_show,
-    auth_resource_validation_delete, auth_resource_validation_run_batch,
     resource_create as custom_resource_create,
     resource_update as custom_resource_update,
+)
+from ckanext.validation.logic.auth import (
+    auth_resource_validation_run, auth_resource_validation_show,
+    auth_resource_validation_delete, auth_resource_validation_run_batch,
 )
 from ckanext.validation.helpers import (
     get_validation_badge,
@@ -133,8 +135,8 @@ to create the database tables:
             data_dict[u'schema'] = uploaded_file.read()
         elif schema_url:
 
-            if (not isinstance(schema_url, six.string_types) or
-                    not schema_url.lower()[:4] == u'http'):
+            if (not isinstance(schema_url, six.string_types)
+                    or not schema_url.lower()[:4] == u'http'):
                 raise t.ValidationError({u'schema_url': 'Must be a valid URL'})
             data_dict[u'schema'] = schema_url
         elif schema_json:
@@ -173,16 +175,13 @@ to create the database tables:
 
     def _handle_validation_for_resource(self, context, resource):
         needs_validation = False
-        if ((
-            # File uploaded
-            resource.get(u'url_type') == u'upload' or
-            # URL defined
-            resource.get(u'url')
-            ) and (
-            # Make sure format is supported
-            resource.get(u'format', u'').lower() in
-                settings.SUPPORTED_FORMATS
-                )):
+        if (
+                # File uploaded
+                (resource.get(u'url_type') == u'upload'
+                 # URL defined
+                 or resource.get(u'url'))
+                # Make sure format is supported
+                and (resource.get(u'format', u'').lower() in settings.SUPPORTED_FORMATS)):
             needs_validation = True
 
         if needs_validation:
@@ -211,22 +210,19 @@ to create the database tables:
             return updated_resource
 
         needs_validation = False
-        if ((
+        if (
             # New file uploaded
-            updated_resource.get(u'upload') or
-            # External URL changed
-            updated_resource.get(u'url') != current_resource.get(u'url') or
-            # Schema changed
-            (updated_resource.get(u'schema') !=
-             current_resource.get(u'schema')) or
-            # Format changed
-            (updated_resource.get(u'format', u'').lower() !=
-             current_resource.get(u'format', u'').lower())
-            ) and (
-            # Make sure format is supported
-            updated_resource.get(u'format', u'').lower() in
-                settings.SUPPORTED_FORMATS
-                )):
+            (updated_resource.get(u'upload')
+             # External URL changed
+             or updated_resource.get(u'url') != current_resource.get(u'url')
+             # Schema changed
+             or (updated_resource.get(u'schema') != current_resource.get(u'schema'))
+             # Format changed
+             or (updated_resource.get(u'format', u'').lower() != current_resource.get(u'format', u'').lower())
+             ) and (
+                # Make sure format is supported
+                updated_resource.get(u'format', u'').lower() in
+                settings.SUPPORTED_FORMATS)):
             needs_validation = True
 
         if needs_validation:
@@ -317,10 +313,10 @@ def _run_async_validation(resource_id):
     except t.ValidationError as e:
         log.warning(
             u'Could not run validation for resource %s: %s',
-                resource_id, e)
+            resource_id, e)
+
 
 def _get_underlying_file(wrapper):
     if isinstance(wrapper, FlaskFileStorage):
         return wrapper.stream
     return wrapper.file
-

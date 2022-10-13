@@ -155,7 +155,7 @@ class TestResourceSchemaForm(object):
             env = {"REMOTE_USER": user["name"].encode("ascii")}
 
             _post(
-            app,
+                app,
                 url=_new_resource_url(dataset['id']),
                 extra_environ=env,
                 data=data,
@@ -422,16 +422,14 @@ class TestResourceValidationOnCreateForm(object):
         dataset = Dataset()
 
         env, response = _get_resource_new_page_as_sysadmin(app, dataset["id"])
-        form = response.forms["resource-edit"]
+        response.forms["resource-edit"]
 
-        upload = ("upload", "valid.csv", VALID_CSV)
+        ("upload", "valid.csv", VALID_CSV)
 
         valid_stream = io.BufferedReader(io.BytesIO(VALID_CSV))
 
         with mock.patch("io.open", return_value=valid_stream):
             pass
-
-            #submit_and_follow(app, form, env, "save", upload_files=[upload])
 
         dataset = call_action("package_show", id=dataset["id"])
 
@@ -443,18 +441,14 @@ class TestResourceValidationOnCreateForm(object):
         dataset = Dataset()
 
         env, response = _get_resource_new_page_as_sysadmin(app, dataset["id"])
-        form = response.forms["resource-edit"]
+        response.forms["resource-edit"]
 
-        upload = ("upload", "invalid.csv", INVALID_CSV)
+        ("upload", "invalid.csv", INVALID_CSV)
 
         invalid_stream = io.BufferedReader(io.BytesIO(INVALID_CSV))
 
         with mock.patch("io.open", return_value=invalid_stream):
             pass
-
-            #response = webtest_submit(
-            #    form, "save", upload_files=[upload], extra_environ=env
-            #)
 
         assert "validation" in response.body
         assert "missing-value" in response.body
@@ -485,15 +479,14 @@ class TestResourceValidationOnUpdateForm(object):
         env, response = _get_resource_update_page_as_sysadmin(
             app, dataset["id"], dataset["resources"][0]["id"]
         )
-        form = response.forms["resource-edit"]
+        response.forms["resource-edit"]
 
-        upload = ("upload", "valid.csv", VALID_CSV)
+        ("upload", "valid.csv", VALID_CSV)
 
         valid_stream = io.BufferedReader(io.BytesIO(VALID_CSV))
 
         with mock.patch("io.open", return_value=valid_stream):
             pass
-            #submit_and_follow(app, form, env, "save", upload_files=[upload])
 
         dataset = call_action("package_show", id=dataset["id"])
 
@@ -508,17 +501,14 @@ class TestResourceValidationOnUpdateForm(object):
         env, response = _get_resource_update_page_as_sysadmin(
             app, dataset["id"], dataset["resources"][0]["id"]
         )
-        form = response.forms["resource-edit"]
+        response.forms["resource-edit"]
 
-        upload = ("upload", "invalid.csv", INVALID_CSV)
+        ("upload", "invalid.csv", INVALID_CSV)
 
         invalid_stream = io.BufferedReader(io.BytesIO(INVALID_CSV))
 
         with mock.patch("io.open", return_value=invalid_stream):
             pass
-            #response = webtest_submit(
-            #    form, "save", upload_files=[upload], extra_environ=env
-            #)
 
         assert "validation" in response.body
         assert "missing-value" in response.body
