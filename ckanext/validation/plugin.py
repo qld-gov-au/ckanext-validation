@@ -52,8 +52,6 @@ The validation extension requires a database setup.
 Validation pages will not be enabled.
 Please run the following to create the database tables:
     %s''', init_command)
-        else:
-            log.debug(u'Validation tables exist')
 
         tk.add_template_directory(config_, u'templates')
         tk.add_resource(u'assets', 'ckanext-validation')
