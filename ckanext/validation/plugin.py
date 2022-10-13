@@ -29,6 +29,8 @@ class ValidationPlugin(MixinPlugin, p.SingletonPlugin, DefaultTranslation):
     p.implements(p.IConfigurer)
     p.implements(p.IActions)
     p.implements(p.IAuthFunctions)
+    p.implements(p.IResourceController, inherit=True)
+    p.implements(p.IPackageController, inherit=True)
     p.implements(p.ITemplateHelpers)
     p.implements(p.IValidators)
     p.implements(p.ITranslation, inherit=True)
@@ -36,7 +38,10 @@ class ValidationPlugin(MixinPlugin, p.SingletonPlugin, DefaultTranslation):
     # ITranslation
     def i18n_directory(self):
         u'''Change the directory of the .mo translation files'''
-        return os.path.join(os.path.dirname(__file__), 'i18n')
+        return os.path.join(
+            os.path.dirname(__file__),
+            'i18n'
+        )
 
     # IConfigurer
 
@@ -46,8 +51,7 @@ class ValidationPlugin(MixinPlugin, p.SingletonPlugin, DefaultTranslation):
                 init_command = 'ckan validation init-db'
             else:
                 init_command = 'paster --plugin=ckanext-validation validation init-db'
-            log.critical(
-                u'''
+            log.critical(u'''
 The validation extension requires a database setup.
 Validation pages will not be enabled.
 Please run the following to create the database tables:
@@ -77,10 +81,6 @@ Please run the following to create the database tables:
 
     def get_validators(self):
         return validators.get_validators()
-
-
-# class ValidationResourcePlugin(p.SingletonPlugin):
-    p.implements(p.IResourceController, inherit=True)
 
     # IResourceController
 
@@ -194,14 +194,6 @@ Please run the following to create the database tables:
     # CKAN >= 2.10
     def before_resource_delete(self, context, resource, resources):
         context['_resource_validation'] = True
-
-
-# class ValidationPackagePlugin(p.SingletonPlugin):
-    p.implements(p.IPackageController, inherit=True)
-
-    # # CKAN < 2.10
-    # def after_create(self, context, data_dict):
-    #     return self.after_dataset_create(context, data_dict)
 
     # CKAN >= 2.10
     def after_dataset_create(self, context, data_dict):
