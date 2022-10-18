@@ -87,7 +87,7 @@ class ValidationResourcePlugin(p.SingletonPlugin):
 
         data_dict = utils.process_schema_fields(data_dict)
 
-        if utils.get_create_mode(context, data_dict) == s.ASYNC_MODE:
+        if s.get_create_mode(context, data_dict) == s.ASYNC_MODE:
             return
 
         if utils.is_resource_could_be_validated(context, data_dict):
@@ -97,7 +97,7 @@ class ValidationResourcePlugin(p.SingletonPlugin):
         if data_dict.pop('_success_validation', False):
             return utils.create_success_validation_job(data_dict["id"])
 
-        if utils.get_create_mode(context, data_dict) == s.SYNC_MODE:
+        if s.get_create_mode(context, data_dict) == s.SYNC_MODE:
             return
 
         if utils.is_resource_could_be_validated(context, data_dict):
@@ -120,7 +120,7 @@ class ValidationResourcePlugin(p.SingletonPlugin):
 
         # if it's a sync mode, it's better run it before updating, because
         # the new uploaded file will be here
-        if utils.get_update_mode(context, updated_resource) == s.SYNC_MODE:
+        if s.get_update_mode(context, updated_resource) == s.SYNC_MODE:
             utils.validate_resource(context, updated_resource)
         else:
             # if it's an async mode, gather ID's and use it in `after_update`

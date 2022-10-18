@@ -6,7 +6,7 @@ from six import string_types, binary_type
 
 from ckantoolkit import Invalid
 
-from ckanext.validation.utils import get_default_validation_options
+from ckanext.validation.settings import get_default_validation_options
 
 
 def get_validators():

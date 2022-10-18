@@ -11,47 +11,20 @@ import requests
 import ckantoolkit as tk
 from requests.exceptions import RequestException
 from goodtables import validate
-from tabulator.config import PARSERS
 from six import string_types
 
 import ckan.plugins as plugins
 import ckan.lib.uploader as uploader
-from ckan.model import Session
+from ckan import model
 
 import ckanext.validation.settings as s
 from ckanext.validation.interfaces import IDataValidation
 from ckanext.validation.validation_status_helper import ValidationStatusHelper, StatusTypes
 from ckanext.validation.helpers import is_url_valid
+from ckanext.validation.validators import resource_schema_validator
+
 
 log = logging.getLogger(__name__)
-
-
-def get_update_mode(context, resource_data):
-    is_async = tk.asbool(tk.config.get(s.ASYNC_UPDATE_KEY))
-
-    mode = s.ASYNC_MODE if is_async else s.SYNC_MODE
-
-    for plugin in plugins.PluginImplementations(IDataValidation):
-        mode = plugin.set_update_mode(context, resource_data, mode)
-
-    assert mode in s.SUPPORTED_MODES, u"Mode '{}' is not supported".format(
-        mode)
-
-    return mode
-
-
-def get_create_mode(context, resource_data):
-    is_async = tk.asbool(tk.config.get(s.ASYNC_CREATE_KEY))
-
-    mode = s.ASYNC_MODE if is_async else s.SYNC_MODE
-
-    for plugin in plugins.PluginImplementations(IDataValidation):
-        mode = plugin.set_create_mode(context, resource_data, mode)
-
-    assert mode in s.SUPPORTED_MODES, u"Mode '{}' is not supported".format(
-        mode)
-
-    return mode
 
 
 def process_schema_fields(data_dict):
@@ -92,12 +65,20 @@ def process_schema_fields(data_dict):
     elif schema_json:
         data_dict[u'schema'] = schema_json
 
+    if not data_dict.get('schema'):
+        return data_dict
+
+    try:
+        resource_schema_validator(data_dict[u'schema'], {})
+    except tk.Invalid:
+        raise tk.ValidationError({u'schema': ['Schema is invalid']})
+
     return data_dict
 
 
 def validate_resource(context, data_dict, new_resource=False):
-    create_mode = get_create_mode(context, data_dict)
-    update_mode = get_update_mode(context, data_dict)
+    create_mode = s.get_create_mode(context, data_dict)
+    update_mode = s.get_update_mode(context, data_dict)
 
     mode = create_mode if new_resource else update_mode
 
@@ -211,7 +192,7 @@ def is_resource_could_be_validated(context, data_dict):
         return False
 
     res_format = data_dict.get(u'format', u'').lower()
-    supportable_format = res_format in get_supported_formats()
+    supportable_format = res_format in s.get_supported_formats()
 
     if supportable_format and (data_dict.get(u'url_type') == u'upload'
                                or data_dict.get(u'upload')
@@ -224,13 +205,13 @@ def is_resource_could_be_validated(context, data_dict):
 def _get_default_schema(package_id):
     """Dataset could have a default_schema, that could be used
     to validate resource"""
-    dataset = tk.get_action(u'package_show')({
-        'ignore_auth': True
-    }, {
-        'id': package_id
-    })
 
-    return dataset.get(u'default_data_schema')
+    dataset = model.Package.get(package_id)
+
+    if not dataset:
+        return
+
+    return dataset.extras.get(u'default_data_schema')
 
 
 def is_resource_requires_validation(context, old_resource, new_resource):
@@ -271,7 +252,7 @@ def is_resource_requires_validation(context, old_resource, new_resource):
     new_format = new_resource.get(u'format', u'').lower()
     is_format_changed = new_format != old_format
 
-    if is_format_changed and new_format in get_supported_formats():
+    if is_format_changed and new_format in s.get_supported_formats():
         log.info("Format has been changed. Validation required")
         return True
 
@@ -308,8 +289,8 @@ def create_success_validation_job(resource_id):
     a success validation record."""
     vsh = ValidationStatusHelper()
 
-    record = vsh.createValidationJob(Session, resource_id)
-    record = vsh.updateValidationJobStatus(session=Session,
+    record = vsh.createValidationJob(model.Session, resource_id)
+    record = vsh.updateValidationJobStatus(session=model.Session,
                                            resource_id=resource_id,
                                            status=StatusTypes.success,
                                            validationRecord=record)
@@ -325,7 +306,7 @@ def get_resource_validation_options(resource_data):
     Returns:
         dict: validation options dict
     """
-    options = get_default_validation_options()
+    options = s.get_default_validation_options()
     resource_options = resource_data.get(u'validation_options')
 
     if resource_options and isinstance(resource_options, string_types):
@@ -345,35 +326,6 @@ def get_site_user():
 
 def get_site_user_api_key():
     return get_site_user()['apikey']
-
-
-def get_supported_formats():
-    """Returns a list of supported formats to validate.
-    We use a tabulator to parse the file contents, so only those formats for
-    which a parser exists are supported
-
-    Returns:
-        list[str]: supported format list
-    """
-    supported_formats = [
-        _format.lower()
-        for _format in tk.aslist(tk.config.get(s.SUPPORTED_FORMATS_KEY))
-    ]
-
-    for _format in supported_formats:
-        assert _format in PARSERS, "Format {} is not supported".format(_format)
-
-    return supported_formats or s.DEFAULT_SUPPORTED_FORMATS
-
-
-def get_default_validation_options():
-    """Return a default validation options
-
-    Returns:
-        dict[str, Any]: validation options dictionary
-    """
-    default_options = tk.config.get(s.DEFAULT_VALIDATION_OPTIONS_KEY)
-    return json.loads(default_options) if default_options else {}
 
 
 def is_uploaded_file(upload):
