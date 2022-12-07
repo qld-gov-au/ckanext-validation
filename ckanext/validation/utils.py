@@ -23,7 +23,6 @@ from ckanext.validation.validation_status_helper import ValidationStatusHelper, 
 from ckanext.validation.helpers import is_url_valid
 from ckanext.validation.validators import resource_schema_validator
 
-
 log = logging.getLogger(__name__)
 
 
@@ -46,8 +45,8 @@ def process_schema_fields(data_dict):
     schema_json = data_dict.pop(u'schema_json', None)
 
     if is_uploaded_file(schema_upload):
-        data_dict[u'schema'] = ensure_str(uploader._get_underlying_file(
-            schema_upload).read())
+        data_dict[u'schema'] = ensure_str(
+            uploader._get_underlying_file(schema_upload).read())
 
     elif schema_url:
         if not is_url_valid(schema_url):
@@ -221,12 +220,6 @@ def is_resource_requires_validation(context, old_resource, new_resource):
     schema = new_resource.get(u'schema')
     schema_aligned = tk.asbool(new_resource.get('align_default_schema'))
 
-    if schema_aligned and is_api_call():
-        raise tk.ValidationError({
-            u'align_default_schema':
-            [tk._(u"This field couldn't be updated via API")]
-        })
-
     for plugin in plugins.PluginImplementations(IDataValidation):
         if not plugin.can_validate(context, new_resource):
             log.debug(u"Skipping validation for resource {}".format(res_id))
@@ -256,8 +249,8 @@ def is_resource_requires_validation(context, old_resource, new_resource):
         log.info("Format has been changed. Validation required")
         return True
 
-    if (old_resource.get(u'validation_options')
-            != new_resource.get(u'validation_options')):
+    if (old_resource.get(u'validation_options') !=
+            new_resource.get(u'validation_options')):
         log.info("Validation options have been updated. Validation required")
         return True
 
@@ -267,11 +260,13 @@ def is_resource_requires_validation(context, old_resource, new_resource):
 def is_api_call():
     controller, action = tk.get_endpoint()
 
-    resource_edit = ((controller == "resource" and action == "edit")
-                     or (controller == "package" and action == "resource_edit"))
+    resource_edit = ((controller == "resource" and action == "edit") or
+                     (controller == "package" and action == "resource_edit"))
     resource_create = action == "new_resource"
+    package_edit = ((controller == "dataset" and action == "edit")
+                    or (controller == "package" and action == "edit"))
 
-    return False if (resource_edit or resource_create) else True
+    return not (resource_edit or resource_create or package_edit)
 
 
 def is_dataset(data_dict):
