@@ -12,13 +12,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+        timeout-minutes: 2
       - uses: actions/setup-python@v2
+        timeout-minutes: 5
         with:
-          python-version: '3.6'
+          python-version: '3.x'
       - name: Install requirements
+        timeout-minutes: 5
         run: pip install flake8 pycodestyle
       - name: Check syntax
-        run: flake8 . --count --select=E901,E999,F821,F822,F823 --show-source --statistics --exclude ckan
+        timeout-minutes: 5
+        run: flake8
 
   test:
     needs: lint

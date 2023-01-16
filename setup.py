@@ -73,9 +73,7 @@ setup(
     # pip to create the appropriate form of executable for the target platform.
     entry_points={
         'ckan.plugins': [
-            'validation=ckanext.validation.plugin:ValidationPlugin',
-            'validation_resource=ckanext.validation.plugin:ValidationResourcePlugin',
-            'validation_package=ckanext.validation.plugin:ValidationPackagePlugin'
+            'validation=ckanext.validation.plugin:ValidationPlugin'
         ],
         'ckan.test_plugins': [
             'test_validation_plugin = ckanext.validation.tests.test_interfaces:TestPlugin',

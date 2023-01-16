@@ -15,9 +15,15 @@ class TestResourceSchemaValidator(object):
 
     def test_resource_schema_none(self):
 
+        schema = None
+
+        assert resource_schema_validator(schema, {}) is None
+
+    def test_resource_schema_empty_string(self):
+
         schema = ''
 
-        assert resource_schema_validator(schema, {}) == ''
+        assert resource_schema_validator(schema, {}) is None
 
     def test_resource_schema_invalid_json_string(self):
 

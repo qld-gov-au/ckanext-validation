@@ -89,7 +89,7 @@ ON CKAN <= 2.8:
 
 Once installed, add the `validation` plugin to the `ckan.plugins` configuration option in your INI file:
 
-    ckan.plugins = ... validation validation_resource validation_package
+    ckan.plugins = ... validation
 
 *Note:* if using CKAN 2.6 or lower and [asynchronous validation](#asynchronous-validation), also add the `rq` plugin ([see Versions supported and requirements](#versions-supported-and-requirements)) to `ckan.plugins`.
 
