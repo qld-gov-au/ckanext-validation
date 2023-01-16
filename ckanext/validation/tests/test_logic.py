@@ -284,7 +284,7 @@ class TestResourceValidationOnCreate(object):
 
     def test_validation_fails_if_schema_invalid(self, resource_factory):
         with pytest.raises(tk.ValidationError, match="Schema is invalid"):
-            resource = resource_factory(schema="{111}")
+            resource_factory(schema="{111}")
 
 
 @pytest.mark.usefixtures("clean_db", "validation_setup")

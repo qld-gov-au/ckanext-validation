@@ -6,7 +6,6 @@ import json
 import ckantoolkit as tk
 from six import string_types
 
-from ckanext.validation import utils
 from ckanext.validation.jobs import run_validation_job
 from ckanext.validation import settings
 from ckanext.validation.validation_status_helper import (

@@ -249,8 +249,7 @@ def is_resource_requires_validation(context, old_resource, new_resource):
         log.info("Format has been changed. Validation required")
         return True
 
-    if (old_resource.get(u'validation_options') !=
-            new_resource.get(u'validation_options')):
+    if old_resource.get("validation_options") != new_resource.get("validation_options"):
         log.info("Validation options have been updated. Validation required")
         return True
 
@@ -260,11 +259,13 @@ def is_resource_requires_validation(context, old_resource, new_resource):
 def is_api_call():
     controller, action = tk.get_endpoint()
 
-    resource_edit = ((controller == "resource" and action == "edit") or
-                     (controller == "package" and action == "resource_edit"))
+    resource_edit = (controller == "resource" and action == "edit") or (
+        controller == "package" and action == "resource_edit"
+    )
     resource_create = action == "new_resource"
-    package_edit = ((controller == "dataset" and action == "edit")
-                    or (controller == "package" and action == "edit"))
+    package_edit = (controller == "dataset" and action == "edit") or (
+        controller == "package" and action == "edit"
+    )
 
     return not (resource_edit or resource_create or package_edit)
 
