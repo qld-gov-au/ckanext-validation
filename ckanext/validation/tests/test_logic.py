@@ -282,6 +282,10 @@ class TestResourceValidationOnCreate(object):
         assert resource['validation_status'] == 'success'
         assert 'validation_timestamp' in resource
 
+    def test_validation_fails_if_schema_invalid(self, resource_factory):
+        with pytest.raises(tk.ValidationError, match="Schema is invalid"):
+            resource_factory(schema="{111}")
+
 
 @pytest.mark.usefixtures("clean_db", "validation_setup")
 class TestResourceValidationOnUpdate(object):
@@ -364,6 +368,15 @@ class TestResourceValidationOnUpdate(object):
         assert resource['schema'] == schema_url
         assert resource['validation_status'] == 'success'
         assert 'validation_timestamp' in resource
+
+    def test_validation_fails_if_schema_invalid(self, resource_factory):
+        resource = resource_factory(format="pdf")
+        with pytest.raises(tk.ValidationError, match="Schema is invalid"):
+            call_action('resource_update',
+                        id=resource['id'],
+                        package_id=resource['package_id'],
+                        format='csv',
+                        schema="{111}")
 
 
 @pytest.mark.usefixtures("clean_db", "validation_setup")

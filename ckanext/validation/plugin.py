@@ -56,8 +56,6 @@ The validation extension requires a database setup.
 Validation pages will not be enabled.
 Please run the following to create the database tables:
     %s''', init_command)
-        else:
-            log.debug(u'Validation tables exist')
 
         tk.add_template_directory(config_, u'templates')
         tk.add_resource(u'assets', 'ckanext-validation')
@@ -94,7 +92,7 @@ Please run the following to create the database tables:
 
         data_dict = utils.process_schema_fields(data_dict)
 
-        if utils.get_create_mode(context, data_dict) == s.ASYNC_MODE:
+        if s.get_create_mode(context, data_dict) == s.ASYNC_MODE:
             return
 
         if utils.is_resource_could_be_validated(context, data_dict):
@@ -119,7 +117,7 @@ Please run the following to create the database tables:
         if data_dict.pop('_success_validation', False):
             return utils.create_success_validation_job(data_dict["id"])
 
-        if utils.get_create_mode(context, data_dict) == s.SYNC_MODE:
+        if s.get_create_mode(context, data_dict) == s.SYNC_MODE:
             return
 
         if utils.is_resource_could_be_validated(context, data_dict):
@@ -147,7 +145,7 @@ Please run the following to create the database tables:
 
         # if it's a sync mode, it's better run it before updating, because
         # the new uploaded file will be here
-        if utils.get_update_mode(context, updated_resource) == s.SYNC_MODE:
+        if s.get_update_mode(context, updated_resource) == s.SYNC_MODE:
             utils.validate_resource(context, updated_resource)
         else:
             # if it's an async mode, gather ID's and use it in `after_update`
@@ -221,7 +219,6 @@ Please run the following to create the database tables:
 
             utils.validate_resource(context, resource)
 
-    # CKAN < 2.10
     def before_index(self, index_dict):
         if (self._data_dict_is_dataset(index_dict)):
             return self.before_dataset_index(index_dict)

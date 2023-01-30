@@ -6,7 +6,6 @@ import json
 import ckantoolkit as tk
 from six import string_types
 
-from ckanext.validation import utils
 from ckanext.validation.jobs import run_validation_job
 from ckanext.validation import settings
 from ckanext.validation.validation_status_helper import (
@@ -54,7 +53,7 @@ def resource_validation_run(context, data_dict):
     # TODO: limit to sysadmins
     async_job = data_dict.get(u'async', True)
 
-    supported_formats = utils.get_supported_formats()
+    supported_formats = settings.get_supported_formats()
 
     # Ensure format is supported
     if not resource.get(u'format', u'').lower() in supported_formats:
@@ -271,7 +270,7 @@ def resource_validation_run_batch(context, data_dict):
 
                 for resource in dataset['resources']:
                     res_format = resource.get(u'format', u'').lower()
-                    if res_format not in utils.get_supported_formats():
+                    if res_format not in settings.get_supported_formats():
                         continue
 
                     try:
