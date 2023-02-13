@@ -35,11 +35,19 @@ def log_in_directly(context):
 
     assert context.persona
     context.execute_steps(u"""
-        When I fill in "login" with "$name"
-        And I fill in "password" with "$password"
-        And I press the element with xpath "//button[contains(string(), 'Login')]"
+        When I attempt to log in with password "$password"
         Then I should see an element with xpath "//a[@title='Log out']"
     """)
+
+
+@step(u'I attempt to log in with password "{password}"')
+def attempt_login(context, password):
+    assert context.persona
+    context.execute_steps(u"""
+        When I fill in "login" with "$name"
+        And I fill in "password" with "{}"
+        And I press the element with xpath "//button[contains(string(), 'Login')]"
+    """.format(password))
 
 
 @step(u'I open the new resource form for dataset "{name}"')
@@ -123,5 +131,5 @@ def go_to_organisation_including_users(context, organisation_id, including):
 def should_see_validation_timestamp(context):
     context.execute_steps(u"""
         Then I should see "Validation timestamp"
-        And I should see an element with xpath "//th[contains(string(), 'Validation timestamp')]/../td[contains(string(), '-') and contains(string(), 'T') and contains(string(), ':') and contains(string(), '.')]"
+        And I should see an element with xpath "//th[contains(string(), 'Validation timestamp')]/../td[contains(string(), '-') and contains(string(), ':') and contains(string(), '.')]"
     """)

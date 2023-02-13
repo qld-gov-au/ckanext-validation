@@ -11,7 +11,7 @@ from ckantoolkit import (c, NotAuthorized,
                          check_ckan_version)
 
 from ckanext.validation import settings
-from ckanext.validation.logic import _search_datasets
+from ckanext.validation.logic.action import _search_datasets
 from ckanext.validation.model import create_tables, tables_exist
 
 

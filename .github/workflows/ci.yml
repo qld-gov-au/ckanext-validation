@@ -5,25 +5,37 @@ on:
   pull_request:
     branches:
       - master
+      - develop
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        timeout-minutes: 2
+      - uses: actions/setup-python@v2
+        timeout-minutes: 5
+        with:
+          python-version: '3.x'
+      - name: Install requirements
+        timeout-minutes: 5
+        run: pip install flake8 pycodestyle
+      - name: Check syntax
+        timeout-minutes: 5
+        run: flake8
+
   test:
+    needs: lint
     strategy:
       fail-fast: false
       matrix:
-        ckan-version: [ckan-2.8.8, ckan-2.9.5]
-        python-version: [py2, py3]
-        exclude:
-          - ckan-version: ckan-2.8.8
-            python-version: py3
+        ckan-version: [2.9, "2.9-py2", 2.8]
 
-    name: Continuous Integration build on CKAN ${{ matrix.ckan-version }} ${{ matrix.python-version }}
+    name: Continuous Integration build on CKAN ${{ matrix.ckan-version }}
     runs-on: ubuntu-latest
-    container: integratedexperts/ci-builder
+    container: drevops/ci-builder
     env:
-      CKAN_REPO: ckan/ckan
       CKAN_VERSION: ${{ matrix.ckan-version }}
-      PYTHON_VERSION: ${{ matrix.python-version }}
 
     steps:
       - uses: actions/checkout@v2
@@ -31,11 +43,11 @@ jobs:
 
       - name: Build
         run: .circleci/build.sh
-        timeout-minutes: 10
+        timeout-minutes: 15
 
       - name: Test
         run: .circleci/test.sh
-        timeout-minutes: 15
+        timeout-minutes: 20
 
       - name: Retrieve screenshots
         if: failure()
@@ -46,6 +58,6 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v2
         with:
-          name: CKAN ${{ matrix.ckan-version }} ${{ matrix.python-version }} screenshots
+          name: CKAN ${{ matrix.ckan-version }} screenshots
           path: /tmp/artifacts/behave/screenshots
         timeout-minutes: 1

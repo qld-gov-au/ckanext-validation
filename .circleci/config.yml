@@ -7,8 +7,8 @@ aliases:
     docker:
       #; Using "runner" container where each job will be executed. This container
       #; has all necessary tools to run dockerized environment.
-      #; @see https://github.com/integratedexperts/ci-builder
-      - image: integratedexperts/ci-builder
+      #; @see https://github.com/drevops/ci-builder
+      - image: drevops/ci-builder
 
   # Step to setup remote docker.
   - &step_setup_remote_docker
@@ -26,7 +26,7 @@ jobs:
       - run:
           command: .circleci/build.sh
           environment:
-            CKAN_VERSION: ckan-2.9.5
+            CKAN_VERSION: 2.9
       - run: .circleci/test.sh
       - run:
           name: Process artifacts
