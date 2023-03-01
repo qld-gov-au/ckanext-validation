@@ -158,6 +158,7 @@ def _get_uploaded_resource_path(resource_data):
 
     return path
 
+
 def _get_session(resource_data):
     dataset = tk.get_action('package_show')({
         'user': get_site_user()['name']
