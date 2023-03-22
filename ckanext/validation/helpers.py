@@ -23,8 +23,8 @@ def _get_helpers():
 
 def get_validation_badge(resource, in_listing=False):
 
-    afterDate = config.get('ckanext.validation.show_badges_after_last_modified_Date', "")
-    if afterDate != "" and h.date_str_to_datetime(afterDate) >= h.date_str_to_datetime(resource['last_modified']):
+    afterDate = config.get('ckanext.validation.show_badges_after_last_modified_date', "")
+    if afterDate and h.date_str_to_datetime(afterDate) >= h.date_str_to_datetime(resource['last_modified']):
         return ''
 
     if in_listing and not asbool(
