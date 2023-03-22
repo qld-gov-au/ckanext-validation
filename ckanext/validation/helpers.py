@@ -4,7 +4,7 @@ import json
 from six.moves.urllib.parse import urlparse
 from six import string_types
 from ckantoolkit import url_for, _, config, asbool,\
-    literal, check_ckan_version
+    literal, check_ckan_version, h
 
 
 def _get_helpers():
@@ -22,6 +22,10 @@ def _get_helpers():
 
 
 def get_validation_badge(resource, in_listing=False):
+
+    afterDate = config.get('ckanext.validation.show_badges_after_last_modified_Date', "")
+    if afterDate != "" and h.date_str_to_datetime(afterDate) >= h.date_str_to_datetime(resource['last_modified']) :
+        return ''
 
     if in_listing and not asbool(
             config.get('ckanext.validation.show_badges_in_listings', True)):
