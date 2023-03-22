@@ -36,21 +36,6 @@ PERSONAS = {
         'email': u'group_admin@localhost',
         'password': u'Password123!'
     },
-    'Publisher': {
-        'name': u'editor',
-        'email': u'publisher@localhost',
-        'password': u'Password123!'
-    },
-    'Walker': {
-        'name': u'walker',
-        'email': u'walker@localhost',
-        'password': u'Password123!'
-    },
-    'Foodie': {
-        'name': u'foodie',
-        'email': u'foodie@localhost',
-        'password': u'Password123!'
-    },
     'TestOrgAdmin': {
         'name': u'test_org_admin',
         'email': u'test_org_admin@localhost',
