@@ -104,6 +104,9 @@ def run_sync_validation(resource_data):
     if schema and isinstance(schema, string_types):
         schema = schema if is_url_valid(schema) else json.loads(schema)
 
+    if not schema:
+        return
+
     _format = resource_data.get('format', '').lower()
     options = get_resource_validation_options(resource_data)
 

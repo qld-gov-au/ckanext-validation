@@ -50,8 +50,7 @@ def resource_validation_run(context, data_dict):
 
     resource = tk.get_action(u'resource_show')(context, {u'id': resource_id})
 
-    schema = resource.get('schema')
-    if not schema:
+    if not resource.get('schema'):
         return
 
     # TODO: limit to sysadmins
