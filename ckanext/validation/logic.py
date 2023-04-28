@@ -2,9 +2,9 @@
 
 import logging
 import json
+import six
 
 import ckantoolkit as tk
-from six import string_types
 
 from ckanext.validation.jobs import run_validation_job
 from ckanext.validation import settings
@@ -12,6 +12,65 @@ from ckanext.validation.validation_status_helper import (
     ValidationStatusHelper, ValidationJobAlreadyEnqueued)
 
 log = logging.getLogger(__name__)
+
+
+def enqueue_validation_job(package_id, resource_id):
+    job_title = "run_validation_job: package_id: {} resource: {}".format(
+        package_id, resource_id),
+
+    enqueue_args = {
+        'fn': run_validation_job,
+        'title': job_title,
+        'kwargs': {
+            'resource': resource_id,
+        }
+    }
+
+    ttl = 24 * 60 * 60  # 24 hour ttl.
+    rq_kwargs = {
+        'ttl': ttl, 'failure_ttl': ttl
+    }
+    enqueue_args['rq_kwargs'] = rq_kwargs
+
+    # Optional variable, if not set, default queue is used
+    queue = tk.config.get('ckanext.validation.queue', None)
+
+    if queue:
+        enqueue_args['queue'] = queue
+
+    tk.enqueue_job(**enqueue_args)
+
+
+# Auth
+
+def auth_resource_validation_run(context, data_dict):
+    if tk.check_access(
+            u'resource_update', context, {u'id': data_dict[u'resource_id']}):
+        return {u'success': True}
+    return {u'success': False}
+
+
+def auth_resource_validation_delete(context, data_dict):
+    if tk.check_access(
+            u'resource_update', context, {u'id': data_dict[u'resource_id']}):
+        return {u'success': True}
+    return {u'success': False}
+
+
+@tk.auth_allow_anonymous_access
+def auth_resource_validation_show(context, data_dict):
+    if tk.check_access(
+            u'resource_show', context, {u'id': data_dict[u'resource_id']}):
+        return {u'success': True}
+    return {u'success': False}
+
+
+def auth_resource_validation_run_batch(context, data_dict):
+    '''u Sysadmins only'''
+    return {u'success': False}
+
+
+# Actions
 
 
 def get_actions():
@@ -48,7 +107,8 @@ def resource_validation_run(context, data_dict):
     if not resource_id:
         raise tk.ValidationError({u'resource_id': u'Missing value'})
 
-    resource = tk.get_action(u'resource_show')(context, {u'id': resource_id})
+    resource = tk.get_action(u'resource_show')(
+        context, {u'id': resource_id})
 
     # TODO: limit to sysadmins
     async_job = data_dict.get(u'async', True)
@@ -57,11 +117,10 @@ def resource_validation_run(context, data_dict):
 
     # Ensure format is supported
     if not resource.get(u'format', u'').lower() in supported_formats:
-        raise tk.ValidationError({
-            u'format':
-            u'Unsupported resource format.'
-            u'Must be one of {}'.format(u','.join(supported_formats))
-        })
+        raise tk.ValidationError(
+            {u'format': u'Unsupported resource format.'
+             u'Must be one of {}'.format(
+                 u','.join(supported_formats))})
 
     # Ensure there is a URL or file upload
     if not resource.get(u'url') and not resource.get(u'url_type') == u'upload':
@@ -84,33 +143,6 @@ def resource_validation_run(context, data_dict):
         enqueue_validation_job(package_id, resource_id)
     else:
         run_validation_job(resource)
-
-
-def enqueue_validation_job(package_id, resource_id):
-    job_title = "run_validation_job: package_id: {} resource: {}".format(
-        package_id, resource_id),
-
-    enqueue_args = {
-        'fn': run_validation_job,
-        'title': job_title,
-        'kwargs': {
-            'resource': resource_id,
-        }
-    }
-
-    ttl = 24 * 60 * 60  # 24 hour ttl.
-    rq_kwargs = {
-        'ttl': ttl, 'failure_ttl': ttl
-    }
-    enqueue_args['rq_kwargs'] = rq_kwargs
-
-    # Optional variable, if not set, default queue is used
-    queue = tk.config.get('ckanext.validation.queue', None)
-
-    if queue:
-        enqueue_args['queue'] = queue
-
-    tk.enqueue_job(**enqueue_args)
 
 
 @tk.side_effect_free
@@ -234,14 +266,14 @@ def resource_validation_run_batch(context, data_dict):
     count_resources = 0
 
     dataset_ids = data_dict.get('dataset_ids')
-    if isinstance(dataset_ids, string_types):
+    if isinstance(dataset_ids, six.string_types):
         try:
             dataset_ids = json.loads(dataset_ids)
         except ValueError:
             dataset_ids = [dataset_ids]
 
     search_params = data_dict.get('query')
-    if isinstance(search_params, string_types):
+    if isinstance(search_params, six.string_types):
         try:
             search_params = json.loads(search_params)
         except ValueError:
@@ -250,10 +282,10 @@ def resource_validation_run_batch(context, data_dict):
 
     while True:
 
-        query = _search_datasets(page,
-                                 page_size=page_size,
-                                 dataset_ids=dataset_ids,
-                                 search_params=search_params)
+        query = _search_datasets(
+            page, page_size=page_size,
+            dataset_ids=dataset_ids,
+            search_params=search_params)
 
         if page == 1 and query['count'] == 0:
             msg = 'No suitable datasets for validation'
@@ -272,12 +304,9 @@ def resource_validation_run_batch(context, data_dict):
 
                     try:
                         tk.get_action(u'resource_validation_run')(
-                            {
-                                u'ignore_auth': True
-                            }, {
-                                u'resource_id': resource['id'],
-                                u'async': True
-                            })
+                            {u'ignore_auth': True},
+                            {u'resource_id': resource['id'],
+                             u'async': True})
 
                         count_resources += 1
 
@@ -299,10 +328,8 @@ def resource_validation_run_batch(context, data_dict):
     return {'output': msg}
 
 
-def _search_datasets(page=1,
-                     page_size=100,
-                     dataset_ids=None,
-                     search_params=None):
+def _search_datasets(
+        page=1, page_size=100, dataset_ids=None, search_params=None):
     '''
     Perform a query with `package_search` and return the result
 
@@ -320,10 +347,10 @@ def _search_datasets(page=1,
 
     if dataset_ids:
 
-        search_data_dict['q'] = ' OR '.join([
-            'id:{0} OR name:"{0}"'.format(dataset_id)
-            for dataset_id in dataset_ids
-        ])
+        search_data_dict['q'] = ' OR '.join(
+            ['id:{0} OR name:"{0}"'.format(dataset_id)
+             for dataset_id in dataset_ids]
+        )
 
     elif search_params:
         _update_search_params(search_data_dict, search_params)
@@ -374,9 +401,8 @@ def _add_default_formats(search_data_dict):
     for _format in settings.DEFAULT_SUPPORTED_FORMATS:
         filter_formats.extend([_format, _format.upper()])
 
-    filter_formats_query = [
-        '+res_format:"{0}"'.format(_format) for _format in filter_formats
-    ]
+    filter_formats_query = ['+res_format:"{0}"'.format(_format)
+                            for _format in filter_formats]
     search_data_dict['fq_list'].append(' OR '.join(filter_formats_query))
 
 
@@ -388,10 +414,10 @@ def _validation_dictize(validation):
         'report': validation.report,
         'error': validation.error,
     }
-    out['created'] = (validation.created.isoformat()
-                      if validation.created else None)
-    out['finished'] = (validation.finished.isoformat()
-                       if validation.finished else None)
+    out['created'] = (
+        validation.created.isoformat() if validation.created else None)
+    out['finished'] = (
+        validation.finished.isoformat() if validation.finished else None)
 
     return out
 

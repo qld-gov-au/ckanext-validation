@@ -4,10 +4,10 @@ import datetime
 import uuid
 import logging
 
+from six import text_type as str
 from sqlalchemy import Column, Unicode, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.dialects.postgresql import JSON
-from six import text_type
 
 from ckan.model.meta import metadata
 
@@ -15,7 +15,7 @@ log = logging.getLogger(__name__)
 
 
 def make_uuid():
-    return text_type(uuid.uuid4())
+    return str(uuid.uuid4())
 
 
 Base = declarative_base(metadata=metadata)

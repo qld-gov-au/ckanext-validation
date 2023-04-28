@@ -1,10 +1,10 @@
 # encoding: utf-8
 
 import json
-
-import six
 import mock
 import pytest
+import six
+
 from bs4 import BeautifulSoup
 
 from ckan.tests.factories import Sysadmin, Dataset

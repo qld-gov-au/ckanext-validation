@@ -3,26 +3,25 @@
 import logging
 import json
 import os
-from six import ensure_str
 from io import BytesIO
 from datetime import datetime as dt
 from cgi import FieldStorage
-
 import requests
-import ckantoolkit as tk
 from requests.exceptions import RequestException
-from goodtables import validate
-from six import string_types
+from six import ensure_str, string_types
 
+from goodtables import validate
+
+from ckan import model
 import ckan.plugins as plugins
 import ckan.lib.uploader as uploader
-from ckan import model
+import ckantoolkit as tk
 
-import ckanext.validation.settings as s
-from ckanext.validation.interfaces import IDataValidation
-from ckanext.validation.validation_status_helper import ValidationStatusHelper, StatusTypes
-from ckanext.validation.helpers import is_url_valid
-from ckanext.validation.validators import resource_schema_validator
+from . import settings as s
+from .interfaces import IDataValidation
+from .validation_status_helper import ValidationStatusHelper, StatusTypes
+from .helpers import is_url_valid
+from .validators import resource_schema_validator
 
 log = logging.getLogger(__name__)
 
@@ -134,7 +133,7 @@ def run_sync_validation(resource_data):
         resource_data[
             'validation_status'] = StatusTypes.success if _table_count else ""
         resource_data['validation_timestamp'] = str(
-            dt.now()) if _table_count else ""
+            dt.utcnow()) if _table_count else ""
         resource_data['_success_validation'] = True
 
 

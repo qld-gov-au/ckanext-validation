@@ -9,16 +9,15 @@ import ckantoolkit as tk
 import ckan.plugins as p
 from ckan.lib.plugins import DefaultTranslation
 
-from . import settings as s, utils, validators
+from . import blueprints, cli, settings as s, utils, validators
 from .helpers import _get_helpers
 from .logic import action, auth
 from .model import tables_exist
-from .plugin_mixins.flask_plugin import MixinPlugin
 
 log = logging.getLogger(__name__)
 
 
-class ValidationPlugin(MixinPlugin, p.SingletonPlugin, DefaultTranslation):
+class ValidationPlugin(p.SingletonPlugin, DefaultTranslation):
     p.implements(p.IConfigurer)
     p.implements(p.IActions)
     p.implements(p.IAuthFunctions)
@@ -27,6 +26,8 @@ class ValidationPlugin(MixinPlugin, p.SingletonPlugin, DefaultTranslation):
     p.implements(p.ITemplateHelpers)
     p.implements(p.IValidators)
     p.implements(p.ITranslation, inherit=True)
+    p.implements(p.IBlueprint)
+    p.implements(p.IClick)
 
     # ITranslation
     def i18n_directory(self):
@@ -64,11 +65,6 @@ Please run the following to create the database tables:
 
     def get_helpers(self):
         return _get_helpers()
-
-    # IValidators
-
-    def get_validators(self):
-        return validators.get_validators()
 
     # IResourceController
 
@@ -226,3 +222,18 @@ Please run the following to create the database tables:
             index_dict['vocab_validation_status'] = res_status
 
         return index_dict
+
+    # IValidators
+
+    def get_validators(self):
+        return validators.get_validators()
+
+    # IBlueprint
+
+    def get_blueprint(self):
+        return blueprints.get_blueprints()
+
+    # IClick
+
+    def get_commands(self):
+        return cli.get_commands()

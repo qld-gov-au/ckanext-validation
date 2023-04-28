@@ -3,8 +3,6 @@
 import json
 
 import ckantoolkit as tk
-
-
 import ckan.plugins as plugins
 
 from ckanext.validation.interfaces import IDataValidation
