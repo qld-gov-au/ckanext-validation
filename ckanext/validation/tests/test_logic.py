@@ -493,6 +493,8 @@ class TestPackageUpdate(object):
 
 
 @pytest.mark.usefixtures("clean_db", "validation_setup")
+@pytest.mark.ckan_config("ckanext.validation.run_on_create_sync", False)
+@pytest.mark.ckan_config("ckanext.validation.run_on_update_sync", False)
 class TestAuth(object):
 
     def test_run_anon(self):
