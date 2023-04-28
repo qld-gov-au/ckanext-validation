@@ -5,7 +5,6 @@ on:
   pull_request:
     branches:
       - master
-      - develop
 
 jobs:
   lint:
@@ -29,7 +28,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ckan-version: ["2.10", 2.9, "2.9-py2"]
+        ckan-version: ["2.10", 2.9, 2.9-py2]
 
     name: Continuous Integration build on CKAN ${{ matrix.ckan-version }}
     runs-on: ubuntu-latest
@@ -42,21 +41,21 @@ jobs:
         timeout-minutes: 2
 
       - name: Build
-        run: .circleci/build.sh
+        run: bin/build.sh
         timeout-minutes: 15
 
       - name: Test
-        run: .circleci/test.sh
+        run: bin/test.sh
         timeout-minutes: 20
 
       - name: Retrieve screenshots
         if: failure()
-        run: .circleci/process-artifacts.sh
+        run: bin/process-artifacts.sh
         timeout-minutes: 1
 
       - name: Upload screenshots
         if: failure()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: CKAN ${{ matrix.ckan-version }} screenshots
           path: /tmp/artifacts/behave/screenshots
