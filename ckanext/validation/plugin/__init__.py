@@ -144,8 +144,8 @@ to create the database tables:
                 data_dict["schema"] = data_dict["schema"].decode()
         elif schema_url:
 
-            if (not isinstance(schema_url, str) or
-                    not schema_url.lower()[:4] == u'http'):
+            if (not isinstance(schema_url, str)
+                    or not schema_url.lower()[:4] == u'http'):
                 raise t.ValidationError({u'schema_url': 'Must be a valid URL'})
             data_dict[u'schema'] = schema_url
         elif schema_json:
@@ -187,14 +187,14 @@ to create the database tables:
         needs_validation = False
         if ((
             # File uploaded
-            resource.get(u'url_type') == u'upload' or
+            resource.get(u'url_type') == u'upload'
             # URL defined
-            resource.get(u'url')
-            ) and (
+            or resource.get(u'url')
+        ) and (
             # Make sure format is supported
             resource.get(u'format', u'').lower() in
-                settings.SUPPORTED_FORMATS
-                )):
+            settings.SUPPORTED_FORMATS
+        )):
             needs_validation = True
 
         if needs_validation:
@@ -225,20 +225,19 @@ to create the database tables:
         needs_validation = False
         if ((
             # New file uploaded
-            updated_resource.get(u'upload') or
+            updated_resource.get(u'upload')
             # External URL changed
-            updated_resource.get(u'url') != current_resource.get(u'url') or
+            or updated_resource.get(u'url') != current_resource.get(u'url')
             # Schema changed
-            (updated_resource.get(u'schema') !=
-             current_resource.get(u'schema')) or
+            or (updated_resource.get(u'schema')
+                != current_resource.get(u'schema'))
             # Format changed
-            (updated_resource.get(u'format', u'').lower() !=
-             current_resource.get(u'format', u'').lower())
-            ) and (
-            # Make sure format is supported
-            updated_resource.get(u'format', u'').lower() in
-                settings.SUPPORTED_FORMATS
-                )):
+            or (updated_resource.get(u'format', u'').lower()
+                != current_resource.get(u'format', u'').lower()))
+            and (
+                # Make sure format is supported
+                updated_resource.get(u'format', u'').lower() in
+                settings.SUPPORTED_FORMATS)):
             needs_validation = True
 
         if needs_validation:
@@ -337,10 +336,10 @@ def _run_async_validation(resource_id):
     except t.ValidationError as e:
         log.warning(
             u'Could not run validation for resource %s: %s',
-                resource_id, e)
+            resource_id, e)
+
 
 def _get_underlying_file(wrapper):
     if isinstance(wrapper, FlaskFileStorage):
         return wrapper.stream
     return wrapper.file
-

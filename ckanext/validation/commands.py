@@ -381,5 +381,4 @@ Formats breakdown (validation failed or errored):
 CSV Report stored in {output_csv}
 '''.format(**outputs)
 
-
         log.info(msg)

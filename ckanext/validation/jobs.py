@@ -105,7 +105,7 @@ def run_validation_job(resource):
         validation.report = json.dumps(report)
     else:
         validation.report = json.dumps(report)
-        if 'errors' in report and report['errors']: 
+        if 'errors' in report and report['errors']:
             validation.status = 'error'
             validation.error = {
                 'message': [str(err) for err in report['errors']]}
@@ -132,8 +132,6 @@ def run_validation_job(resource):
         '_validation_performed': True
     }
     t.get_action('resource_patch')(patch_context, data_dict)
-
-
 
 
 def _validate_table(source, _format='csv', schema=None, **options):
