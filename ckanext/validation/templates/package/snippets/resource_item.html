@@ -4,8 +4,6 @@
 {{ super() }}
 {{ h.get_validation_badge(res, in_listing=True)|safe }}
 
-{% set type = 'asset' %}
-{% include 'validation/snippets/validation_style_' ~ type ~ '.html' %}
+  {% asset 'ckanext-validation/main-css' %}
+
 {% endblock %}
-
-

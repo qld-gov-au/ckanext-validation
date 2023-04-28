@@ -7,7 +7,8 @@
         <div id="report" data-module="validation-report" data-module-report="{{ h.dump_json_value(validation_report) }}"></div>
       </div>
 </div>
-
-{% set type = 'asset' %}
-{% include 'validation/snippets/validation_report_form_' ~ type ~ '.html' %}
-
+{% asset 'ckanext-validation/goodtables-ui' %}
+{% asset 'ckanext-validation/validation-report-css' %}
+{% asset 'ckanext-validation/module-validation-report' %}
+{% asset 'ckanext-validation/validation-report-form-css' %}
+{% asset 'ckanext-validation/module-modal-dialog' %}
