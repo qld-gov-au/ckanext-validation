@@ -1,6 +1,8 @@
-{% extends "package/base.html" %}
+{% set type = 'asset' %}
 
-{% asset 'ckanext-validation/main-css' %}
+{% include 'validation/snippets/validation_style_' ~ type ~ '.html' %}
+
+{% extends "package/base.html" %}
 
 {%- block subtitle %}{{ _('Validation Report') }}{% endblock -%}
 
@@ -38,9 +40,9 @@
         </div>
       </div>
     </section>
-    {% asset 'ckanext-validation/goodtables-ui' %}
-    {% asset 'ckanext-validation/validation-report-css' %}
-    {% asset 'ckanext-validation/module-validation-report' %}
+
+    {% include 'validation/snippets/validation_report_' ~ type ~ '.html' %}
+
 {% endblock %}
 
 
