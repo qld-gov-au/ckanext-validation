@@ -49,7 +49,7 @@ Please run the following to create the database tables:
     %s''', init_command)
 
         tk.add_template_directory(config_, u'templates')
-        tk.add_resource(u'assets', 'ckanext-validation')
+        tk.add_resource(u'webassets', 'ckanext-validation')
 
     # IActions
 
