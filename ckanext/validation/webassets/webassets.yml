@@ -1,52 +1,46 @@
-main-css:
+validation-css:
   output: ckanext-validation/%(version)s_validation.css
   contents:
     - css/validation.css
 
-validation-report-css:
-  output: ckanext-validation/%(version)s_validation-report.css
-  contents:
-    - css/validation-report.css
-
-validation-report-form-css:
-  output: ckanext-validation/%(version)s_validation-report-form.css
-  contents:
-    - css/validation-report-form.css
-
-goodtables-ui-css:
-  output: ckanext-validation/%(version)s_goodtables-ui.css
-  contents:
-    - vendor/goodtables-ui/goodtables-ui.css
-
 resource-schema-form:
-  output: visualize/%(version)s_module-resource-schema.js
+  filter: rjsmin
+  output: ckanext-validation/%(version)s_resource_schema_form.js
   contents:
     - js/module-resource-schema.js
   extra:
     preload:
       - base/main
 
-module-validation-report:
-  output: visualize/%(version)s_module-validation-report.js
+report-form-js:
+  filter: rjsmin
+  output: ckanext-validation/%(version)s_report_form.js
   contents:
+    - js/module-modal-dialog.js
+  extra:
+    preload:
+      - ckanext-validation/report-js
+
+report-form-css:
+  output: ckanext-validation/%(version)s_validation_report_form.css
+  contents:
+    - css/validation-report-form.css
+  extra:
+    preload:
+      - ckanext-validation/report-css
+
+report-js:
+  filter: rjsmin
+  output: ckanext-validation/%(version)s_report.js
+  contents:
+    - vendor/goodtables-ui/goodtables-ui.js
     - js/module-validation-report.js
   extra:
     preload:
       - base/main
 
-module-modal-dialog:
-  output: visualize/%(version)s_module-modal-dialog.js
+report-css:
+  output: ckanext-validation/%(version)s_validation_report.css
   contents:
-    - js/module-modal-dialog.js
-  extra:
-    preload:
-      - base/main
-
-goodtables-ui:
-  output: ckanext-validation/%(version)s_goodtables-ui.js
-  contents:
-    - vendor/goodtables-ui/goodtables-ui.js
-  extra:
-    preload:
-      - ckanext-validation/goodtables-ui-css
-
+    - vendor/goodtables-ui/goodtables-ui.css
+    - css/validation-report.css
