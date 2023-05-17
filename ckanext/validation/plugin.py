@@ -9,9 +9,8 @@ import ckantoolkit as tk
 import ckan.plugins as p
 from ckan.lib.plugins import DefaultTranslation
 
-from . import blueprints, cli, settings as s, utils, validators
+from . import blueprints, cli, logic, settings as s, utils, validators
 from .helpers import _get_helpers
-from .logic import action, auth
 from .model import tables_exist
 
 log = logging.getLogger(__name__)
@@ -54,12 +53,12 @@ Please run the following to create the database tables:
     # IActions
 
     def get_actions(self):
-        return action.get_actions()
+        return logic.get_actions()
 
     # IAuthFunctions
 
     def get_auth_functions(self):
-        return auth.get_auth_functions()
+        return logic.get_auth_functions()
 
     # ITemplateHelpers
 

@@ -43,6 +43,17 @@ def enqueue_validation_job(package_id, resource_id):
 
 # Auth
 
+def get_auth_functions():
+    validators = (
+        auth_resource_validation_run,
+        auth_resource_validation_delete,
+        auth_resource_validation_show,
+        auth_resource_validation_run_batch,
+    )
+
+    return {"{}".format(func.__name__.replace("auth_", "")): func for func in validators}
+
+
 def auth_resource_validation_run(context, data_dict):
     if tk.check_access(
             u'resource_update', context, {u'id': data_dict[u'resource_id']}):
