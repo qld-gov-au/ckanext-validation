@@ -24,6 +24,8 @@ from ckanext.validation.tests.helpers import (
     MockFileStorage,
 )
 
+CSV_URL = "https://people.sc.fsu.edu/~jburkardt/data/csv/addresses.csv"
+
 
 @pytest.mark.usefixtures("clean_db", "validation_setup")
 class TestResourceValidationRun(object):
@@ -498,7 +500,7 @@ class TestAuth(object):
     @pytest.mark.ckan_config("ckanext.validation.run_on_create_sync", False)
     @pytest.mark.ckan_config("ckanext.validation.run_on_update_sync", False)
     def test_run_anon(self):
-        resource = factories.Resource(url="https://example.com")
+        resource = factories.Resource(url=CSV_URL)
         context = {'user': None, 'model': model}
 
         with pytest.raises(tk.NotAuthorized):
@@ -509,7 +511,7 @@ class TestAuth(object):
     @pytest.mark.ckan_config("ckanext.validation.run_on_create_sync", False)
     @pytest.mark.ckan_config("ckanext.validation.run_on_update_sync", False)
     def test_run_sysadmin(self):
-        resource = factories.Resource(url="https://example.com")
+        resource = factories.Resource(url=CSV_URL)
         sysadmin = factories.Sysadmin()
         context = {'user': sysadmin['name'], 'model': model}
 
@@ -522,8 +524,7 @@ class TestAuth(object):
     def test_run_non_auth_user(self):
         user = factories.User()
         org = factories.Organization()
-        dataset = factories.Dataset(owner_org=org['id'],
-                                    resources=[factories.Resource(url="https://example.com")])
+        dataset = factories.Dataset(owner_org=org['id'], resources=[factories.Resource(url=CSV_URL)])
         context = {'user': user['name'], 'model': model}
 
         with pytest.raises(tk.NotAuthorized):
@@ -539,8 +540,7 @@ class TestAuth(object):
             'name': user['name'],
             'capacity': 'editor'
         }])
-        dataset = factories.Dataset(owner_org=org['id'],
-                                    resources=[factories.Resource(url="https://example.com")])
+        dataset = factories.Dataset(owner_org=org['id'], resources=[factories.Resource(url=CSV_URL)])
         context = {'user': user['name'], 'model': model}
 
         assert call_auth('resource_validation_run',
@@ -550,7 +550,7 @@ class TestAuth(object):
     @pytest.mark.ckan_config("ckanext.validation.run_on_create_sync", False)
     @pytest.mark.ckan_config("ckanext.validation.run_on_update_sync", False)
     def test_delete_anon(self):
-        resource = factories.Resource(url="https://example.com")
+        resource = factories.Resource(url=CSV_URL)
         context = {'user': None, 'model': model}
 
         with pytest.raises(tk.NotAuthorized):
@@ -561,7 +561,7 @@ class TestAuth(object):
     @pytest.mark.ckan_config("ckanext.validation.run_on_create_sync", False)
     @pytest.mark.ckan_config("ckanext.validation.run_on_update_sync", False)
     def test_delete_sysadmin(self):
-        resource = factories.Resource(url="https://example.com")
+        resource = factories.Resource(url=CSV_URL)
         sysadmin = factories.Sysadmin()
         context = {'user': sysadmin['name'], 'model': model}
 
@@ -574,8 +574,7 @@ class TestAuth(object):
     def test_delete_non_auth_user(self):
         user = factories.User()
         org = factories.Organization()
-        dataset = factories.Dataset(owner_org=org['id'],
-                                    resources=[factories.Resource(url="https://example.com")])
+        dataset = factories.Dataset(owner_org=org['id'], resources=[factories.Resource(url=CSV_URL)])
         context = {'user': user['name'], 'model': model}
 
         with pytest.raises(tk.NotAuthorized):
@@ -591,8 +590,7 @@ class TestAuth(object):
             'name': user['name'],
             'capacity': 'editor'
         }])
-        dataset = factories.Dataset(owner_org=org['id'],
-                                    resources=[factories.Resource(url="https://example.com")])
+        dataset = factories.Dataset(owner_org=org['id'], resources=[factories.Resource(url=CSV_URL)])
         context = {'user': user['name'], 'model': model}
 
         assert call_auth('resource_validation_delete',
@@ -602,7 +600,7 @@ class TestAuth(object):
     @pytest.mark.ckan_config("ckanext.validation.run_on_create_sync", False)
     @pytest.mark.ckan_config("ckanext.validation.run_on_update_sync", False)
     def test_show_anon(self):
-        resource = factories.Resource(url="https://example.com")
+        resource = factories.Resource(url=CSV_URL)
         context = {'user': None, 'model': model}
 
         assert call_auth('resource_validation_show',
@@ -614,9 +612,10 @@ class TestAuth(object):
     def test_show_anon_public_dataset(self):
         user = factories.User()
         org = factories.Organization()
-        dataset = factories.Dataset(owner_org=org['id'],
-                                    resources=[factories.Resource(url="https://example.com")],
-                                    private=False)
+        dataset = factories.Dataset(
+            owner_org=org['id'],
+            resources=[factories.Resource(url=CSV_URL)],
+            private=False)
         context = {'user': user['name'], 'model': model}
 
         assert call_auth('resource_validation_show',
@@ -628,9 +627,10 @@ class TestAuth(object):
     def test_show_anon_private_dataset(self):
         user = factories.User()
         org = factories.Organization()
-        dataset = factories.Dataset(owner_org=org['id'],
-                                    resources=[factories.Resource(url="https://example.com")],
-                                    private=True)
+        dataset = factories.Dataset(
+            owner_org=org['id'],
+            resources=[factories.Resource(url=CSV_URL)],
+            private=True)
         context = {'user': user['name'], 'model': model}
 
         with pytest.raises(tk.NotAuthorized):
