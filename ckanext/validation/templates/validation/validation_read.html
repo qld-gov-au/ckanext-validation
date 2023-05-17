@@ -1,8 +1,6 @@
-{% set type = 'asset' %}
-
-{% include 'validation/snippets/validation_style_' ~ type ~ '.html' %}
-
 {% extends "package/base.html" %}
+
+{% include 'validation/snippets/validation_style_asset.html' %}
 
 {%- block subtitle %}{{ _('Validation Report') }}{% endblock -%}
 
@@ -41,7 +39,7 @@
       </div>
     </section>
 
-    {% include 'validation/snippets/validation_report_' ~ type ~ '.html' %}
+    {% include 'validation/snippets/validation_report_asset.html' %}
 
 {% endblock %}
 

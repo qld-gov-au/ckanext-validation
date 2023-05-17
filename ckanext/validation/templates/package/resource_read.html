@@ -6,8 +6,7 @@
   {{ h.get_validation_badge(res)|safe }}
   </h1>
 
-  {% set type = 'asset' %}
-  {% include 'validation/snippets/validation_style_' ~ type ~ '.html' %}
+  {% include 'validation/snippets/validation_style_asset.html' %}
 
 {% endblock %}
 
