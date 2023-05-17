@@ -498,7 +498,7 @@ class TestAuth(object):
     @pytest.mark.ckan_config("ckanext.validation.run_on_create_sync", False)
     @pytest.mark.ckan_config("ckanext.validation.run_on_update_sync", False)
     def test_run_anon(self):
-        resource = factories.Resource()
+        resource = factories.Resource(url="https://example.com")
         context = {'user': None, 'model': model}
 
         with pytest.raises(tk.NotAuthorized):
@@ -509,7 +509,7 @@ class TestAuth(object):
     @pytest.mark.ckan_config("ckanext.validation.run_on_create_sync", False)
     @pytest.mark.ckan_config("ckanext.validation.run_on_update_sync", False)
     def test_run_sysadmin(self):
-        resource = factories.Resource()
+        resource = factories.Resource(url="https://example.com")
         sysadmin = factories.Sysadmin()
         context = {'user': sysadmin['name'], 'model': model}
 
@@ -523,7 +523,7 @@ class TestAuth(object):
         user = factories.User()
         org = factories.Organization()
         dataset = factories.Dataset(owner_org=org['id'],
-                                    resources=[factories.Resource()])
+                                    resources=[factories.Resource(url="https://example.com")])
         context = {'user': user['name'], 'model': model}
 
         with pytest.raises(tk.NotAuthorized):
@@ -540,7 +540,7 @@ class TestAuth(object):
             'capacity': 'editor'
         }])
         dataset = factories.Dataset(owner_org=org['id'],
-                                    resources=[factories.Resource()])
+                                    resources=[factories.Resource(url="https://example.com")])
         context = {'user': user['name'], 'model': model}
 
         assert call_auth('resource_validation_run',
@@ -550,7 +550,7 @@ class TestAuth(object):
     @pytest.mark.ckan_config("ckanext.validation.run_on_create_sync", False)
     @pytest.mark.ckan_config("ckanext.validation.run_on_update_sync", False)
     def test_delete_anon(self):
-        resource = factories.Resource()
+        resource = factories.Resource(url="https://example.com")
         context = {'user': None, 'model': model}
 
         with pytest.raises(tk.NotAuthorized):
@@ -561,7 +561,7 @@ class TestAuth(object):
     @pytest.mark.ckan_config("ckanext.validation.run_on_create_sync", False)
     @pytest.mark.ckan_config("ckanext.validation.run_on_update_sync", False)
     def test_delete_sysadmin(self):
-        resource = factories.Resource()
+        resource = factories.Resource(url="https://example.com")
         sysadmin = factories.Sysadmin()
         context = {'user': sysadmin['name'], 'model': model}
 
@@ -575,7 +575,7 @@ class TestAuth(object):
         user = factories.User()
         org = factories.Organization()
         dataset = factories.Dataset(owner_org=org['id'],
-                                    resources=[factories.Resource()])
+                                    resources=[factories.Resource(url="https://example.com")])
         context = {'user': user['name'], 'model': model}
 
         with pytest.raises(tk.NotAuthorized):
@@ -592,7 +592,7 @@ class TestAuth(object):
             'capacity': 'editor'
         }])
         dataset = factories.Dataset(owner_org=org['id'],
-                                    resources=[factories.Resource()])
+                                    resources=[factories.Resource(url="https://example.com")])
         context = {'user': user['name'], 'model': model}
 
         assert call_auth('resource_validation_delete',
@@ -602,7 +602,7 @@ class TestAuth(object):
     @pytest.mark.ckan_config("ckanext.validation.run_on_create_sync", False)
     @pytest.mark.ckan_config("ckanext.validation.run_on_update_sync", False)
     def test_show_anon(self):
-        resource = factories.Resource()
+        resource = factories.Resource(url="https://example.com")
         context = {'user': None, 'model': model}
 
         assert call_auth('resource_validation_show',
@@ -615,7 +615,7 @@ class TestAuth(object):
         user = factories.User()
         org = factories.Organization()
         dataset = factories.Dataset(owner_org=org['id'],
-                                    resources=[factories.Resource()],
+                                    resources=[factories.Resource(url="https://example.com")],
                                     private=False)
         context = {'user': user['name'], 'model': model}
 
@@ -629,7 +629,7 @@ class TestAuth(object):
         user = factories.User()
         org = factories.Organization()
         dataset = factories.Dataset(owner_org=org['id'],
-                                    resources=[factories.Resource()],
+                                    resources=[factories.Resource(url="https://example.com")],
                                     private=True)
         context = {'user': user['name'], 'model': model}
 
