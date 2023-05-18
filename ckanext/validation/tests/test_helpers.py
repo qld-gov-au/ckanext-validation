@@ -5,11 +5,15 @@ import mock
 
 from ckan.tests import factories
 
-import ckanext.validation.helpers as h
+from ckanext.validation.helpers import (
+    get_validation_badge,
+    is_url_valid,
+    validation_extract_report_from_errors,
+)
 
 
 def _assert_validation_badge_status(resource, status):
-    out = h.get_validation_badge(resource)
+    out = get_validation_badge(resource)
 
     assert 'href="/dataset/{}/resource/{}/validation"'.format(
         resource["package_id"], resource["id"]) in out
@@ -29,7 +33,7 @@ class TestBadges(object):
     def test_get_validation_badge_no_validation(self, mock_is_validatable):
         resource = factories.Resource(format="CSV")
 
-        assert h.get_validation_badge(resource) == ""
+        assert get_validation_badge(resource) == ""
 
     def test_get_validation_badge_success(self, mock_is_validatable):
         resource = factories.Resource(
@@ -78,8 +82,7 @@ class TestExtractReportFromErrors(object):
             "validation": [report],
         }
 
-        extracted_report, errors = h.validation_extract_report_from_errors(
-            errors)
+        extracted_report, errors = validation_extract_report_from_errors(errors)
 
         assert extracted_report == report
         assert errors["some_field"] == ["Some error"]
@@ -95,7 +98,7 @@ class TestExtractReportFromErrors(object):
             "some_other_field": ["Some other error"],
         }
 
-        report, errors = h.validation_extract_report_from_errors(errors)
+        report, errors = validation_extract_report_from_errors(errors)
 
         assert report is None
         assert errors["some_field"] == ["Some error"]
@@ -112,7 +115,7 @@ class TestIsUrlValid(object):
         ]
 
         for url in urls:
-            assert h.is_url_valid(url)
+            assert is_url_valid(url)
 
     def test_invalid_url(self):
         urls = [
@@ -122,4 +125,4 @@ class TestIsUrlValid(object):
         ]
 
         for url in urls:
-            assert not h.is_url_valid(url)
+            assert not is_url_valid(url)
