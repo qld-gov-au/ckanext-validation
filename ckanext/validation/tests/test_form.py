@@ -45,15 +45,8 @@ def _get_sysadmin_env():
     return {"REMOTE_USER": user["name"].encode("ascii")}
 
 
-def _get_response_body(response):
-    if hasattr(response, "text"):
-        return response.text
-    else:
-        return response.body
-
-
 def _get_form(response):
-    soup = BeautifulSoup(_get_response_body(response), "html.parser")
+    soup = BeautifulSoup(response.body, "html.parser")
     return soup.find("form", id="resource-edit")
 
 
@@ -84,7 +77,6 @@ class TestResourceSchemaForm(object):
 
         data = {
             "name": "test_resource_form_create",
-            "package_id": dataset["id"],
             "schema": json.dumps(SCHEMA),
         }
 
@@ -104,7 +96,6 @@ class TestResourceSchemaForm(object):
 
         data = {
             "name": "test_resource_form_create_json",
-            "package_id": dataset["id"],
             "url": "https://example.com/data.csv",
             "schema_json": json.dumps(SCHEMA),
         }
@@ -125,7 +116,6 @@ class TestResourceSchemaForm(object):
 
         data = {
             "name": "test_resource_form_create_upload",
-            "package_id": dataset["id"],
             "url": "https://example.com/data.csv",
             "schema_upload": get_mock_upload(SCHEMA, "schema.json"),
         }
@@ -145,14 +135,14 @@ class TestResourceSchemaForm(object):
         """Test we are able to create a resource with schema from a url"""
         dataset = Dataset()
 
-        schema_url = "https://example.com/schema.json"
-        mocked_responses.add("GET", schema_url, json=SCHEMA)
+        value = "https://example.com/schemas.json"
+        mocked_responses.add("GET", value, json=SCHEMA)
 
         data = {
             "name": "test_resource_form_create_url",
             "package_id": dataset["id"],
             "url": "https://example.com/data.csv",
-            "schema_url": schema_url,
+            "schema_url": value,
         }
 
         _post(
@@ -174,7 +164,6 @@ class TestResourceSchemaForm(object):
         assert resource["schema"] == SCHEMA
 
         data = {
-            "id": resource["id"],
             "name": "test_resource_form_update",
             "url": "https://example.com/data.csv",
             "schema": json.dumps(NEW_SCHEMA)
@@ -197,7 +186,9 @@ class TestResourceSchemaForm(object):
 
         assert resource["schema"] == SCHEMA
 
-        data = {"id": resource_id, "schema_json": json.dumps(NEW_SCHEMA)}
+        data = {
+            "schema_json": json.dumps(NEW_SCHEMA)
+        }
 
         _post(
             app,
@@ -221,7 +212,6 @@ class TestResourceSchemaForm(object):
         schema_url = "https://example.com/schema.json"
         mocked_responses.add("GET", schema_url, json=NEW_SCHEMA)
         data = {
-            "id": resource_id,
             "schema_url": schema_url
         }
 
@@ -239,17 +229,17 @@ class TestResourceSchemaForm(object):
         """Test we are able to replace a schema from a file for an existing resource"""
         dataset = Dataset()
         resource = resource_factory(package_id=dataset["id"])
+        resource_id = resource["id"]
 
         assert resource["schema"] == SCHEMA
 
         data = {
-            "id": resource["id"],
             "schema_upload": get_mock_upload(NEW_SCHEMA, "schema.json"),
         }
 
         _post(
             app,
-            url=EDIT_RESOURCE_URL.format(dataset["id"], resource["id"]),
+            url=EDIT_RESOURCE_URL.format(dataset["id"], resource_id),
             data=data
         )
 
@@ -320,7 +310,6 @@ class TestResourceValidationOptionsForm(object):
         }
 
         data = {
-            "id": resource_id,
             "name": "test_resource_form_update",
             "url": "https://example.com/data.csv",
             "validation_options": json.dumps(value)
@@ -365,9 +354,10 @@ class TestResourceValidationOnCreateForm(object):
         assert "validation_timestamp" in dataset["resources"][0]
 
     def test_resource_form_create_invalid(self, app):
-        """Test we aren't able to create resource with an ivalid CSV file.
+        """Test we aren't able to create resource with an invalid CSV file.
         If schema and format is provided - resource will be validated according
-        to the schema"""
+        to the schema.
+        """
         dataset = Dataset()
 
         data = {
@@ -378,17 +368,15 @@ class TestResourceValidationOnCreateForm(object):
             "upload": get_mock_upload(INVALID_CSV, "invalid.csv"),
         }
 
-        response = _get_response_body(
-            _post(
-                app,
-                url=NEW_RESOURCE_URL.format(dataset["id"]),
-                data=data
-            )
+        response = _post(
+            app,
+            url=NEW_RESOURCE_URL.format(dataset["id"]),
+            data=data
         )
 
-        assert "validation" in response
-        assert "missing-value" in response
-        assert "Row 2 has a missing value in column 4" in response
+        assert "validation" in response.body
+        assert "missing-value" in response.body
+        assert "Row 2 has a missing value in column 4" in response.body
 
 
 @pytest.mark.usefixtures("clean_db", "validation_setup")
@@ -403,7 +391,6 @@ class TestResourceValidationOnUpdateForm(object):
         resource_id = resource["id"]
 
         data = {
-            "id": resource_id,
             "name": "test_resource_form_update_valid",
             "url": "https://example.com/data.csv",
             "format": "csv",
@@ -411,16 +398,14 @@ class TestResourceValidationOnUpdateForm(object):
             "upload": get_mock_upload(VALID_CSV, "valid.csv"),
         }
 
-        response = _get_response_body(
-            _post(
-                app,
-                url=EDIT_RESOURCE_URL.format(dataset["id"], resource_id),
-                data=data
-            )
+        response = _post(
+            app,
+            url=EDIT_RESOURCE_URL.format(dataset["id"], resource_id),
+            data=data
         )
 
-        assert "missing-value" not in response
-        assert "Row 2 has a missing value in column 4" not in response
+        assert "missing-value" not in response.body
+        assert "Row 2 has a missing value in column 4" not in response.body
 
         resource = call_action("resource_show", id=resource_id)
 
@@ -435,22 +420,19 @@ class TestResourceValidationOnUpdateForm(object):
         resource = resource_factory(package_id=dataset["id"])
 
         data = {
-            "id": resource["id"],
             "format": "csv",
             "schema": json.dumps(SCHEMA),
             "upload": get_mock_upload(INVALID_CSV, "invalid.csv"),
         }
-        response = _get_response_body(
-            _post(
-                app,
-                url=EDIT_RESOURCE_URL.format(dataset["id"], resource["id"]),
-                data=data
-            )
+        response = _post(
+            app,
+            url=EDIT_RESOURCE_URL.format(dataset["id"], resource["id"]),
+            data=data
         )
 
-        assert "validation" in response
-        assert "missing-value" in response
-        assert "Row 2 has a missing value in column 4" in response
+        assert "validation" in response.body
+        assert "missing-value" in response.body
+        assert "Row 2 has a missing value in column 4" in response.body
 
 
 @pytest.mark.usefixtures("clean_db", "validation_setup")
@@ -466,7 +448,6 @@ class TestResourceValidationFieldsPersisted(object):
         assert not resource.get("description")
 
         data = {
-            "id": resource["id"],
             "description": "test desc",
             "url": "https://example.com/data.xlsx",
             "format": "xlsx",
