@@ -28,6 +28,16 @@ class ValidationPlugin(p.SingletonPlugin, DefaultTranslation):
     p.implements(p.IBlueprint)
     p.implements(p.IClick)
 
+    # IBlueprint
+
+    def get_blueprint(self):
+        return blueprints.get_blueprints()
+
+    # IClick
+
+    def get_commands(self):
+        return cli.get_commands()
+
     # ITranslation
     def i18n_directory(self):
         u'''Change the directory of the .mo translation files'''
@@ -149,6 +159,21 @@ Please run the following to create the database tables:
             return self.after_resource_update(context, data_dict)
 
     # CKAN >= 2.10
+    def after_dataset_update(self, context, data_dict):
+        if context.pop('_validation_performed', None) \
+                or context.pop('_resource_validation', None):
+            return
+
+        for resource in data_dict.get('resources', []):
+            if resource.pop(u'_do_not_validate', False) \
+                    or resource.pop('_success_validation', False):
+                continue
+
+            if not utils.is_resource_could_be_validated(context, resource):
+                continue
+
+            utils.validate_resource(context, resource)
+
     def after_resource_update(self, context, data_dict):
         context.pop('_resource_validation', None)
 
@@ -184,26 +209,6 @@ Please run the following to create the database tables:
             if utils.is_resource_could_be_validated(context, resource):
                 utils.validate_resource(context, resource)
 
-    # CKAN < 2.10
-    # def after_update(self, context, data_dict):
-    #     return self.after_dataset_update(context, data_dict)
-
-    # CKAN >= 2.10
-    def after_dataset_update(self, context, data_dict):
-        if context.pop('_validation_performed', None) \
-                or context.pop('_resource_validation', None):
-            return
-
-        for resource in data_dict.get('resources', []):
-            if resource.pop(u'_do_not_validate', False) \
-                    or resource.pop('_success_validation', False):
-                continue
-
-            if not utils.is_resource_could_be_validated(context, resource):
-                continue
-
-            utils.validate_resource(context, resource)
-
     def before_index(self, index_dict):
         if (self._data_dict_is_dataset(index_dict)):
             return self.before_dataset_index(index_dict)
@@ -226,13 +231,3 @@ Please run the following to create the database tables:
 
     def get_validators(self):
         return validators.get_validators()
-
-    # IBlueprint
-
-    def get_blueprint(self):
-        return blueprints.get_blueprints()
-
-    # IClick
-
-    def get_commands(self):
-        return cli.get_commands()
