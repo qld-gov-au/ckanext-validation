@@ -31,6 +31,7 @@ def org():
     return factories.Organization()
 
 
+# Making a dataset private lets us skip dealing with the activity stream
 @pytest.fixture
 def dataset(org):
     return factories.Dataset(private=True, owner_org=org['id'])
@@ -59,8 +60,3 @@ class ResourceFactory(factories.Resource):
 @pytest.fixture
 def resource_factory():
     return ResourceFactory
-
-
-@pytest.fixture
-def resource():
-    return ResourceFactory()

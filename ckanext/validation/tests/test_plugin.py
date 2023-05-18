@@ -55,7 +55,7 @@ class TestResourceControllerHooksUpdate(object):
     def test_validation_run_on_upload(self, mock_enqueue, resource_factory):
         """Validation must be triggered during update on upload new file"""
         mock_upload = helpers.MockFieldStorage(io.BytesIO(helpers.VALID_CSV),
-                                              'valid.csv')
+                                               'valid.csv')
 
         resource = resource_factory(format="pdf")
 
