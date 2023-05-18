@@ -27,7 +27,7 @@ class TestBadges(object):
     last validation result"""
 
     def test_get_validation_badge_no_validation(self, mock_is_validatable):
-        resource = factories.Resource(format="CSV", )
+        resource = factories.Resource(format="CSV")
 
         assert h.get_validation_badge(resource) == ""
 
@@ -35,7 +35,8 @@ class TestBadges(object):
         resource = factories.Resource(
             format="CSV",
             validation_status="success",
-            validation_timestamp=datetime.datetime.utcnow().isoformat())
+            validation_timestamp=datetime.datetime.utcnow().isoformat()
+        )
 
         _assert_validation_badge_status(resource, "success")
 
@@ -43,7 +44,8 @@ class TestBadges(object):
         resource = factories.Resource(
             format="CSV",
             validation_status="failure",
-            validation_timestamp=datetime.datetime.utcnow().isoformat())
+            validation_timestamp=datetime.datetime.utcnow().isoformat()
+        )
 
         _assert_validation_badge_status(resource, "invalid")
 
@@ -51,7 +53,8 @@ class TestBadges(object):
         resource = factories.Resource(
             format="CSV",
             validation_status="error",
-            validation_timestamp=datetime.datetime.utcnow().isoformat())
+            validation_timestamp=datetime.datetime.utcnow().isoformat()
+        )
 
         _assert_validation_badge_status(resource, "error")
 
@@ -89,7 +92,7 @@ class TestExtractReportFromErrors(object):
 
         errors = {
             "some_field": ["Some error"],
-            "some_other_field": ["Some other error"]
+            "some_other_field": ["Some other error"],
         }
 
         report, errors = h.validation_extract_report_from_errors(errors)

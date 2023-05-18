@@ -10,10 +10,10 @@ from ckan.tests.factories import Sysadmin, Dataset
 from ckan.tests.helpers import call_action
 
 from ckanext.validation.tests.helpers import (
-    NEW_SCHEMA,
     VALID_CSV,
     INVALID_CSV,
     SCHEMA,
+    NEW_SCHEMA,
     VALID_REPORT,
     get_mock_upload,
 )
@@ -62,7 +62,6 @@ class TestResourceSchemaForm(object):
     def test_resource_form_includes_schema_fields(self, app):
         """All schema related fields must be in the resource form"""
         dataset = Dataset()
-
         response = _get_resource_new_page_as_sysadmin(app, dataset["id"])
         form = _get_form(response)
 
@@ -140,7 +139,6 @@ class TestResourceSchemaForm(object):
 
         data = {
             "name": "test_resource_form_create_url",
-            "package_id": dataset["id"],
             "url": "https://example.com/data.csv",
             "schema_url": value,
         }
@@ -166,7 +164,7 @@ class TestResourceSchemaForm(object):
         data = {
             "name": "test_resource_form_update",
             "url": "https://example.com/data.csv",
-            "schema": json.dumps(NEW_SCHEMA)
+            "schema": json.dumps(NEW_SCHEMA),
         }
 
         _post(
@@ -187,7 +185,7 @@ class TestResourceSchemaForm(object):
         assert resource["schema"] == SCHEMA
 
         data = {
-            "schema_json": json.dumps(NEW_SCHEMA)
+            "schema_json": json.dumps(NEW_SCHEMA),
         }
 
         _post(
@@ -209,10 +207,10 @@ class TestResourceSchemaForm(object):
 
         assert resource["schema"] == SCHEMA
 
-        schema_url = "https://example.com/schema.json"
-        mocked_responses.add("GET", schema_url, json=NEW_SCHEMA)
+        value = "https://example.com/schema.json"
+        mocked_responses.add("GET", value, json=NEW_SCHEMA)
         data = {
-            "schema_url": schema_url
+            "schema_url": value,
         }
 
         _post(
@@ -243,7 +241,7 @@ class TestResourceSchemaForm(object):
             data=data
         )
 
-        resource = call_action("resource_show", id=resource["id"])
+        resource = call_action("resource_show", id=resource_id)
 
         assert resource["schema"] == NEW_SCHEMA
 

@@ -121,8 +121,11 @@ class TestValidationJob(object):
 
         run_validation_job(resource)
 
-        validation = Session.query(Validation).filter(
-            Validation.resource_id == resource["id"]).one()
+        validation = (
+            Session.query(Validation)
+            .filter(Validation.resource_id == resource["id"])
+            .one()
+        )
 
         assert validation.status == "success"
         assert validation.report["error-count"] == 0
@@ -138,8 +141,11 @@ class TestValidationJob(object):
 
         run_validation_job(resource)
 
-        validation = Session.query(Validation).filter(
-            Validation.resource_id == resource["id"]).one()
+        validation = (
+            Session.query(Validation)
+            .filter(Validation.resource_id == resource["id"])
+            .one()
+        )
 
         assert validation.status == "failure"
         assert validation.report["error-count"] == 2
@@ -153,8 +159,11 @@ class TestValidationJob(object):
 
         run_validation_job(resource)
 
-        validation = Session.query(Validation).filter(
-            Validation.resource_id == resource["id"]).one()
+        validation = (
+            Session.query(Validation)
+            .filter(Validation.resource_id == resource["id"])
+            .one()
+        )
 
         assert validation.status == "error"
         assert validation.report is None
@@ -167,8 +176,11 @@ class TestValidationJob(object):
 
         run_validation_job(resource)
 
-        validation = Session.query(Validation).filter(
-            Validation.resource_id == resource["id"]).one()
+        validation = (
+            Session.query(Validation)
+            .filter(Validation.resource_id == resource["id"])
+            .one()
+        )
 
         assert validation.report["tables"][0]["source"].startswith("http")
 
@@ -176,13 +188,16 @@ class TestValidationJob(object):
         resource = resource_factory(do_not_validate=True)
         run_validation_job(resource)
 
-        validation = Session.query(Validation).filter(
-            Validation.resource_id == resource["id"]).one()
+        validation = (
+            Session.query(Validation)
+            .filter(Validation.resource_id == resource["id"])
+            .one()
+        )
 
-        res = call_action("resource_show", id=resource["id"])
+        updated_resource = call_action("resource_show", id=resource["id"])
 
-        assert res["validation_status"] == validation.status
-        assert res["validation_timestamp"] == validation.finished.isoformat()
+        assert updated_resource["validation_status"] == validation.status
+        assert updated_resource["validation_timestamp"] == validation.finished.isoformat()
 
     def test_job_local_paths_are_hidden(self, resource_factory):
         """Local path for a resource file must be hidden inside report"""

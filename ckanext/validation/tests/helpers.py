@@ -10,8 +10,13 @@ MOCK_SYNC_VALIDATE = "ckanext.validation.utils.validate"
 MOCK_ASYNC_VALIDATE = "ckanext.validation.jobs.validate"
 MOCK_ENQUEUE_JOB = "ckantoolkit.enqueue_job"
 
-INVALID_CSV = b'a,b,c,d\n1,2,3'
-VALID_CSV = b'a,b,c,d\n1,2,3,4'
+INVALID_CSV = b'''a,b,c,d
+1,2,3
+'''
+
+VALID_CSV = b'''a,b,c,d
+1,2,3,4
+'''
 
 SCHEMA = {
     "fields": [{
