@@ -10,6 +10,7 @@ from ckanext.validation.jobs import run_validation_job
 from ckanext.validation import settings
 from ckanext.validation.validation_status_helper import (
     ValidationStatusHelper, ValidationJobAlreadyEnqueued)
+from ckanext.validation.utils import delete_validation_report
 
 log = logging.getLogger(__name__)
 
@@ -51,7 +52,7 @@ def resource_validation_run(context, data_dict):
     resource = tk.get_action(u'resource_show')(context, {u'id': resource_id})
 
     if not resource.get('schema'):
-        return
+        return delete_validation_report(resource)
 
     # TODO: limit to sysadmins
     async_job = data_dict.get(u'async', True)

@@ -105,7 +105,7 @@ def run_sync_validation(resource_data):
         schema = schema if is_url_valid(schema) else json.loads(schema)
 
     if not schema:
-        return
+        return delete_validation_report(resource_data)
 
     _format = resource_data.get('format', '').lower()
     options = get_resource_validation_options(resource_data)
@@ -139,6 +139,22 @@ def run_sync_validation(resource_data):
         resource_data['validation_timestamp'] = str(
             dt.now()) if _table_count else ""
         resource_data['_success_validation'] = True
+
+
+def delete_validation_report(resource_data):
+    resource_id = resource_data.get('id')
+    if not resource_id:
+        return
+
+    context = {u'ignore_auth': True}
+    data_dict = {u'resource_id': resource_id}
+
+    try:
+        tk.get_action(u'resource_validation_show')(context, data_dict)
+    except tk.ObjectNotFound:
+        return
+
+    tk.get_action(u'resource_validation_delete')(context, data_dict)
 
 
 def _get_uploaded_resource_path(resource_data):

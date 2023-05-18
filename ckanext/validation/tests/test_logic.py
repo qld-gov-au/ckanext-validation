@@ -252,6 +252,45 @@ class TestResourceValidationOnCreate(object):
 
         assert not Session.query(Validation).count()
 
+    def test_validation_skips_no_schema_provided(self):
+        """If the schema is missed - no validation entity should be saved in database"""
+        dataset = factories.Dataset()
+
+        mock_upload = MockFileStorage(io.BytesIO(VALID_CSV), 'valid.csv')
+
+        call_action('resource_create',
+                    package_id=dataset['id'],
+                    format='csv',
+                    upload=mock_upload,
+                    url_type='upload')
+
+        assert not Session.query(Validation).count()
+
+    def test_validation_report_delete_when_schema_removed(self):
+        """If the schema is deleted - no validation entity should be saved in database"""
+        dataset = factories.Dataset()
+
+        mock_upload = MockFileStorage(io.BytesIO(VALID_CSV), 'valid.csv')
+
+        resource_1 = call_action('resource_create',
+                    package_id=dataset['id'],
+                    format='csv',
+                    upload=mock_upload,
+                    url_type='upload',
+                    schema=SCHEMA)
+
+        assert Session.query(Validation).count()
+
+        call_action('resource_patch',
+                    id=resource_1['id'],
+                    schema='')
+
+        resource_2 = call_action('resource_show',
+                    id=resource_1['id'])
+
+        assert not Session.query(Validation).count()
+
+
     def test_validation_passes_on_upload(self):
         dataset = factories.Dataset()
 
