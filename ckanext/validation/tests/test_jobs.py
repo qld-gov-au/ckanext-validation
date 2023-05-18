@@ -113,6 +113,7 @@ class TestValidationJob(object):
             http_session="Some_Session",
             schema=None)
 
+    @mock.patch(MOCK_ASYNC_VALIDATE, return_value=VALID_REPORT)
     def test_job_run_valid_stores_validation_object(self, mocked_responses):
         url = "http://example.com/file.csv"
 
@@ -128,9 +129,7 @@ class TestValidationJob(object):
         )
 
         assert validation.status == "success"
-        assert validation.report["error-count"] == 0
-        assert validation.report["table-count"] == 1
-        assert validation.report["tables"][0]["source"] == url
+        assert validation.report == VALID_REPORT
         assert validation.finished
 
     @mock.patch(MOCK_ASYNC_VALIDATE, return_value=INVALID_REPORT)
@@ -148,9 +147,7 @@ class TestValidationJob(object):
         )
 
         assert validation.status == "failure"
-        assert validation.report["error-count"] == 2
-        assert validation.report["table-count"] == 1
-        assert validation.report["tables"][0]["source"] == url
+        assert validation.report == INVALID_REPORT
         assert validation.finished
 
     @mock.patch(MOCK_ASYNC_VALIDATE, return_value=ERROR_REPORT)
@@ -206,8 +203,11 @@ class TestValidationJob(object):
 
         run_validation_job(resource)
 
-        validation = Session.query(Validation).filter(
-            Validation.resource_id == resource["id"]).one()
+        validation = (
+            Session.query(Validation)
+            .filter(Validation.resource_id == resource["id"])
+            .one()
+        )
 
         source = validation.report["tables"][0]["source"]
         assert source.startswith("http")
