@@ -16,7 +16,7 @@ from ckanext.validation.tests.helpers import (
     INVALID_CSV,
     SCHEMA,
     VALID_REPORT,
-    MockFileStorage,
+    MockFieldStorage,
 )
 
 NEW_RESOURCE_URL = '/dataset/{}/resource/new'
@@ -70,7 +70,7 @@ def _post(app, url, params, upload=None):
         file_data = 2
 
         for entry in upload:
-            params[entry[field_name]] = MockFileStorage(
+            params[entry[field_name]] = MockFieldStorage(
                 six.BytesIO(six.ensure_binary(entry[file_data])),
                 entry[file_name])
 

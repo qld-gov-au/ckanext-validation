@@ -27,7 +27,7 @@ from ckanext.validation.tests.helpers import (
     VALID_CSV,
     INVALID_CSV,
     SCHEMA,
-    MockFileStorage,
+    MockFieldStorage,
     MOCK_ASYNC_VALIDATE,
 )
 
@@ -187,7 +187,7 @@ class TestValidationJob(object):
 
     def test_job_local_paths_are_hidden(self, resource_factory):
         """Local path for a resource file must be hidden inside report"""
-        upload = MockFileStorage(io.BytesIO(INVALID_CSV), 'invalid.csv')
+        upload = MockFieldStorage(io.BytesIO(INVALID_CSV), 'invalid.csv')
         resource = resource_factory(upload=upload, do_not_validate=True)
 
         run_validation_job(resource)
@@ -201,7 +201,7 @@ class TestValidationJob(object):
 
     def test_job_pass_validation_options(self, resource_factory):
         valid_csv = b'a,b,c,d\n#comment\n1,2,3,4'
-        upload = MockFileStorage(io.BytesIO(valid_csv), 'valid.csv')
+        upload = MockFieldStorage(io.BytesIO(valid_csv), 'valid.csv')
 
         validation_options = {'headers': 1, 'skip_rows': ['#']}
 
@@ -225,7 +225,7 @@ class TestValidationJob(object):
             "delimiter": ";"
         }'''
 
-        mock_upload = MockFileStorage(io.BytesIO(invalid_csv), 'invalid.csv')
+        mock_upload = MockFieldStorage(io.BytesIO(invalid_csv), 'invalid.csv')
 
         resource = resource_factory(upload=mock_upload,
                                     validation_options=validation_options,

@@ -11,7 +11,7 @@ from ckan.lib import uploader
 from ckan.tests import factories
 
 from ckanext.validation.model import create_tables, tables_exist
-from ckanext.validation.tests.helpers import VALID_CSV, MockFileStorage, SCHEMA
+from ckanext.validation.tests.helpers import VALID_CSV, MockFieldStorage, SCHEMA
 
 
 fake = Faker()
@@ -53,7 +53,7 @@ class ResourceFactory(factories.Resource):
     url = None
     url_type = "upload"
     upload = factory.LazyAttribute(
-        lambda _: MockFileStorage(six.BytesIO(VALID_CSV), 'data.csv'))
+        lambda _: MockFieldStorage(six.BytesIO(VALID_CSV), 'data.csv'))
 
 
 @pytest.fixture

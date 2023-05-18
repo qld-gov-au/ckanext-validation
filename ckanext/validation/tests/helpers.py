@@ -1,6 +1,6 @@
 # encoding: utf-8
 
-from werkzeug.datastructures import FileStorage as MockFileStorage  # noqa
+from werkzeug.datastructures import FileStorage as MockFieldStorage  # noqa
 
 MOCK_COULD_BE_VALIDATED = "ckanext.validation.utils.is_resource_could_be_validated"
 MOCK_SYNC_VALIDATE = "ckanext.validation.utils.validate"
