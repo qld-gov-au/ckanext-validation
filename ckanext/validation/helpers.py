@@ -3,8 +3,7 @@ import json
 
 from six.moves.urllib.parse import urlparse
 from six import string_types
-from ckantoolkit import url_for, _, config, asbool,\
-    literal, check_ckan_version, h, get_action
+from ckantoolkit import url_for, _, config, asbool, literal, h, get_action
 
 
 def _get_helpers():
@@ -13,7 +12,6 @@ def _get_helpers():
         validation_extract_report_from_errors,
         dump_json_value,
         bootstrap_version,
-        is_ckan_29,
         validation_hide_source,
         is_url_valid
     )
@@ -24,7 +22,9 @@ def _get_helpers():
 def get_validation_badge(resource, in_listing=False):
 
     afterDate = config.get('ckanext.validation.show_badges_after_last_modified_date', "")
-    if afterDate and h.date_str_to_datetime(afterDate) >= h.date_str_to_datetime(resource['last_modified']):
+    if afterDate and (not resource.get('last_modified')
+                      or h.date_str_to_datetime(afterDate)
+                      >= h.date_str_to_datetime(resource['last_modified'])):
         return ''
 
     if in_listing and not asbool(
@@ -53,10 +53,7 @@ def get_validation_badge(resource, in_listing=False):
     else:
         status = 'unknown'
 
-    if check_ckan_version(min_version='2.9.0'):
-        action = 'validation.read'
-    else:
-        action = 'validation_read'
+    action = 'validation.read'
 
     validation_url = url_for(
         action,
@@ -134,14 +131,6 @@ def bootstrap_version():
         return '3'
     else:
         return '2'
-
-
-def is_ckan_29():
-    """
-    Returns True if using CKAN 2.9+, with Flask and Webassets.
-    Returns False if those are not present.
-    """
-    return check_ckan_version(min_version='2.9.0')
 
 
 def validation_hide_source(type):
