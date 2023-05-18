@@ -21,13 +21,13 @@ class TestResourceSchemaValidator(object):
 
     def test_resource_schema_empty_string(self):
 
-        schema = ''
+        schema = ""
 
         assert resource_schema_validator(schema, {}) is None
 
     def test_resource_schema_invalid_json_string(self):
 
-        schema = '{a,b}'
+        schema = "{a,b}"
 
         pytest.raises(Invalid, resource_schema_validator, schema, {})
 
@@ -39,7 +39,7 @@ class TestResourceSchemaValidator(object):
 
     def test_resource_schema_valid_json_not_a_dict_string(self):
 
-        schema = '[a,2]'
+        schema = "[a,2]"
 
         pytest.raises(Invalid, resource_schema_validator, schema, {})
 
@@ -51,18 +51,19 @@ class TestResourceSchemaValidator(object):
 
     def test_resource_schema_invalid_schema_object(self):
 
-        schema = {'a': 1}
+        schema = {"a": 1}
 
         with pytest.raises(Invalid) as e:
             resource_schema_validator(schema, {})
 
         assert e.value.error.startswith(
-            'Invalid Table Schema: '
-            'Descriptor validation error: \'fields\' is a required property')
+            "Invalid Table Schema: "
+            "Descriptor validation error: 'fields' is a required property"
+        )
 
     def test_resource_schema_valid_schema_object(self):
 
-        schema = {'fields': [{'name': 'longitude'}]}
+        schema = {"fields": [{"name": "longitude"}]}
 
         value = resource_schema_validator(schema, {})
 
@@ -78,7 +79,7 @@ class TestResourceSchemaValidator(object):
 
     def test_resource_schema_valid_schema_url(self):
 
-        schema = 'https://example.com/schema.json'
+        schema = "https://example.com/schema.json"
 
         value = resource_schema_validator(schema, {})
 
@@ -86,17 +87,17 @@ class TestResourceSchemaValidator(object):
 
     def test_resource_schema_invalid_wrong_url(self):
 
-        schema = '/some/wrong/url/schema.json'
+        schema = "/some/wrong/url/schema.json"
 
         pytest.raises(Invalid, resource_schema_validator, schema, {})
 
 
 class TestValidationOptionsValidator(object):
-    '''
+    """
     Note: At the point this validator is run the value should already
         be a valid JSON string (ie `scheming_valid_json_object` has been
         run)
-    '''
+    """
 
     def test_no_default_validation_options(self):
 

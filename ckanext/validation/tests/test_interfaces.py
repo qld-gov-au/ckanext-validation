@@ -23,17 +23,17 @@ class TestPlugin(p.SingletonPlugin):
     def can_validate(self, context, data_dict):
         self.calls += 1
 
-        if data_dict.get('do_not_validate'):
+        if data_dict.get("do_not_validate"):
             return False
 
         return True
 
     def set_create_mode(self, context, data_dict, current_mode):
-        is_async = data_dict.get('async')
+        is_async = data_dict.get("async")
         return settings.ASYNC_MODE if is_async else current_mode
 
     def set_update_mode(self, context, data_dict, current_mode):
-        is_async = data_dict.get('async')
+        is_async = data_dict.get("async")
         return settings.ASYNC_MODE if is_async else current_mode
 
 
@@ -84,10 +84,10 @@ class TestInterfaceSync(BaseTestInterfaces):
 
         assert _get_plugin_calls() == 1
 
-        resource['format'] = 'CSV'
-        resource['url'] = 'https://example.com/data.csv'
+        resource["format"] = "CSV"
+        resource["url"] = "https://example.com/data.csv"
 
-        call_action('resource_update', **resource)
+        call_action("resource_update", **resource)
 
         assert mock_validation.called
         assert _get_plugin_calls() == 2
@@ -101,8 +101,8 @@ class TestInterfaceSync(BaseTestInterfaces):
         resource = resource_factory(do_not_validate=True)
         assert _get_plugin_calls() == 1
 
-        resource['format'] = 'TTF'
-        call_action('resource_update', **resource)
+        resource["format"] = "TTF"
+        call_action("resource_update", **resource)
 
         assert _get_plugin_calls() == 2
         assert not mock_validation.called
@@ -147,9 +147,9 @@ class TestInterfaceAsync(BaseTestInterfaces):
 
         assert _get_plugin_calls() == 1
 
-        resource['format'] = 'CSV'
+        resource["format"] = "CSV"
 
-        call_action('resource_update', **resource)
+        call_action("resource_update", **resource)
 
         assert _get_plugin_calls() == 3
         assert mock_validation.called
@@ -167,8 +167,8 @@ class TestInterfaceAsync(BaseTestInterfaces):
 
         assert _get_plugin_calls() == 1
 
-        resource['format'] = "TTF"
-        call_action('resource_update', **resource)
+        resource["format"] = "TTF"
+        call_action("resource_update", **resource)
 
         assert _get_plugin_calls() == 2
         assert not mock_validation.called
