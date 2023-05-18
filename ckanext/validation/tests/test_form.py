@@ -57,28 +57,10 @@ def _get_form(response):
     return soup.find("form", id="resource-edit")
 
 
-def _post(app, url, params, upload=None):
-    args = []
-
-    params["save"] = ""
-    params.setdefault("id", "")
-
-    if upload:
-        field_name = 0
-        file_name = 1
-        file_data = 2
-
-        for entry in upload:
-            params[entry[field_name]] = get_mock_upload(
-                entry[file_data], entry[file_name])
-
-    kwargs = {
-        "url": url,
-        "data": params,
-        "extra_environ": _get_sysadmin_env()
-    }
-
-    return app.post(*args, **kwargs)
+def _post(app, url, data):
+    data["save"] = ""
+    data.setdefault("id", "")
+    return app.post(url=url, data=data, extra_environ=_get_sysadmin_env())
 
 
 @pytest.mark.usefixtures("clean_db", "validation_setup")
@@ -100,13 +82,17 @@ class TestResourceSchemaForm(object):
         """Test we are able to create a resource with a schema"""
         dataset = Dataset()
 
-        params = {
+        data = {
             "name": "test_resource_form_create",
             "package_id": dataset["id"],
             "schema": json.dumps(SCHEMA),
         }
 
-        _post(app, NEW_RESOURCE_URL.format(dataset["id"]), params)
+        _post(
+            app,
+            url=NEW_RESOURCE_URL.format(dataset["id"]),
+            data=data
+        )
 
         dataset = call_action("package_show", id=dataset["id"])
 
@@ -116,14 +102,18 @@ class TestResourceSchemaForm(object):
         """Test we are able to create a resource with schema from a json"""
         dataset = Dataset()
 
-        params = {
+        data = {
             "name": "test_resource_form_create_json",
             "package_id": dataset["id"],
             "url": "https://example.com/data.csv",
             "schema_json": json.dumps(SCHEMA),
         }
 
-        _post(app, NEW_RESOURCE_URL.format(dataset["id"]), params)
+        _post(
+            app,
+            url=NEW_RESOURCE_URL.format(dataset["id"]),
+            data=data
+        )
 
         dataset = call_action("package_show", id=dataset["id"])
 
@@ -133,16 +123,18 @@ class TestResourceSchemaForm(object):
         """Test we are able to create a resource with schema from an uploaded file"""
         dataset = Dataset()
 
-        params = {
+        data = {
             "name": "test_resource_form_create_upload",
             "package_id": dataset["id"],
             "url": "https://example.com/data.csv",
+            "schema_upload": get_mock_upload(SCHEMA, "schema.json"),
         }
 
-        _post(app,
-              NEW_RESOURCE_URL.format(dataset["id"]),
-              params,
-              upload=[("schema_upload", "data.json", json.dumps(SCHEMA))])
+        _post(
+            app,
+            url=NEW_RESOURCE_URL.format(dataset["id"]),
+            data=data
+        )
 
         dataset = call_action("package_show", id=dataset["id"])
 
@@ -156,14 +148,18 @@ class TestResourceSchemaForm(object):
         schema_url = "https://example.com/schema.json"
         mocked_responses.add("GET", schema_url, json=SCHEMA)
 
-        params = {
+        data = {
             "name": "test_resource_form_create_url",
             "package_id": dataset["id"],
             "url": "https://example.com/data.csv",
             "schema_url": schema_url,
         }
 
-        _post(app, NEW_RESOURCE_URL.format(dataset["id"]), params)
+        _post(
+            app,
+            url=NEW_RESOURCE_URL.format(dataset["id"]),
+            data=data
+        )
 
         dataset = call_action("package_show", id=dataset["id"])
 
@@ -177,14 +173,18 @@ class TestResourceSchemaForm(object):
 
         assert resource["schema"] == SCHEMA
 
-        params = {
+        data = {
             "id": resource["id"],
             "name": "test_resource_form_update",
             "url": "https://example.com/data.csv",
             "schema": json.dumps(NEW_SCHEMA)
         }
 
-        _post(app, EDIT_RESOURCE_URL.format(dataset["id"], resource_id), params)
+        _post(
+            app,
+            url=EDIT_RESOURCE_URL.format(dataset["id"], resource_id),
+            data=data
+        )
 
         resource = call_action("resource_show", id=resource_id)
 
@@ -197,9 +197,13 @@ class TestResourceSchemaForm(object):
 
         assert resource["schema"] == SCHEMA
 
-        params = {"id": resource_id, "schema_json": json.dumps(NEW_SCHEMA)}
+        data = {"id": resource_id, "schema_json": json.dumps(NEW_SCHEMA)}
 
-        _post(app, EDIT_RESOURCE_URL.format(dataset["id"], resource_id), params)
+        _post(
+            app,
+            url=EDIT_RESOURCE_URL.format(dataset["id"], resource_id),
+            data=data
+        )
 
         resource = call_action("resource_show", id=resource_id)
 
@@ -216,9 +220,16 @@ class TestResourceSchemaForm(object):
 
         schema_url = "https://example.com/schema.json"
         mocked_responses.add("GET", schema_url, json=NEW_SCHEMA)
-        params = {"id": resource_id, "schema_url": schema_url}
+        data = {
+            "id": resource_id,
+            "schema_url": schema_url
+        }
 
-        _post(app, EDIT_RESOURCE_URL.format(dataset["id"], resource_id), params)
+        _post(
+            app,
+            url=EDIT_RESOURCE_URL.format(dataset["id"], resource_id),
+            data=data
+        )
 
         resource = call_action("resource_show", id=resource_id)
 
@@ -231,14 +242,16 @@ class TestResourceSchemaForm(object):
 
         assert resource["schema"] == SCHEMA
 
-        params = {
+        data = {
             "id": resource["id"],
+            "schema_upload": get_mock_upload(NEW_SCHEMA, "schema.json"),
         }
 
-        _post(app,
-              EDIT_RESOURCE_URL.format(dataset["id"], resource["id"]),
-              params,
-              upload=[("schema_upload", "data.json", json.dumps(NEW_SCHEMA))])
+        _post(
+            app,
+            url=EDIT_RESOURCE_URL.format(dataset["id"], resource["id"]),
+            data=data
+        )
 
         resource = call_action("resource_show", id=resource["id"])
 
@@ -265,26 +278,30 @@ class TestResourceValidationOptionsForm(object):
             "headers": 1,
         }
         json_value = json.dumps(value)
-        params = {
+        data = {
             "name": "test_resource_form_create",
             "url": "https://example.com/data.csv",
             "validation_options": json_value,
         }
 
-        _post(app, NEW_RESOURCE_URL.format(dataset["id"]), params)
+        _post(
+            app,
+            url=NEW_RESOURCE_URL.format(dataset["id"]),
+            data=data
+        )
 
         dataset = call_action("package_show", id=dataset["id"])
 
         assert dataset["resources"][0]["validation_options"] == value
 
     def test_resource_form_update(self, app, resource_factory):
-        options = {
+        value = {
             "delimiter": ",",
             "headers": 1,
             "skip_rows": ["#"],
         }
 
-        resource = resource_factory(validation_options=options)
+        resource = resource_factory(validation_options=value)
         resource_id = resource["id"]
 
         response = _get_resource_update_page_as_sysadmin(
@@ -293,49 +310,54 @@ class TestResourceValidationOptionsForm(object):
 
         assert form.find("textarea",
                          attrs={"name": "validation_options"}).text ==\
-            json.dumps(options, indent=2, sort_keys=True)
+            json.dumps(value, indent=2, sort_keys=True)
 
-        new_options = {
+        value = {
             "delimiter": ",",
             "headers": 4,
             "skip_rows": ["#"],
             "skip_tests": ["blank-rows"],
         }
 
-        params = {
+        data = {
             "id": resource_id,
             "name": "test_resource_form_update",
             "url": "https://example.com/data.csv",
-            "validation_options": json.dumps(new_options)
+            "validation_options": json.dumps(value)
         }
 
-        _post(app, EDIT_RESOURCE_URL.format(resource["package_id"],
-                                            resource_id), params)
+        _post(
+            app,
+            url=EDIT_RESOURCE_URL.format(resource["package_id"], resource_id),
+            data=data
+        )
         resource = call_action("resource_show", id=resource["id"])
 
-        assert resource["validation_options"] == new_options
+        assert resource["validation_options"] == value
 
 
 @pytest.mark.usefixtures("clean_db", "validation_setup")
 class TestResourceValidationOnCreateForm(object):
 
     def test_resource_form_create_valid(self, app):
-        """Test we aren able to create resource with a valid CSV file.
+        """Test we are able to create resource with a valid CSV file.
         If schema and format is provided - resource will be validated according
         to the schema"""
         dataset = Dataset()
 
-        params = {
+        data = {
             "name": "test_resource_form_create_valid",
             "url": "https://example.com/data.csv",
             "schema": json.dumps(SCHEMA),
-            "format": "csv"
+            "format": "csv",
+            "upload": get_mock_upload(VALID_CSV, "valid.csv"),
         }
 
-        _post(app,
-              NEW_RESOURCE_URL.format(dataset["id"]),
-              params,
-              upload=[("upload", "data.csv", VALID_CSV)])
+        _post(
+            app,
+            url=NEW_RESOURCE_URL.format(dataset["id"]),
+            data=data
+        )
 
         dataset = call_action("package_show", id=dataset["id"])
 
@@ -348,18 +370,21 @@ class TestResourceValidationOnCreateForm(object):
         to the schema"""
         dataset = Dataset()
 
-        params = {
+        data = {
             "name": "test_resource_form_create_invalid",
             "url": "https://example.com/data.csv",
             "schema": json.dumps(SCHEMA),
-            "format": "csv"
+            "format": "csv",
+            "upload": get_mock_upload(INVALID_CSV, "invalid.csv"),
         }
 
         response = _get_response_body(
-            _post(app,
-                  NEW_RESOURCE_URL.format(dataset["id"]),
-                  params,
-                  upload=[("upload", "data.csv", INVALID_CSV)]))
+            _post(
+                app,
+                url=NEW_RESOURCE_URL.format(dataset["id"]),
+                data=data
+            )
+        )
 
         assert "validation" in response
         assert "missing-value" in response
@@ -375,25 +400,29 @@ class TestResourceValidationOnUpdateForm(object):
         to the schema"""
         dataset = Dataset()
         resource = resource_factory(package_id=dataset["id"], format="PDF")
+        resource_id = resource["id"]
 
-        params = {
-            "id": resource["id"],
-            "name": "test_resource_form_update_invalid",
+        data = {
+            "id": resource_id,
+            "name": "test_resource_form_update_valid",
             "url": "https://example.com/data.csv",
             "format": "csv",
-            "schema": json.dumps(SCHEMA)
+            "schema": json.dumps(SCHEMA),
+            "upload": get_mock_upload(VALID_CSV, "valid.csv"),
         }
 
         response = _get_response_body(
-            _post(app,
-                  EDIT_RESOURCE_URL.format(dataset["id"], resource["id"]),
-                  params,
-                  upload=[("upload", "data.csv", VALID_CSV)]))
+            _post(
+                app,
+                url=EDIT_RESOURCE_URL.format(dataset["id"], resource_id),
+                data=data
+            )
+        )
 
         assert "missing-value" not in response
         assert "Row 2 has a missing value in column 4" not in response
 
-        resource = call_action("resource_show", id=resource["id"])
+        resource = call_action("resource_show", id=resource_id)
 
         assert resource["validation_status"] == "success"
         assert resource["validation_timestamp"]
@@ -405,16 +434,19 @@ class TestResourceValidationOnUpdateForm(object):
         dataset = Dataset()
         resource = resource_factory(package_id=dataset["id"])
 
-        params = {
+        data = {
             "id": resource["id"],
             "format": "csv",
-            "schema": json.dumps(SCHEMA)
+            "schema": json.dumps(SCHEMA),
+            "upload": get_mock_upload(INVALID_CSV, "invalid.csv"),
         }
         response = _get_response_body(
-            _post(app,
-                  EDIT_RESOURCE_URL.format(dataset["id"], resource["id"]),
-                  params,
-                  upload=[("upload", "data.csv", INVALID_CSV)]))
+            _post(
+                app,
+                url=EDIT_RESOURCE_URL.format(dataset["id"], resource["id"]),
+                data=data
+            )
+        )
 
         assert "validation" in response
         assert "missing-value" in response
@@ -433,15 +465,19 @@ class TestResourceValidationFieldsPersisted(object):
         assert resource["validation_status"] == "success"
         assert not resource.get("description")
 
-        params = {
+        data = {
             "id": resource["id"],
             "description": "test desc",
             "url": "https://example.com/data.xlsx",
             "format": "xlsx",
-            "schema": json.dumps(SCHEMA)
+            "schema": json.dumps(SCHEMA),
         }
 
-        _post(app, EDIT_RESOURCE_URL.format(dataset["id"], resource["id"]), params)
+        _post(
+            app,
+            url=EDIT_RESOURCE_URL.format(dataset["id"], resource["id"]),
+            data=data
+        )
 
         resource = call_action("resource_show", id=resource["id"])
 
