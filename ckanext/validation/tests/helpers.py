@@ -1,6 +1,9 @@
 # encoding: utf-8
 
-from werkzeug.datastructures import FileStorage as MockFieldStorage  # noqa
+import json
+import six
+
+from werkzeug.datastructures import FileStorage
 
 MOCK_COULD_BE_VALIDATED = "ckanext.validation.utils.is_resource_could_be_validated"
 MOCK_SYNC_VALIDATE = "ckanext.validation.utils.validate"
@@ -134,3 +137,13 @@ VALID_REPORT_LOCAL_FILE = {
     'valid': True,
     'warnings': []
 }
+
+
+def get_mock_upload(contents, filename):
+    if isinstance(contents, dict):
+        contents = json.dumps(contents)
+    if isinstance(contents, six.string_types):
+        contents = six.ensure_binary(contents, encoding='utf-8')
+    if isinstance(contents, six.binary_type):
+        return FileStorage(six.BytesIO(contents), filename)
+    assert False

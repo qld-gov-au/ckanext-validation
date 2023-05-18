@@ -1,12 +1,10 @@
 # encoding: utf-8
 
 import datetime
-import io
 import json
 
 import responses
 import mock
-import six
 import pytest
 import ckantoolkit as t
 
@@ -21,7 +19,7 @@ from ckanext.validation.tests.helpers import (
     INVALID_CSV,
     SCHEMA,
     VALID_REPORT,
-    MockFieldStorage,
+    get_mock_upload,
 )
 
 CSV_URL = "https://people.sc.fsu.edu/~jburkardt/data/csv/addresses.csv"
@@ -222,7 +220,7 @@ class TestResourceValidationOnCreate(object):
 
     def test_validation_fails_on_upload(self):
         """We shouldn't be able to create a resource with an invalid file"""
-        mock_upload = MockFieldStorage(io.BytesIO(INVALID_CSV), 'invalid.csv')
+        mock_upload = get_mock_upload(INVALID_CSV, 'invalid.csv')
 
         dataset = factories.Dataset()
 
@@ -242,7 +240,7 @@ class TestResourceValidationOnCreate(object):
         """If the validation failed - no validation entity should be saved in database"""
         dataset = factories.Dataset()
 
-        mock_upload = MockFieldStorage(io.BytesIO(INVALID_CSV), 'invalid.csv')
+        mock_upload = get_mock_upload(INVALID_CSV, 'invalid.csv')
 
         with pytest.raises(t.ValidationError):
             call_action('resource_create',
@@ -257,7 +255,7 @@ class TestResourceValidationOnCreate(object):
     def test_validation_passes_on_upload(self):
         dataset = factories.Dataset()
 
-        mock_upload = MockFieldStorage(io.BytesIO(VALID_CSV), 'valid.csv')
+        mock_upload = get_mock_upload(VALID_CSV, 'valid.csv')
 
         resource = call_action('resource_create',
                                package_id=dataset['id'],
@@ -296,7 +294,7 @@ class TestResourceValidationOnUpdate(object):
         dataset = factories.Dataset()
         resource = resource_factory(package_id=dataset["id"], schema="")
 
-        mock_upload = MockFieldStorage(io.BytesIO(INVALID_CSV), 'invalid.csv')
+        mock_upload = get_mock_upload(INVALID_CSV, 'invalid.csv')
 
         with pytest.raises(t.ValidationError) as e:
             call_action('resource_update',
@@ -314,7 +312,7 @@ class TestResourceValidationOnUpdate(object):
             self, resource_factory):
         dataset = factories.Dataset()
 
-        mock_upload = MockFieldStorage(six.BytesIO(INVALID_CSV), 'valid.csv')
+        mock_upload = get_mock_upload(INVALID_CSV, 'valid.csv')
 
         with pytest.raises(t.ValidationError):
             resource_factory(package_id=dataset['id'], upload=mock_upload)
@@ -327,7 +325,7 @@ class TestResourceValidationOnUpdate(object):
 
         assert 'validation_status' not in resource
 
-        mock_upload = MockFieldStorage(six.BytesIO(VALID_CSV), 'valid.csv')
+        mock_upload = get_mock_upload(VALID_CSV, 'valid.csv')
 
         resource = call_action('resource_update',
                                id=resource['id'],
@@ -419,8 +417,7 @@ class TestSchemaFields(object):
                         schema_url='not-a-url')
 
     def test_schema_upload_field(self, mocked_report):
-        schema_upload = MockFieldStorage(
-            six.BytesIO(six.ensure_binary(json.dumps(SCHEMA))), 'schema.json')
+        schema_upload = get_mock_upload(SCHEMA, 'schema.json')
 
         dataset = factories.Dataset()
 

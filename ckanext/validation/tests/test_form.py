@@ -3,7 +3,6 @@
 import json
 import mock
 import pytest
-import six
 
 from bs4 import BeautifulSoup
 
@@ -16,7 +15,7 @@ from ckanext.validation.tests.helpers import (
     INVALID_CSV,
     SCHEMA,
     VALID_REPORT,
-    MockFieldStorage,
+    get_mock_upload,
 )
 
 NEW_RESOURCE_URL = '/dataset/{}/resource/new'
@@ -70,9 +69,8 @@ def _post(app, url, params, upload=None):
         file_data = 2
 
         for entry in upload:
-            params[entry[field_name]] = MockFieldStorage(
-                six.BytesIO(six.ensure_binary(entry[file_data])),
-                entry[file_name])
+            params[entry[field_name]] = get_mock_upload(
+                entry[file_data], entry[file_name])
 
     kwargs = {
         'url': url,
