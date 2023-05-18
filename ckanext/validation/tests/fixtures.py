@@ -6,9 +6,9 @@ import responses
 import six
 from faker import Faker
 
-import ckan.plugins.toolkit as tk
 from ckan.lib import uploader
 from ckan.tests import factories
+import ckan.plugins.toolkit as t
 
 from ckanext.validation.model import create_tables, tables_exist
 from ckanext.validation.tests.helpers import VALID_CSV, MockFieldStorage, SCHEMA
@@ -38,7 +38,7 @@ def dataset(org):
 
 @pytest.fixture
 def mocked_responses():
-    solr_url = tk.config.get('solr_url', 'http://127.0.0.1:8983/solr/ckan')
+    solr_url = t.config.get('solr_url', 'http://127.0.0.1:8983/solr/ckan')
 
     with responses.RequestsMock() as rsps:
         rsps.add_passthru(solr_url)

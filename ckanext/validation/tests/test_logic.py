@@ -8,7 +8,7 @@ import responses
 import mock
 import six
 import pytest
-import ckantoolkit as tk
+import ckantoolkit as t
 
 from ckan.model import Session
 from ckan import model
@@ -31,19 +31,19 @@ CSV_URL = "https://people.sc.fsu.edu/~jburkardt/data/csv/addresses.csv"
 class TestResourceValidationRun(object):
 
     def test_resource_validation_run_param_missing(self):
-        with pytest.raises(tk.ValidationError) as err:
+        with pytest.raises(t.ValidationError) as err:
             call_action('resource_validation_run')
 
         assert err.value.error_dict == {'resource_id': 'Missing value'}
 
     def test_resource_validation_run_not_exists(self):
-        with pytest.raises(tk.ObjectNotFound):
+        with pytest.raises(t.ObjectNotFound):
             call_action('resource_validation_run', resource_id='not_exists')
 
     def test_resource_validation_wrong_format(self):
         resource = factories.Resource(format='pdf')
 
-        with pytest.raises(tk.ValidationError) as err:
+        with pytest.raises(t.ValidationError) as err:
             call_action('resource_validation_run', resource_id=resource['id'])
 
         assert 'Unsupported resource format' in err.value.error_dict['format']
@@ -51,7 +51,7 @@ class TestResourceValidationRun(object):
     def test_resource_validation_no_url_or_upload(self):
         resource = factories.Resource(url='', format='csv')
 
-        with pytest.raises(tk.ValidationError) as err:
+        with pytest.raises(t.ValidationError) as err:
             call_action('resource_validation_run', resource_id=resource['id'])
 
         assert {u'url':
@@ -125,13 +125,13 @@ class TestResourceValidationRun(object):
 class TestResourceValidationShow(object):
 
     def test_resource_validation_show_param_missing(self):
-        with pytest.raises(tk.ValidationError) as err:
+        with pytest.raises(t.ValidationError) as err:
             call_action('resource_validation_show')
 
         assert err.value.error_dict == {'resource_id': 'Missing value'}
 
     def test_resource_validation_show_not_exists(self):
-        with pytest.raises(tk.ObjectNotFound):
+        with pytest.raises(t.ObjectNotFound):
             call_action('resource_validation_show', resource_id='not_exists')
 
     def test_resource_validation_show_validation_does_not_exists(self):
@@ -140,7 +140,7 @@ class TestResourceValidationShow(object):
 
         dataset = factories.Dataset(resources=[resource])
 
-        with pytest.raises(tk.ObjectNotFound) as err:
+        with pytest.raises(t.ObjectNotFound) as err:
             call_action('resource_validation_show',
                         resource_id=dataset['resources'][0]['id'])
 
@@ -179,13 +179,13 @@ class TestResourceValidationShow(object):
 class TestResourceValidationDelete(object):
 
     def test_resource_validation_delete_param_missing(self):
-        with pytest.raises(tk.ValidationError) as err:
+        with pytest.raises(t.ValidationError) as err:
             call_action('resource_validation_delete')
 
         assert err.value.error_dict == {'resource_id': 'Missing value'}
 
     def test_resource_validation_delete_not_exists(self):
-        with pytest.raises(tk.ObjectNotFound) as err:
+        with pytest.raises(t.ObjectNotFound) as err:
             call_action('resource_validation_delete', resource_id='not_exists')
 
         assert 'No validation report exists for this resource' ==\
@@ -226,7 +226,7 @@ class TestResourceValidationOnCreate(object):
 
         dataset = factories.Dataset()
 
-        with pytest.raises(tk.ValidationError) as e:
+        with pytest.raises(t.ValidationError) as e:
             call_action('resource_create',
                         package_id=dataset['id'],
                         format='csv',
@@ -244,7 +244,7 @@ class TestResourceValidationOnCreate(object):
 
         mock_upload = MockFieldStorage(io.BytesIO(INVALID_CSV), 'invalid.csv')
 
-        with pytest.raises(tk.ValidationError):
+        with pytest.raises(t.ValidationError):
             call_action('resource_create',
                         package_id=dataset['id'],
                         format='csv',
@@ -285,7 +285,7 @@ class TestResourceValidationOnCreate(object):
         assert 'validation_timestamp' in resource
 
     def test_validation_fails_if_schema_invalid(self, resource_factory):
-        with pytest.raises(tk.ValidationError, match="Schema is invalid"):
+        with pytest.raises(t.ValidationError, match="Schema is invalid"):
             resource_factory(schema="{111}")
 
 
@@ -298,7 +298,7 @@ class TestResourceValidationOnUpdate(object):
 
         mock_upload = MockFieldStorage(io.BytesIO(INVALID_CSV), 'invalid.csv')
 
-        with pytest.raises(tk.ValidationError) as e:
+        with pytest.raises(t.ValidationError) as e:
             call_action('resource_update',
                         id=resource['id'],
                         package_id=dataset['id'],
@@ -316,7 +316,7 @@ class TestResourceValidationOnUpdate(object):
 
         mock_upload = MockFieldStorage(six.BytesIO(INVALID_CSV), 'valid.csv')
 
-        with pytest.raises(tk.ValidationError):
+        with pytest.raises(t.ValidationError):
             resource_factory(package_id=dataset['id'], upload=mock_upload)
 
         assert Session.query(Validation).count() == 0
@@ -373,7 +373,7 @@ class TestResourceValidationOnUpdate(object):
 
     def test_validation_fails_if_schema_invalid(self, resource_factory):
         resource = resource_factory(format="pdf")
-        with pytest.raises(tk.ValidationError, match="Schema is invalid"):
+        with pytest.raises(t.ValidationError, match="Schema is invalid"):
             call_action('resource_update',
                         id=resource['id'],
                         package_id=resource['package_id'],
@@ -413,7 +413,7 @@ class TestSchemaFields(object):
         assert 'schema_url' not in resource
 
     def test_schema_url_field_wrong_url(self, mocked_report):
-        with pytest.raises(tk.ValidationError):
+        with pytest.raises(t.ValidationError):
             call_action('resource_create',
                         url='http://example.com/file.csv',
                         schema_url='not-a-url')
@@ -503,7 +503,7 @@ class TestAuth(object):
         resource = factories.Resource(url=CSV_URL)
         context = {'user': None, 'model': model}
 
-        with pytest.raises(tk.NotAuthorized):
+        with pytest.raises(t.NotAuthorized):
             call_auth('resource_validation_run',
                       context=context,
                       resource_id=resource['id'])
@@ -527,7 +527,7 @@ class TestAuth(object):
         dataset = factories.Dataset(owner_org=org['id'], resources=[factories.Resource(url=CSV_URL)])
         context = {'user': user['name'], 'model': model}
 
-        with pytest.raises(tk.NotAuthorized):
+        with pytest.raises(t.NotAuthorized):
             call_auth('resource_validation_run',
                       context=context,
                       resource_id=dataset['resources'][0]['id'])
@@ -553,7 +553,7 @@ class TestAuth(object):
         resource = factories.Resource(url=CSV_URL)
         context = {'user': None, 'model': model}
 
-        with pytest.raises(tk.NotAuthorized):
+        with pytest.raises(t.NotAuthorized):
             call_auth('resource_validation_delete',
                       context=context,
                       resource_id=resource['id'])
@@ -577,7 +577,7 @@ class TestAuth(object):
         dataset = factories.Dataset(owner_org=org['id'], resources=[factories.Resource(url=CSV_URL)])
         context = {'user': user['name'], 'model': model}
 
-        with pytest.raises(tk.NotAuthorized):
+        with pytest.raises(t.NotAuthorized):
             call_auth('resource_validation_delete',
                       context=context,
                       resource_id=dataset['resources'][0]['id'])
@@ -633,7 +633,7 @@ class TestAuth(object):
             private=True)
         context = {'user': user['name'], 'model': model}
 
-        with pytest.raises(tk.NotAuthorized):
+        with pytest.raises(t.NotAuthorized):
             call_auth('resource_validation_run',
                       context=context,
                       resource_id=dataset['resources'][0]['id'])

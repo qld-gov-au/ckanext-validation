@@ -4,7 +4,7 @@ import logging
 import json
 import six
 
-import ckantoolkit as tk
+import ckantoolkit as t
 
 from ckanext.validation.jobs import run_validation_job
 from ckanext.validation import settings
@@ -33,12 +33,12 @@ def enqueue_validation_job(package_id, resource_id):
     enqueue_args['rq_kwargs'] = rq_kwargs
 
     # Optional variable, if not set, default queue is used
-    queue = tk.config.get('ckanext.validation.queue', None)
+    queue = t.config.get('ckanext.validation.queue', None)
 
     if queue:
         enqueue_args['queue'] = queue
 
-    tk.enqueue_job(**enqueue_args)
+    t.enqueue_job(**enqueue_args)
 
 
 # Auth
@@ -55,22 +55,22 @@ def get_auth_functions():
 
 
 def auth_resource_validation_run(context, data_dict):
-    if tk.check_access(
+    if t.check_access(
             u'resource_update', context, {u'id': data_dict[u'resource_id']}):
         return {u'success': True}
     return {u'success': False}
 
 
 def auth_resource_validation_delete(context, data_dict):
-    if tk.check_access(
+    if t.check_access(
             u'resource_update', context, {u'id': data_dict[u'resource_id']}):
         return {u'success': True}
     return {u'success': False}
 
 
-@tk.auth_allow_anonymous_access
+@t.auth_allow_anonymous_access
 def auth_resource_validation_show(context, data_dict):
-    if tk.check_access(
+    if t.check_access(
             u'resource_show', context, {u'id': data_dict[u'resource_id']}):
         return {u'success': True}
     return {u'success': False}
@@ -112,13 +112,13 @@ def resource_validation_run(context, data_dict):
 
     '''
 
-    tk.check_access(u'resource_validation_run', context, data_dict)
+    t.check_access(u'resource_validation_run', context, data_dict)
 
     resource_id = data_dict.get(u'resource_id')
     if not resource_id:
-        raise tk.ValidationError({u'resource_id': u'Missing value'})
+        raise t.ValidationError({u'resource_id': u'Missing value'})
 
-    resource = tk.get_action(u'resource_show')(
+    resource = t.get_action(u'resource_show')(
         context, {u'id': resource_id})
 
     # TODO: limit to sysadmins
@@ -128,14 +128,14 @@ def resource_validation_run(context, data_dict):
 
     # Ensure format is supported
     if not resource.get(u'format', u'').lower() in supported_formats:
-        raise tk.ValidationError(
+        raise t.ValidationError(
             {u'format': u'Unsupported resource format.'
              u'Must be one of {}'.format(
                  u','.join(supported_formats))})
 
     # Ensure there is a URL or file upload
     if not resource.get(u'url') and not resource.get(u'url_type') == u'upload':
-        raise tk.ValidationError(
+        raise t.ValidationError(
             {u'url': u'Resource must have a valid URL or an uploaded file'})
 
     # Check if there was an existing validation for the resource
@@ -156,7 +156,7 @@ def resource_validation_run(context, data_dict):
         run_validation_job(resource)
 
 
-@tk.side_effect_free
+@t.side_effect_free
 def resource_validation_show(context, data_dict):
     u'''
     Display the validation job result for a particular resource.
@@ -179,17 +179,17 @@ def resource_validation_show(context, data_dict):
 
     '''
 
-    tk.check_access(u'resource_validation_show', context, data_dict)
+    t.check_access(u'resource_validation_show', context, data_dict)
 
     if not data_dict.get(u'resource_id'):
-        raise tk.ValidationError({u'resource_id': u'Missing value'})
+        raise t.ValidationError({u'resource_id': u'Missing value'})
 
     session = context['model'].Session
     validation = ValidationStatusHelper().getValidationJob(
         session, data_dict['resource_id'])
 
     if not validation:
-        raise tk.ObjectNotFound(
+        raise t.ObjectNotFound(
             'No validation report exists for this resource')
 
     return _validation_dictize(validation)
@@ -207,17 +207,17 @@ def resource_validation_delete(context, data_dict):
 
     '''
 
-    tk.check_access(u'resource_validation_delete', context, data_dict)
+    t.check_access(u'resource_validation_delete', context, data_dict)
 
     if not data_dict.get(u'resource_id'):
-        raise tk.ValidationError({u'resource_id': u'Missing value'})
+        raise t.ValidationError({u'resource_id': u'Missing value'})
 
     session = context['model'].Session
     validation = ValidationStatusHelper().getValidationJob(
         session, data_dict['resource_id'])
 
     if not validation:
-        raise tk.ObjectNotFound(
+        raise t.ObjectNotFound(
             'No validation report exists for this resource')
 
     ValidationStatusHelper().deleteValidationJob(session, validation)
@@ -270,7 +270,7 @@ def resource_validation_run_batch(context, data_dict):
 
     '''
 
-    tk.check_access(u'resource_validation_run_batch', context, data_dict)
+    t.check_access(u'resource_validation_run_batch', context, data_dict)
 
     page = 1
     page_size = 100
@@ -314,14 +314,14 @@ def resource_validation_run_batch(context, data_dict):
                         continue
 
                     try:
-                        tk.get_action(u'resource_validation_run')(
+                        t.get_action(u'resource_validation_run')(
                             {u'ignore_auth': True},
                             {u'resource_id': resource['id'],
                              u'async': True})
 
                         count_resources += 1
 
-                    except tk.ValidationError as e:
+                    except t.ValidationError as e:
                         log.warning(
                             u'Could not run validation for resource %s from dataset %s: %s',
                             resource['id'], dataset['name'], e)
@@ -371,7 +371,7 @@ def _search_datasets(
     if not search_data_dict.get('q'):
         search_data_dict['q'] = '*:*'
 
-    query = tk.get_action('package_search')({}, search_data_dict)
+    query = t.get_action('package_search')({}, search_data_dict)
 
     return query
 
@@ -433,7 +433,7 @@ def _validation_dictize(validation):
     return out
 
 
-@tk.chained_action
+@t.chained_action
 def package_patch(original_action, context, data_dict):
     ''' Detect whether resources have been replaced, and if not,
     place a flag in the context accordingly if save flag is not set
@@ -446,8 +446,8 @@ def package_patch(original_action, context, data_dict):
     original_action(context, data_dict)
 
 
-@tk.side_effect_free
-@tk.chained_action
+@t.side_effect_free
+@t.chained_action
 def resource_show(next_func, context, data_dict):
     """Throws away _success_validation flag, that we are using to prevent
     multiple validations of resource in different interface methods

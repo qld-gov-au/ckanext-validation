@@ -2,7 +2,7 @@
 
 import json
 
-import ckantoolkit as tk
+import ckantoolkit as t
 import ckan.plugins as plugins
 
 from ckanext.validation.interfaces import IDataValidation
@@ -55,7 +55,7 @@ def get_default_validation_options():
     Returns:
         dict[str, Any]: validation options dictionary
     """
-    default_options = tk.config.get(DEFAULT_VALIDATION_OPTIONS_KEY)
+    default_options = t.config.get(DEFAULT_VALIDATION_OPTIONS_KEY)
     return json.loads(default_options) if default_options else {}
 
 
@@ -69,7 +69,7 @@ def get_supported_formats():
     """
     supported_formats = [
         _format.lower()
-        for _format in tk.aslist(tk.config.get(SUPPORTED_FORMATS_KEY))
+        for _format in t.aslist(t.config.get(SUPPORTED_FORMATS_KEY))
     ]
 
     for _format in supported_formats:
@@ -79,7 +79,7 @@ def get_supported_formats():
 
 
 def get_update_mode(context, resource_data):
-    is_async = tk.asbool(tk.config.get(ASYNC_UPDATE_KEY))
+    is_async = t.asbool(t.config.get(ASYNC_UPDATE_KEY))
 
     mode = ASYNC_MODE if is_async else SYNC_MODE
 
@@ -93,7 +93,7 @@ def get_update_mode(context, resource_data):
 
 
 def get_create_mode(context, resource_data):
-    is_async = tk.asbool(tk.config.get(ASYNC_CREATE_KEY))
+    is_async = t.asbool(t.config.get(ASYNC_CREATE_KEY))
 
     mode = ASYNC_MODE if is_async else SYNC_MODE
 

@@ -4,10 +4,10 @@ import json
 import logging
 import os
 
-import ckantoolkit as tk
-
 import ckan.plugins as p
 from ckan.lib.plugins import DefaultTranslation
+
+import ckantoolkit as t
 
 from . import blueprints, cli, logic, settings as s, utils, validators
 from .helpers import _get_helpers
@@ -47,8 +47,8 @@ Validation pages will not be enabled.
 Please run the following to create the database tables:
     %s''', init_command)
 
-        tk.add_template_directory(config_, u'templates')
-        tk.add_resource(u'webassets', 'ckanext-validation')
+        t.add_template_directory(config_, u'templates')
+        t.add_resource(u'webassets', 'ckanext-validation')
 
     # IActions
 

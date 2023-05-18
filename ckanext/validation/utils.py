@@ -15,7 +15,7 @@ from goodtables import validate
 from ckan import model
 import ckan.plugins as plugins
 import ckan.lib.uploader as uploader
-import ckantoolkit as tk
+import ckantoolkit as t
 
 from . import settings as s
 from .interfaces import IDataValidation
@@ -50,13 +50,13 @@ def process_schema_fields(data_dict):
 
     elif schema_url:
         if not is_url_valid(schema_url):
-            raise tk.ValidationError({u'schema_url': ['Must be a valid URL']})
+            raise t.ValidationError({u'schema_url': ['Must be a valid URL']})
 
         try:
             resp = requests.get(schema_url)
             schema = resp.json()
         except (ValueError, RequestException):
-            raise tk.ValidationError(
+            raise t.ValidationError(
                 {u'schema_url': ['Can\'t read a valid schema from url']})
 
         data_dict[u'schema'] = schema
@@ -69,8 +69,8 @@ def process_schema_fields(data_dict):
 
     try:
         resource_schema_validator(data_dict[u'schema'], {})
-    except tk.Invalid:
-        raise tk.ValidationError({u'schema': ['Schema is invalid']})
+    except t.Invalid:
+        raise t.ValidationError({u'schema': ['Schema is invalid']})
 
     return data_dict
 
@@ -97,7 +97,7 @@ def run_sync_validation(resource_data):
     """
     schema = resource_data.get('schema')
 
-    if tk.asbool(resource_data.get('align_default_schema')):
+    if t.asbool(resource_data.get('align_default_schema')):
         schema = _get_default_schema(resource_data["package_id"])
 
     if schema and isinstance(schema, string_types):
@@ -126,7 +126,7 @@ def run_sync_validation(resource_data):
         for table in report.get('tables', []):
             table['source'] = resource_data['url']
 
-        raise tk.ValidationError({u'validation': [report]})
+        raise t.ValidationError({u'validation': [report]})
     else:
         _table_count = report.get('table-count', 0) > 0
 
@@ -163,20 +163,20 @@ def _get_uploaded_resource_path(resource_data):
 
 
 def _get_session(resource_data):
-    dataset = tk.get_action('package_show')({
+    dataset = t.get_action('package_show')({
         'user': get_site_user()['name']
     }, {
         'id': resource_data['package_id']
     })
 
-    pass_auth_header = tk.asbool(
-        tk.config.get(s.PASS_AUTH_HEADER, s.PASS_AUTH_HEADER_DEFAULT))
+    pass_auth_header = t.asbool(
+        t.config.get(s.PASS_AUTH_HEADER, s.PASS_AUTH_HEADER_DEFAULT))
 
     if dataset[u'private'] and pass_auth_header:
         _session = requests.Session()
         _session.headers.update({
             u'Authorization':
-            tk.config.get(s.PASS_AUTH_HEADER_VALUE, get_site_user_api_key())
+            t.config.get(s.PASS_AUTH_HEADER_VALUE, get_site_user_api_key())
         })
 
         return _session
@@ -197,8 +197,8 @@ def run_async_validation(resource_id):
     data_dict = {u'resource_id': resource_id, u'async': True}
 
     try:
-        tk.get_action(u'resource_validation_run')(context, data_dict)
-    except tk.ValidationError as e:
+        t.get_action(u'resource_validation_run')(context, data_dict)
+    except t.ValidationError as e:
         log.warning(u'Could not run validation for resource {}: {}'.format(
             resource_id, e))
 
@@ -242,7 +242,7 @@ def is_resource_requires_validation(context, old_resource, new_resource):
     do we need to re-validate it"""
     res_id = new_resource["id"]
     schema = new_resource.get(u'schema')
-    schema_aligned = tk.asbool(new_resource.get('align_default_schema'))
+    schema_aligned = t.asbool(new_resource.get('align_default_schema'))
 
     for plugin in plugins.PluginImplementations(IDataValidation):
         if not plugin.can_validate(context, new_resource):
@@ -281,7 +281,7 @@ def is_resource_requires_validation(context, old_resource, new_resource):
 
 
 def is_api_call():
-    controller, action = tk.get_endpoint()
+    controller, action = t.get_endpoint()
 
     resource_edit = (controller == "resource" and action == "edit") or (
         controller == "package" and action == "resource_edit"
@@ -340,8 +340,8 @@ def get_resource_validation_options(resource_data):
 
 def get_site_user():
     context = {'ignore_auth': True}
-    site_user_name = tk.get_action('get_site_user')(context, {})
-    return tk.get_action('get_site_user')(context, {'id': site_user_name})
+    site_user_name = t.get_action('get_site_user')(context, {})
+    return t.get_action('get_site_user')(context, {'id': site_user_name})
 
 
 def get_site_user_api_key():
