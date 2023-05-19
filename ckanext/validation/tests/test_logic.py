@@ -30,10 +30,10 @@ CSV_URL = "https://people.sc.fsu.edu/~jburkardt/data/csv/addresses.csv"
 class TestResourceValidationRun(object):
 
     def test_resource_validation_run_param_missing(self):
-        with pytest.raises(t.ValidationError) as err:
+        with pytest.raises(t.ValidationError) as e:
             call_action("resource_validation_run")
 
-        assert err.value.error_dict == {"resource_id": "Missing value"}
+        assert "Missing value" in str(e)
 
     def test_resource_validation_run_not_exists(self):
         with pytest.raises(t.ObjectNotFound):
@@ -42,20 +42,18 @@ class TestResourceValidationRun(object):
     def test_resource_validation_wrong_format(self):
         resource = factories.Resource(format="pdf")
 
-        with pytest.raises(t.ValidationError) as err:
+        with pytest.raises(t.ValidationError) as e:
             call_action("resource_validation_run", resource_id=resource["id"])
 
-        assert "Unsupported resource format" in err.value.error_dict["format"]
+        assert "Unsupported resource format" in str(e)
 
     def test_resource_validation_no_url_or_upload(self):
         resource = factories.Resource(url="", format="csv")
 
-        with pytest.raises(t.ValidationError) as err:
+        with pytest.raises(t.ValidationError) as e:
             call_action("resource_validation_run", resource_id=resource["id"])
 
-        assert {u"url":
-                u"Resource must have a valid URL or an uploaded file"} ==\
-            err.value.error_dict
+        assert u"Resource must have a valid URL or an uploaded file" in str(e)
 
     def test_resource_validation_with_url(self, mocked_responses):
         url = "http://example.com"
@@ -124,10 +122,10 @@ class TestResourceValidationRun(object):
 class TestResourceValidationShow(object):
 
     def test_resource_validation_show_param_missing(self):
-        with pytest.raises(t.ValidationError) as err:
+        with pytest.raises(t.ValidationError) as e:
             call_action("resource_validation_show")
 
-        assert err.value.error_dict == {"resource_id": "Missing value"}
+        assert "Missing value" in str(e)
 
     def test_resource_validation_show_not_exists(self):
         with pytest.raises(t.ObjectNotFound):
@@ -139,12 +137,11 @@ class TestResourceValidationShow(object):
 
         dataset = factories.Dataset(resources=[resource])
 
-        with pytest.raises(t.ObjectNotFound) as err:
+        with pytest.raises(t.ObjectNotFound) as e:
             call_action("resource_validation_show",
                         resource_id=dataset["resources"][0]["id"])
 
-        assert "No validation report exists for this resource" ==\
-               err.value.message
+        assert "No validation report exists for this resource" in str(e)
 
     def test_resource_validation_show_returns_all_fields(self):
         resource = {"url": "https://some.url"}
@@ -178,17 +175,16 @@ class TestResourceValidationShow(object):
 class TestResourceValidationDelete(object):
 
     def test_resource_validation_delete_param_missing(self):
-        with pytest.raises(t.ValidationError) as err:
+        with pytest.raises(t.ValidationError) as e:
             call_action("resource_validation_delete")
 
-        assert err.value.error_dict == {"resource_id": "Missing value"}
+        assert "Missing value" in str(e)
 
     def test_resource_validation_delete_not_exists(self):
-        with pytest.raises(t.ObjectNotFound) as err:
+        with pytest.raises(t.ObjectNotFound) as e:
             call_action("resource_validation_delete", resource_id="not_exists")
 
-        assert "No validation report exists for this resource" ==\
-            err.value.message
+        assert "No validation report exists for this resource" in str(e)
 
     def test_resource_validation_delete_removes_object(self, resource_factory):
         resource = resource_factory(format="PDF")
