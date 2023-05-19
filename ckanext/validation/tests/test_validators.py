@@ -1,14 +1,15 @@
-import json
+# encoding: utf-8
 
+import json
 import pytest
 
 from ckantoolkit import Invalid
 
-from ckan.tests.helpers import change_config
-
 from ckanext.validation import settings
-from ckanext.validation.validators import (resource_schema_validator,
-                                           validation_options_validator)
+from ckanext.validation.validators import (
+    resource_schema_validator,
+    validation_options_validator,
+)
 
 
 class TestResourceSchemaValidator(object):
@@ -29,25 +30,29 @@ class TestResourceSchemaValidator(object):
 
         schema = "{a,b}"
 
-        pytest.raises(Invalid, resource_schema_validator, schema, {})
+        with pytest.raises(Invalid):
+            resource_schema_validator(schema, {})
 
     def test_resource_schema_invalid_schema_string(self):
 
         schema = '{"a": 1}'
 
-        pytest.raises(Invalid, resource_schema_validator, schema, {})
+        with pytest.raises(Invalid):
+            resource_schema_validator(schema, {})
 
     def test_resource_schema_valid_json_not_a_dict_string(self):
 
         schema = "[a,2]"
 
-        pytest.raises(Invalid, resource_schema_validator, schema, {})
+        with pytest.raises(Invalid):
+            resource_schema_validator(schema, {})
 
     def test_resource_schema_valid_json_empty_string(self):
 
         schema = '""'
 
-        pytest.raises(Invalid, resource_schema_validator, schema, {})
+        with pytest.raises(Invalid):
+            resource_schema_validator(schema, {})
 
     def test_resource_schema_invalid_schema_object(self):
 
@@ -58,7 +63,7 @@ class TestResourceSchemaValidator(object):
 
         assert e.value.error.startswith(
             "Invalid Table Schema: "
-            "Descriptor validation error: 'fields' is a required property"
+            + "Descriptor validation error: 'fields' is a required property"
         )
 
     def test_resource_schema_valid_schema_object(self):
@@ -89,7 +94,8 @@ class TestResourceSchemaValidator(object):
 
         schema = "/some/wrong/url/schema.json"
 
-        pytest.raises(Invalid, resource_schema_validator, schema, {})
+        with pytest.raises(Invalid):
+            resource_schema_validator(schema, {})
 
 
 class TestValidationOptionsValidator(object):
@@ -105,20 +111,27 @@ class TestValidationOptionsValidator(object):
 
         assert validation_options_validator(value, {}) == value
 
-    @change_config(settings.DEFAULT_VALIDATION_OPTIONS_KEY,
-                   '{"delimiter":";"}')
+    @pytest.mark.ckan_config(
+        settings.DEFAULT_VALIDATION_OPTIONS_KEY, '{"delimiter":";"}'
+    )
     def test_default_validation_options(self):
 
         value = '{"headers": 3}'
 
-        assert validation_options_validator(value, {}) ==\
-            '{"delimiter": ";", "headers": 3}'
+        assert (
+            validation_options_validator(value, {})
+            == '{"delimiter": ";", "headers": 3}'
+        )
 
-    @change_config(settings.DEFAULT_VALIDATION_OPTIONS_KEY,
-                   '{"delimiter":";", "headers":2}')
+    @pytest.mark.ckan_config(
+        settings.DEFAULT_VALIDATION_OPTIONS_KEY,
+        '{"delimiter":";", "headers":2}',
+    )
     def test_default_validation_optionsi_does_not_override(self):
 
         value = '{"headers": 3}'
 
-        assert validation_options_validator(value, {}) ==\
-            '{"delimiter": ";", "headers": 3}'
+        assert (
+            validation_options_validator(value, {})
+            == '{"delimiter": ";", "headers": 3}'
+        )
