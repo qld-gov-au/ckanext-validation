@@ -74,8 +74,11 @@ class TestResourceValidationRun(object):
 
         call_action("resource_validation_run", resource_id=resource["id"])
 
-        validation = Session.query(Validation).filter(
-            Validation.resource_id == resource["id"]).one()
+        validation = (
+            Session.query(Validation)
+            .filter(Validation.resource_id == resource["id"])
+            .one()
+        )
 
         assert validation.resource_id == resource["id"]
         assert validation.status == "created"
@@ -89,26 +92,32 @@ class TestResourceValidationRun(object):
         url = "https://some.url"
         mocked_responses.add(responses.GET, url, body=VALID_CSV, stream=True)
 
-        resource = {"format": "csv", "url": url}
+        resource = {"format": "CSV", "url": url}
 
         dataset = factories.Dataset(resources=[resource])
 
         timestamp = datetime.datetime.utcnow()
-        old_validation = Validation(resource_id=dataset["resources"][0]["id"],
-                                    created=timestamp,
-                                    finished=timestamp,
-                                    status="valid",
-                                    report={"some": "report"},
-                                    error={"some": "error"})
+        old_validation = Validation(
+            resource_id=dataset["resources"][0]["id"],
+            created=timestamp,
+            finished=timestamp,
+            status="valid",
+            report={"some": "report"},
+            error={"some": "error"},
+        )
 
         Session.add(old_validation)
         Session.commit()
 
-        call_action("resource_validation_run",
-                    resource_id=dataset["resources"][0]["id"])
+        call_action(
+            "resource_validation_run", resource_id=dataset["resources"][0]["id"]
+        )
 
-        validation = Session.query(Validation).filter(
-            Validation.resource_id == dataset["resources"][0]["id"]).one()
+        validation = (
+            Session.query(Validation)
+            .filter(Validation.resource_id == dataset["resources"][0]["id"])
+            .one()
+        )
 
         assert validation.resource_id == dataset["resources"][0]["id"]
         assert validation.status == "created"
@@ -131,7 +140,7 @@ class TestResourceValidationShow(object):
         with pytest.raises(t.ObjectNotFound):
             call_action("resource_validation_show", resource_id="not_exists")
 
-    def test_resource_validation_show_validation_does_not_exists(self):
+    def test_resource_validation_show_validation_does_not_exist(self):
 
         resource = {"url": "https://some.url"}
 
@@ -149,18 +158,20 @@ class TestResourceValidationShow(object):
         dataset = factories.Dataset(resources=[resource])
 
         timestamp = datetime.datetime.utcnow()
-        validation = Validation(resource_id=dataset["resources"][0]["id"],
-                                created=timestamp,
-                                finished=timestamp,
-                                status="valid",
-                                report={"some": "report"},
-                                error={"some": "error"})
+        validation = Validation(
+            resource_id=dataset["resources"][0]["id"],
+            created=timestamp,
+            finished=timestamp,
+            status="valid",
+            report={"some": "report"},
+            error={"some": "error"},
+        )
         Session.add(validation)
         Session.commit()
 
         validation_show = call_action(
-            "resource_validation_show",
-            resource_id=dataset["resources"][0]["id"])
+            "resource_validation_show", resource_id=dataset["resources"][0]["id"]
+        )
 
         assert validation_show["id"] == validation.id
         assert validation_show["resource_id"] == validation.resource_id
@@ -190,302 +201,34 @@ class TestResourceValidationDelete(object):
         resource = resource_factory(format="PDF")
 
         timestamp = datetime.datetime.utcnow()
-        validation = Validation(resource_id=resource["id"],
-                                created=timestamp,
-                                finished=timestamp,
-                                status="valid",
-                                report={"some": "report"},
-                                error={"some": "error"})
+        validation = Validation(
+            resource_id=resource["id"],
+            created=timestamp,
+            finished=timestamp,
+            status="valid",
+            report={"some": "report"},
+            error={"some": "error"},
+        )
         Session.add(validation)
         Session.commit()
 
-        count_before = Session.query(Validation).filter(
-            Validation.resource_id == resource["id"]).count()
+        count_before = (
+            Session.query(Validation)
+            .filter(Validation.resource_id == resource["id"])
+            .count()
+        )
 
         assert count_before == 1
 
         call_action("resource_validation_delete", resource_id=resource["id"])
 
-        count_after = Session.query(Validation).filter(
-            Validation.resource_id == resource["id"]).count()
+        count_after = (
+            Session.query(Validation)
+            .filter(Validation.resource_id == resource["id"])
+            .count()
+        )
 
         assert count_after == 0
-
-
-@pytest.mark.usefixtures("clean_db", "validation_setup")
-class TestResourceValidationOnCreate(object):
-
-    def test_validation_fails_on_upload(self):
-        """We shouldn't be able to create a resource with an invalid file"""
-        mock_upload = get_mock_upload(INVALID_CSV, "invalid.csv")
-
-        dataset = factories.Dataset()
-
-        with pytest.raises(t.ValidationError) as e:
-            call_action("resource_create",
-                        package_id=dataset["id"],
-                        format="csv",
-                        upload=mock_upload,
-                        url_type="upload",
-                        schema=SCHEMA)
-
-        assert "validation" in e.value.error_dict
-        assert "missing-value" in str(e.value)
-        assert "Row 2 has a missing value in column 4" in str(e.value)
-
-    def test_validation_fails_no_validation_object_stored(self):
-        """If the validation failed - no validation entity should be saved in database"""
-        dataset = factories.Dataset()
-
-        mock_upload = get_mock_upload(INVALID_CSV, "invalid.csv")
-
-        with pytest.raises(t.ValidationError):
-            call_action("resource_create",
-                        package_id=dataset["id"],
-                        format="csv",
-                        upload=mock_upload,
-                        url_type="upload",
-                        schema=SCHEMA)
-
-        assert not Session.query(Validation).count()
-
-    def test_validation_passes_on_upload(self):
-        dataset = factories.Dataset()
-
-        mock_upload = get_mock_upload(VALID_CSV, "valid.csv")
-
-        resource = call_action("resource_create",
-                               package_id=dataset["id"],
-                               format="csv",
-                               upload=mock_upload,
-                               url_type="upload",
-                               schema=SCHEMA)
-
-        assert resource["validation_status"] == "success"
-        assert "validation_timestamp" in resource
-
-    def test_validation_passes_with_url(self, mocked_responses):
-        dataset = factories.Dataset()
-
-        url = "https://example.com/valid.csv"
-        mocked_responses.add(responses.GET, url, body=VALID_CSV, stream=True)
-
-        resource = call_action("resource_create",
-                               package_id=dataset["id"],
-                               format="csv",
-                               url=url,
-                               schema=SCHEMA)
-
-        assert resource["validation_status"] == "success"
-        assert "validation_timestamp" in resource
-
-    def test_validation_fails_if_schema_invalid(self, resource_factory):
-        with pytest.raises(t.ValidationError, match="Schema is invalid"):
-            resource_factory(schema="{111}")
-
-
-@pytest.mark.usefixtures("clean_db", "validation_setup")
-class TestResourceValidationOnUpdate(object):
-
-    def test_validation_fails_on_upload(self, resource_factory):
-        dataset = factories.Dataset()
-        resource = resource_factory(package_id=dataset["id"], schema="")
-
-        mock_upload = get_mock_upload(INVALID_CSV, "invalid.csv")
-
-        with pytest.raises(t.ValidationError) as e:
-            call_action("resource_update",
-                        id=resource["id"],
-                        package_id=dataset["id"],
-                        upload=mock_upload,
-                        format="csv",
-                        schema=SCHEMA)
-
-        assert "validation" in e.value.error_dict
-        assert "missing-value" in str(e.value)
-        assert "Row 2 has a missing value in column 4" in str(e.value)
-
-    def test_validation_fails_no_validation_object_stored(
-            self, resource_factory):
-        dataset = factories.Dataset()
-
-        mock_upload = get_mock_upload(INVALID_CSV, "valid.csv")
-
-        with pytest.raises(t.ValidationError):
-            resource_factory(package_id=dataset["id"], upload=mock_upload)
-
-        assert Session.query(Validation).count() == 0
-
-    def test_validation_passes_on_upload(self, resource_factory):
-        dataset = factories.Dataset()
-        resource = resource_factory(package_id=dataset["id"], format="")
-
-        assert "validation_status" not in resource
-
-        mock_upload = get_mock_upload(VALID_CSV, "valid.csv")
-
-        resource = call_action("resource_update",
-                               id=resource["id"],
-                               package_id=dataset["id"],
-                               format="csv",
-                               upload=mock_upload,
-                               schema=SCHEMA)
-
-        assert resource["validation_status"] == "success"
-        assert "validation_timestamp" in resource
-
-    def test_validation_passes_with_url(self, mocked_responses,
-                                        resource_factory):
-        dataset = factories.Dataset()
-        resource = resource_factory(package_id=dataset["id"], format="")
-
-        assert "validation_status" not in resource
-
-        url = "https://example.com/data.csv"
-        mocked_responses.add(responses.GET, url, body=VALID_CSV, stream=True)
-
-        resource = call_action("resource_update",
-                               id=resource["id"],
-                               package_id=dataset["id"],
-                               format="csv",
-                               url=url,
-                               schema=SCHEMA)
-
-        assert resource["validation_status"] == "success"
-        assert "validation_timestamp" in resource
-
-    def test_validation_passes_with_schema_as_url(self, mocked_responses,
-                                                  resource_factory):
-        schema_url = "https://example.com/schema.json"
-
-        mocked_responses.add(responses.GET, schema_url, json=SCHEMA)
-
-        resource = resource_factory(schema=schema_url)
-
-        assert resource["schema"] == schema_url
-        assert resource["validation_status"] == "success"
-        assert "validation_timestamp" in resource
-
-    def test_validation_fails_if_schema_invalid(self, resource_factory):
-        resource = resource_factory(format="pdf")
-        with pytest.raises(t.ValidationError, match="Schema is invalid"):
-            call_action("resource_update",
-                        id=resource["id"],
-                        package_id=resource["package_id"],
-                        format="csv",
-                        schema="{111}")
-
-
-@pytest.mark.usefixtures("clean_db", "validation_setup")
-@mock.patch("ckanext.validation.utils.validate", return_value=VALID_REPORT)
-class TestSchemaFields(object):
-
-    def test_schema_field(self, mocked_report):
-        dataset = factories.Dataset()
-
-        resource = call_action("resource_create",
-                               package_id=dataset["id"],
-                               url="http://example.com/file.csv",
-                               schema=json.dumps(SCHEMA))
-
-        assert resource["schema"] == SCHEMA
-        assert "schema_upload" not in resource
-        assert "schema_url" not in resource
-
-    def test_schema_url_field(self, mocked_report, mocked_responses):
-        schema_url = "https://example.com/schema.json"
-        mocked_responses.add(responses.GET, schema_url, json=SCHEMA)
-
-        dataset = factories.Dataset()
-
-        resource = call_action("resource_create",
-                               package_id=dataset["id"],
-                               url="http://example.com/file.csv",
-                               schema_url=schema_url)
-
-        assert resource["schema"] == SCHEMA
-        assert "schema_upload" not in resource
-        assert "schema_url" not in resource
-
-    def test_schema_url_field_wrong_url(self, mocked_report):
-        with pytest.raises(t.ValidationError):
-            call_action("resource_create",
-                        url="http://example.com/file.csv",
-                        schema_url="not-a-url")
-
-    def test_schema_upload_field(self, mocked_report):
-        schema_upload = get_mock_upload(SCHEMA, "schema.json")
-
-        dataset = factories.Dataset()
-
-        resource = call_action("resource_create",
-                               package_id=dataset["id"],
-                               url="http://example.com/file.csv",
-                               schema_upload=schema_upload)
-
-        assert resource["schema"] == SCHEMA
-        assert "schema_upload" not in resource
-        assert "schema_url" not in resource
-
-
-@pytest.mark.usefixtures("clean_db", "validation_setup")
-@mock.patch("ckanext.validation.utils.validate", return_value=VALID_REPORT)
-class TestValidationOptionsField(object):
-
-    def test_validation_options_field(self, mocked_report):
-        dataset = factories.Dataset()
-
-        validation_options = {
-            "delimiter": ";",
-            "headers": 2,
-            "skip_rows": ["#"],
-        }
-
-        resource = call_action(
-            "resource_create",
-            package_id=dataset["id"],
-            url="http://example.com/file.csv",
-            validation_options=validation_options,
-        )
-
-        assert resource["validation_options"] == validation_options
-
-    def test_validation_options_field_string(self, mocked_report):
-        dataset = factories.Dataset()
-
-        validation_options = """{
-            "delimiter": ";",
-            "headers": 2,
-            "skip_rows": ["#"]
-        }"""
-
-        resource = call_action(
-            "resource_create",
-            package_id=dataset["id"],
-            url="http://example.com/file.csv",
-            validation_options=validation_options,
-        )
-
-        assert resource["validation_options"] == json.loads(validation_options)
-
-
-@pytest.mark.usefixtures("clean_db", "validation_setup")
-class TestPackageUpdate(object):
-
-    def test_package_patch_without_resources_sets_context_flag(self):
-        dataset = factories.Dataset()
-        context = {}
-        call_action("package_patch", context=context, id=dataset["id"])
-        assert context.get("save", False)
-
-    def test_package_patch_with_resources_does_not_set_context_flag(self):
-        dataset = factories.Dataset()
-        context = {}
-        call_action("package_patch",
-                    context=context,
-                    id=dataset["id"],
-                    resources=[])
-        assert "save" not in context
 
 
 @pytest.mark.usefixtures("clean_db", "validation_setup")
@@ -631,3 +374,305 @@ class TestAuth(object):
             call_auth("resource_validation_run",
                       context=context,
                       resource_id=dataset["resources"][0]["id"])
+
+
+@pytest.mark.usefixtures("clean_db", "validation_setup")
+class TestResourceValidationOnCreate(object):
+
+    def test_validation_fails_on_upload(self):
+        """We shouldn't be able to create a resource with an invalid file"""
+        mock_upload = get_mock_upload(INVALID_CSV, "invalid.csv")
+
+        dataset = factories.Dataset()
+
+        with pytest.raises(t.ValidationError) as e:
+            call_action(
+                "resource_create",
+                package_id=dataset["id"],
+                format="csv",
+                upload=mock_upload,
+                url_type="upload",
+                schema=SCHEMA
+            )
+
+        assert "validation" in e.value.error_dict
+        assert "missing-value" in str(e.value)
+        assert "Row 2 has a missing value in column 4" in str(e.value)
+
+    def test_validation_fails_no_validation_object_stored(self):
+        """If the validation failed - no validation entity should be saved in database"""
+        dataset = factories.Dataset()
+
+        mock_upload = get_mock_upload(INVALID_CSV, "invalid.csv")
+
+        with pytest.raises(t.ValidationError):
+            call_action(
+                "resource_create",
+                package_id=dataset["id"],
+                format="csv",
+                upload=mock_upload,
+                url_type="upload",
+                schema=SCHEMA
+            )
+
+        assert not Session.query(Validation).count()
+
+    def test_validation_passes_on_upload(self):
+        dataset = factories.Dataset()
+
+        mock_upload = get_mock_upload(VALID_CSV, "valid.csv")
+
+        resource = call_action(
+            "resource_create",
+            package_id=dataset["id"],
+            format="csv",
+            upload=mock_upload,
+            url_type="upload",
+            schema=SCHEMA
+        )
+
+        assert resource["validation_status"] == "success"
+        assert "validation_timestamp" in resource
+
+    def test_validation_passes_with_url(self, mocked_responses):
+        dataset = factories.Dataset()
+
+        url = "https://example.com/valid.csv"
+        mocked_responses.add(responses.GET, url, body=VALID_CSV, stream=True)
+
+        resource = call_action(
+            "resource_create",
+            package_id=dataset["id"],
+            format="csv",
+            url=url,
+            schema=SCHEMA
+        )
+
+        assert resource["validation_status"] == "success"
+        assert "validation_timestamp" in resource
+
+    def test_validation_fails_if_schema_invalid(self, resource_factory):
+        with pytest.raises(t.ValidationError, match="Schema is invalid"):
+            resource_factory(schema="{111}")
+
+
+@pytest.mark.usefixtures("clean_db", "validation_setup")
+class TestResourceValidationOnUpdate(object):
+
+    def test_validation_fails_on_upload(self, resource_factory):
+        dataset = factories.Dataset()
+        resource = resource_factory(package_id=dataset["id"], schema="")
+
+        mock_upload = get_mock_upload(INVALID_CSV, "invalid.csv")
+
+        with pytest.raises(t.ValidationError) as e:
+            call_action(
+                "resource_update",
+                id=resource["id"],
+                package_id=dataset["id"],
+                upload=mock_upload,
+                format="csv",
+                schema=SCHEMA
+            )
+
+        assert "validation" in e.value.error_dict
+        assert "missing-value" in str(e.value)
+        assert "Row 2 has a missing value in column 4" in str(e.value)
+
+    def test_validation_fails_no_validation_object_stored(
+            self, resource_factory):
+        dataset = factories.Dataset()
+
+        mock_upload = get_mock_upload(INVALID_CSV, "valid.csv")
+
+        with pytest.raises(t.ValidationError):
+            resource_factory(package_id=dataset["id"], upload=mock_upload)
+
+        assert Session.query(Validation).count() == 0
+
+    def test_validation_passes_on_upload(self, resource_factory):
+        dataset = factories.Dataset()
+        resource = resource_factory(package_id=dataset["id"], format="")
+
+        assert "validation_status" not in resource
+
+        mock_upload = get_mock_upload(VALID_CSV, "valid.csv")
+
+        resource = call_action(
+            "resource_update",
+            id=resource["id"],
+            package_id=dataset["id"],
+            format="csv",
+            upload=mock_upload,
+            schema=SCHEMA
+        )
+
+        assert resource["validation_status"] == "success"
+        assert "validation_timestamp" in resource
+
+    def test_validation_passes_with_url(self, mocked_responses,
+                                        resource_factory):
+        dataset = factories.Dataset()
+        resource = resource_factory(package_id=dataset["id"], format="")
+
+        assert "validation_status" not in resource
+
+        url = "https://example.com/data.csv"
+        mocked_responses.add(responses.GET, url, body=VALID_CSV, stream=True)
+
+        resource = call_action(
+            "resource_update",
+            id=resource["id"],
+            package_id=dataset["id"],
+            format="csv",
+            url=url,
+            schema=SCHEMA
+        )
+
+        assert resource["validation_status"] == "success"
+        assert "validation_timestamp" in resource
+
+    def test_validation_passes_with_schema_as_url(self, mocked_responses,
+                                                  resource_factory):
+        schema_url = "https://example.com/schema.json"
+
+        mocked_responses.add(responses.GET, schema_url, json=SCHEMA)
+
+        resource = resource_factory(schema=schema_url)
+
+        assert resource["schema"] == schema_url
+        assert resource["validation_status"] == "success"
+        assert "validation_timestamp" in resource
+
+    def test_validation_fails_if_schema_invalid(self, resource_factory):
+        resource = resource_factory(format="pdf")
+        with pytest.raises(t.ValidationError, match="Schema is invalid"):
+            call_action(
+                "resource_update",
+                id=resource["id"],
+                package_id=resource["package_id"],
+                format="csv",
+                schema="{111}"
+            )
+
+
+@pytest.mark.usefixtures("clean_db", "validation_setup")
+@mock.patch("ckanext.validation.utils.validate", return_value=VALID_REPORT)
+class TestSchemaFields(object):
+
+    def test_schema_field(self, mocked_report):
+        dataset = factories.Dataset()
+
+        resource = call_action(
+            "resource_create",
+            package_id=dataset["id"],
+            url="http://example.com/file.csv",
+            schema=json.dumps(SCHEMA)
+        )
+
+        assert resource["schema"] == SCHEMA
+        assert "schema_upload" not in resource
+        assert "schema_url" not in resource
+
+    def test_schema_url_field(self, mocked_report, mocked_responses):
+        schema_url = "https://example.com/schema.json"
+        mocked_responses.add(responses.GET, schema_url, json=SCHEMA)
+
+        dataset = factories.Dataset()
+
+        resource = call_action(
+            "resource_create",
+            package_id=dataset["id"],
+            url="http://example.com/file.csv",
+            schema_url=schema_url
+        )
+
+        assert resource["schema"] == SCHEMA
+        assert "schema_upload" not in resource
+        assert "schema_url" not in resource
+
+    def test_schema_url_field_wrong_url(self, mocked_report):
+        with pytest.raises(t.ValidationError):
+            call_action(
+                "resource_create",
+                url="http://example.com/file.csv",
+                schema_url="not-a-url"
+            )
+
+    def test_schema_upload_field(self, mocked_report):
+        schema_upload = get_mock_upload(SCHEMA, "schema.json")
+
+        dataset = factories.Dataset()
+
+        resource = call_action(
+            "resource_create",
+            package_id=dataset["id"],
+            url="http://example.com/file.csv",
+            schema_upload=schema_upload
+        )
+
+        assert resource["schema"] == SCHEMA
+        assert "schema_upload" not in resource
+        assert "schema_url" not in resource
+
+
+@pytest.mark.usefixtures("clean_db", "validation_setup")
+@mock.patch("ckanext.validation.utils.validate", return_value=VALID_REPORT)
+class TestValidationOptionsField(object):
+
+    def test_validation_options_field(self, mocked_report):
+        dataset = factories.Dataset()
+
+        validation_options = {
+            "delimiter": ";",
+            "headers": 2,
+            "skip_rows": ["#"],
+        }
+
+        resource = call_action(
+            "resource_create",
+            package_id=dataset["id"],
+            url="http://example.com/file.csv",
+            validation_options=validation_options,
+        )
+
+        assert resource["validation_options"] == validation_options
+
+    def test_validation_options_field_string(self, mocked_report):
+        dataset = factories.Dataset()
+
+        validation_options = """{
+            "delimiter": ";",
+            "headers": 2,
+            "skip_rows": ["#"]
+        }"""
+
+        resource = call_action(
+            "resource_create",
+            package_id=dataset["id"],
+            url="http://example.com/file.csv",
+            validation_options=validation_options,
+        )
+
+        assert resource["validation_options"] == json.loads(validation_options)
+
+
+@pytest.mark.usefixtures("clean_db", "validation_setup")
+class TestPackageUpdate(object):
+
+    def test_package_patch_without_resources_sets_context_flag(self):
+        dataset = factories.Dataset()
+        context = {}
+        call_action("package_patch", context=context, id=dataset["id"])
+        assert context.get("save", False)
+
+    def test_package_patch_with_resources_does_not_set_context_flag(self):
+        dataset = factories.Dataset()
+        context = {}
+        call_action(
+            "package_patch",
+            context=context,
+            id=dataset["id"],
+            resources=[]
+        )
+        assert "save" not in context
