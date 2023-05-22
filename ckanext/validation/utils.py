@@ -5,7 +5,12 @@ import json
 import requests
 from six import string_types
 
-from goodtables import validate
+try:
+    from frictionless import validate, Report, system, Schema, Dialect, Check
+    use_frictionless = True
+except ImportError:
+    from goodtables import validate
+    use_frictionless = False
 
 import ckantoolkit as t
 
@@ -92,8 +97,28 @@ def validate_table(source, _format=u'csv', schema=None, **options):
         proxy = t.config.get('ckan.download_proxy')
         log.debug(u'Download resource for validation via proxy: %s', proxy)
         http_session.proxies.update({'http': proxy, 'https': proxy})
-    report = validate(source, format=_format, schema=schema, http_session=http_session, **options)
 
     log.debug(u'Validating source: %s', source)
+    if use_frictionless:
+        # This option is needed to allow Frictionless Framework to validate absolute paths
+        frictionless_context = {'trusted': True, 'http_session': http_session}
+        resource_schema = Schema.from_descriptor(schema) if schema else None
+
+        # Load the Resource Dialect as described in https://framework.frictionlessdata.io/docs/framework/dialect.html
+        if 'dialect' in options:
+            dialect = Dialect.from_descriptor(options['dialect'])
+            options['dialect'] = dialect
+
+        # Load the list of checks and its parameters declaratively as in https://framework.frictionlessdata.io/docs/checks/table.html
+        if 'checks' in options:
+            checklist = [Check.from_descriptor(c) for c in options['checks']]
+            options['checks'] = checklist
+
+        with system.use_context(**frictionless_context):
+            report = validate(source, format=_format, schema=resource_schema, **options)
+            if type(report) == Report:
+                report = report.to_dict()
+    else:
+        report = validate(source, format=_format, schema=schema, http_session=http_session, **options)
 
     return report
