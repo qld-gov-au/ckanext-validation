@@ -64,11 +64,11 @@ def get_resource_validation_options(resource_data):
 
 
 def _get_session(resource_data):
-    dataset = t.get_action('package_show')({
-        'user': get_site_user()['name']
-    }, {
-        'id': resource_data['package_id']
-    })
+    if 'package_id' not in resource_data:
+        resource_data = t.get_action('resource_show')(
+            {'ignore_auth': True}, {'id': resource_data['id']})
+    dataset = t.get_action('package_show')(
+        {'ignore_auth': True}, {'id': resource_data['package_id']})
 
     pass_auth_header = t.asbool(
         t.config.get(s.PASS_AUTH_HEADER, s.PASS_AUTH_HEADER_DEFAULT))
