@@ -114,9 +114,9 @@ INVALID_REPORT = {
 }
 
 ERROR_REPORT = {
-    'error-count': 0,
+    'error-count': 1,
     'table-count': 0,
-    'warnings': ['Some warning'],
+    'errors': ['Some error or other'],
 }
 
 VALID_REPORT_LOCAL_FILE = {

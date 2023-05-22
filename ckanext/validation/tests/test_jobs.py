@@ -163,7 +163,7 @@ class TestValidationJob(object):
 
         assert validation.status == "error"
         assert validation.report is None
-        assert validation.error == {"message": "Some warning"}
+        assert validation.error == {"message": ["Some error or other"]}
         assert validation.finished
 
     def test_job_run_uploaded_file_replaces_paths(self, resource_factory):

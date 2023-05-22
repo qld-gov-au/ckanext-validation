@@ -71,15 +71,19 @@ def run_validation_job(resource):
     for table in report.get('tables', []):
         if table['source'].startswith('/'):
             table['source'] = resource['url']
-    for index, warning in enumerate(report.get('warnings', [])):
-        report['warnings'][index] = re.sub(r'Table ".*"', 'Table', warning)
-
-    if report['table-count'] > 0:
+    for table in report.get('tasks', []):
+        if table['place'].startswith('/'):
+            table['place'] = resource['url']
+    if 'warnings' in report:
+        for index, warning in enumerate(report['warnings']):
+            report['warnings'][index] = re.sub(r'Table ".*"', 'Table', warning)
+    if 'valid' in report:
         status = StatusTypes.success if report[u'valid'] else StatusTypes.failure
         validation_record = vsh.updateValidationJobStatus(Session, resource['id'], status, report, None, validation_record)
     else:
         status = StatusTypes.error
-        error_payload = {'message': '\n'.join(report['warnings']) or u'No tables found'}
+        error_payload = {
+            'message': [str(err) for err in report.get('errors', report.get('warnings', ['Errors validating the data']))]}
         validation_record = vsh.updateValidationJobStatus(Session, resource['id'], status, None, error_payload, validation_record)
 
     # Store result status in resource
