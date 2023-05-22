@@ -74,8 +74,11 @@ def get_validation_badge(resource, in_listing=False):
 def _get_schema_or_default_schema(resource):
     schema = resource.get('schema')
 
+    context = {u'ignore_auth': True}
+    data_dict = {u'id': resource['package_id']}
+
     if asbool(resource.get('align_default_schema')):
-        dataset = get_action('package_show')({}, {'id': resource['package_id']})
+        dataset = get_action('package_show')(context, data_dict)
 
         if dataset:
             schema = dataset.get(u'default_data_schema')
