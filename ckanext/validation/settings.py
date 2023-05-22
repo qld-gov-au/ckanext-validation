@@ -9,7 +9,7 @@ from ckanext.validation.interfaces import IDataValidation
 
 try:
     from tabulator.config import PARSERS
-except NameError:
+except ImportError:
     # Point in time list of parsers from v1.53.5 if library Tabulator not loaded
     PARSERS = {
         'csv': 'tabulator.parsers.csv.CSVParser',
