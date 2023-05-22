@@ -11,13 +11,12 @@ from ckan.lib.uploader import ResourceUpload
 from ckan.tests.helpers import call_action
 from ckan.tests import factories
 
-from ckanext.validation import settings
+from ckanext.validation import settings, utils
 from ckanext.validation.model import Validation
 from ckanext.validation.jobs import (
     run_validation_job,
     uploader,
     Session,
-    requests,
 )
 from ckanext.validation.tests.helpers import (
     INVALID_REPORT,
@@ -49,8 +48,8 @@ class TestValidationJob(object):
     @mock.patch(MOCK_ASYNC_VALIDATE, return_value=VALID_REPORT)
     @mock.patch.object(Session, "commit")
     @mock.patch.object(ckantoolkit, "get_action")
-    @mock.patch.object(requests, "Session", return_value="Some_Session")
-    def test_job_run_no_schema(self, mock_requests, mock_get_action,
+    @mock.patch.object(utils, "_get_session", return_value="Some_Session")
+    def test_job_run_no_schema(self, mock_utils, mock_get_action,
                                mock_commit, mock_validate, dataset):
         resource = {
             "id": "test",
@@ -69,8 +68,8 @@ class TestValidationJob(object):
     @mock.patch(MOCK_ASYNC_VALIDATE, return_value=VALID_REPORT)
     @mock.patch.object(Session, "commit")
     @mock.patch.object(ckantoolkit, "get_action")
-    @mock.patch.object(requests, "Session", return_value="Some_Session")
-    def test_job_run_schema(self, mock_requests, mock_get_action, mock_commit,
+    @mock.patch.object(utils, "_get_session", return_value="Some_Session")
+    def test_job_run_schema(self, mock_utils, mock_get_action, mock_commit,
                             mock_validate, dataset):
         resource = {
             "id": "test",
@@ -93,8 +92,8 @@ class TestValidationJob(object):
                        return_value=mock_get_resource_uploader({}))
     @mock.patch.object(Session, "commit")
     @mock.patch.object(ckantoolkit, "get_action")
-    @mock.patch.object(requests, "Session", return_value="Some_Session")
-    def test_job_run_uploaded_file(self, mock_requests, mock_get_action,
+    @mock.patch.object(utils, "_get_session", return_value="Some_Session")
+    def test_job_run_uploaded_file(self, mock_utils, mock_get_action,
                                    mock_commit, mock_uploader, mock_validate,
                                    dataset):
         resource = {

@@ -5,7 +5,6 @@ import json
 import re
 
 import requests
-from goodtables import validate
 from six import string_types
 
 from ckan.model import Session
@@ -47,28 +46,11 @@ def run_validation_job(resource):
 
     options = utils.get_resource_validation_options(resource)
 
-    dataset = t.get_action('package_show')(
-        {'ignore_auth': True}, {'id': resource['package_id']})
-
     source = None
     if resource.get(u'url_type') == u'upload':
         upload = uploader.get_resource_uploader(resource)
         if isinstance(upload, uploader.ResourceUpload):
             source = upload.get_path(resource[u'id'])
-        else:
-            # Upload is not the default implementation (ie it's a cloud storage
-            # implementation)
-            pass_auth_header = t.asbool(
-                t.config.get(u'ckanext.validation.pass_auth_header', True))
-            if dataset[u'private'] and pass_auth_header:
-                s = requests.Session()
-                s.headers.update({
-                    u'Authorization': t.config.get(
-                        u'ckanext.validation.pass_auth_header_value',
-                        utils.get_site_user_api_key())
-                })
-
-                options[u'http_session'] = s
 
     if not source:
         source = resource[u'url']
@@ -83,7 +65,7 @@ def run_validation_job(resource):
 
     _format = resource[u'format'].lower()
 
-    report = _validate_table(source, _format=_format, schema=schema, **options)
+    report = utils.validate_table(source, _format=_format, schema=schema, **options)
 
     # Hide uploaded files
     for table in report.get('tables', []):
@@ -103,24 +85,8 @@ def run_validation_job(resource):
     # Store result status in resource
     t.get_action('resource_patch')(
         {'ignore_auth': True,
-         'user': t.get_action('get_site_user')({'ignore_auth': True})['name'],
+         'user': utils.get_site_user()['name'],
          '_validation_performed': True},
         {'id': resource['id'],
          'validation_status': validation_record.status,
          'validation_timestamp': validation_record.finished.isoformat()})
-
-
-def _validate_table(source, _format=u'csv', schema=None, **options):
-
-    http_session = options.pop('http_session', None) or requests.Session()
-
-    use_proxy = 'ckan.download_proxy' in t.config
-    if use_proxy:
-        proxy = t.config.get('ckan.download_proxy')
-        log.debug(u'Download resource for validation via proxy: %s', proxy)
-        http_session.proxies.update({'http': proxy, 'https': proxy})
-    report = validate(source, format=_format, schema=schema, http_session=http_session, **options)
-
-    log.debug(u'Validating source: %s', source)
-
-    return report

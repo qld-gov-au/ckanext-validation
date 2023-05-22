@@ -21,10 +21,10 @@ def _assert_validation_badge_status(resource, status):
 
 
 @pytest.mark.usefixtures("clean_db", "validation_setup")
-@mock.patch("ckanext.validation.utils.is_resource_could_be_validated",
+@mock.patch("ckanext.validation.plugin._is_resource_could_be_validated",
             return_value=False)
 class TestBadges(object):
-    """Mocking is_resource_could_be_validated to prevent actual validation,
+    """Mocking _is_resource_could_be_validated to prevent actual validation,
     because we are not testing it here.
 
     Validation badge is a mark we are showing on a resource page, to show the

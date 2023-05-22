@@ -1,4 +1,6 @@
-this.ckan.module('validation-report', function (jQuery) {
+"use strict";
+
+ckan.module('validation-report', function (jQuery) {
   return {
     options: {
       report: null
