@@ -11,7 +11,7 @@ from ckan.lib.uploader import ResourceUpload
 from ckan.tests.helpers import call_action
 from ckan.tests import factories
 
-from ckanext.validation import settings as s
+from ckanext.validation import settings
 from ckanext.validation.model import Validation
 from ckanext.validation.jobs import (
     run_validation_job,
@@ -42,8 +42,8 @@ def mock_get_resource_uploader(data_dict):
 
 
 @pytest.mark.usefixtures("clean_db", "validation_setup")
-@pytest.mark.ckan_config(s.ASYNC_UPDATE_KEY, True)
-@pytest.mark.ckan_config(s.ASYNC_CREATE_KEY, True)
+@pytest.mark.ckan_config(settings.ASYNC_UPDATE_KEY, True)
+@pytest.mark.ckan_config(settings.ASYNC_CREATE_KEY, True)
 class TestValidationJob(object):
 
     @mock.patch(MOCK_ASYNC_VALIDATE, return_value=VALID_REPORT)
@@ -228,16 +228,18 @@ class TestValidationJob(object):
         validation = Session.query(Validation).filter(
             Validation.resource_id == resource["id"]).one()
 
-        assert validation.report["valid"]
+        assert validation.report["valid"], "Expected 'valid' but was {}".format(validation.report)
 
     def test_job_pass_validation_options_string(self, resource_factory):
         invalid_csv = b"a;b;c;d\n#comment\n1;2;3;4"
 
-        validation_options = """{
+        validation_options = """
+        {
             "headers": 1,
             "skip_rows": ["#"],
             "delimiter": ";"
-        }"""
+        }
+        """
 
         mock_upload = get_mock_upload(invalid_csv, "invalid.csv")
 
@@ -247,7 +249,10 @@ class TestValidationJob(object):
 
         run_validation_job(resource)
 
-        validation = Session.query(Validation).filter(
-            Validation.resource_id == resource["id"]).one()
+        validation = (
+            Session.query(Validation)
+            .filter(Validation.resource_id == resource["id"])
+            .one()
+        )
 
-        assert validation.report["valid"]
+        assert validation.report["valid"], "Expected 'valid' but was {}".format(validation.report)
