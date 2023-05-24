@@ -1,6 +1,5 @@
 # encoding: utf-8
 
-from cgi import FieldStorage
 from datetime import datetime as dt
 from io import BytesIO
 import json
@@ -437,8 +436,7 @@ Please run the following to create the database tables:
 
 
 def _get_new_file_stream(file):
-    if isinstance(file, FieldStorage):
-        file = file.file
+    file = uploader._get_underlying_file(file)
 
     stream = BytesIO(file.read())
     file.seek(0)
