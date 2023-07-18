@@ -8,6 +8,7 @@ from ckan.tests import factories
 import ckanext.validation.helpers as h
 from ckanext.validation.tests.helpers import SCHEMA
 
+
 def _assert_validation_badge_status(resource, status):
     out = h.get_validation_badge(resource)
 

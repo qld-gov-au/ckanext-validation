@@ -273,11 +273,11 @@ class TestResourceValidationOnCreate(object):
         mock_upload = MockFileStorage(io.BytesIO(VALID_CSV), 'valid.csv')
 
         resource_1 = call_action('resource_create',
-                    package_id=dataset['id'],
-                    format='csv',
-                    upload=mock_upload,
-                    url_type='upload',
-                    schema=SCHEMA)
+                                 package_id=dataset['id'],
+                                 format='csv',
+                                 upload=mock_upload,
+                                 url_type='upload',
+                                 schema=SCHEMA)
 
         assert Session.query(Validation).count()
 
@@ -285,11 +285,7 @@ class TestResourceValidationOnCreate(object):
                     id=resource_1['id'],
                     schema='')
 
-        resource_2 = call_action('resource_show',
-                    id=resource_1['id'])
-
         assert not Session.query(Validation).count()
-
 
     def test_validation_passes_on_upload(self):
         dataset = factories.Dataset()

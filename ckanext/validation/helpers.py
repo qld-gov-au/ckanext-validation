@@ -3,7 +3,7 @@ import json
 
 from six.moves.urllib.parse import urlparse
 from six import string_types
-from ckantoolkit import url_for, _, config, asbool, literal, h, get_action
+from ckantoolkit import url_for, _, config, asbool, literal, h
 
 from ckanext.validation.utils import get_default_schema
 
