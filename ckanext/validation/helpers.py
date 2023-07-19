@@ -73,10 +73,11 @@ def get_validation_badge(resource, in_listing=False):
 
 
 def _get_schema_or_default_schema(resource):
-    schema = resource.get('schema')
 
     if asbool(resource.get('align_default_schema')):
         schema = get_default_schema(resource['package_id'])
+    else:
+        schema = resource.get('schema')
 
     if schema and isinstance(schema, string_types):
         schema = schema if is_url_valid(schema) else json.loads(schema)
