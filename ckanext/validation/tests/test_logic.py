@@ -557,14 +557,14 @@ class TestAuth(object):
     def test_run_non_auth_user(self):
         user = factories.User()
         org = factories.Organization()
-        dataset = factories.Dataset(owner_org=org['id'],
-                                    resources=[factories.Resource()])
+        dataset = factories.Dataset(owner_org=org['id'])
+        resource = factories.Resource(package_id=dataset["id"])
         context = {'user': user['name'], 'model': model}
 
         with pytest.raises(tk.NotAuthorized):
             call_auth('resource_validation_run',
                       context=context,
-                      resource_id=dataset['resources'][0]['id'])
+                      resource_id=resource['id'])
 
     @pytest.mark.ckan_config("ckanext.validation.run_on_create_sync", False)
     @pytest.mark.ckan_config("ckanext.validation.run_on_update_sync", False)
@@ -574,13 +574,13 @@ class TestAuth(object):
             'name': user['name'],
             'capacity': 'editor'
         }])
-        dataset = factories.Dataset(owner_org=org['id'],
-                                    resources=[factories.Resource()])
+        dataset = factories.Dataset(owner_org=org['id'])
+        resource = factories.Resource(package_id=dataset["id"])
         context = {'user': user['name'], 'model': model}
 
         assert call_auth('resource_validation_run',
                          context=context,
-                         resource_id=dataset['resources'][0]['id'])
+                         resource_id=resource['id'])
 
     @pytest.mark.ckan_config("ckanext.validation.run_on_create_sync", False)
     @pytest.mark.ckan_config("ckanext.validation.run_on_update_sync", False)
@@ -609,14 +609,15 @@ class TestAuth(object):
     def test_delete_non_auth_user(self):
         user = factories.User()
         org = factories.Organization()
-        dataset = factories.Dataset(owner_org=org['id'],
-                                    resources=[factories.Resource()])
+        dataset = factories.Dataset(owner_org=org['id'])
+        resource = factories.Resource(package_id=dataset["id"])
+
         context = {'user': user['name'], 'model': model}
 
         with pytest.raises(tk.NotAuthorized):
             call_auth('resource_validation_delete',
                       context=context,
-                      resource_id=dataset['resources'][0]['id'])
+                      resource_id=resource['id'])
 
     @pytest.mark.ckan_config("ckanext.validation.run_on_create_sync", False)
     @pytest.mark.ckan_config("ckanext.validation.run_on_update_sync", False)
@@ -626,13 +627,13 @@ class TestAuth(object):
             'name': user['name'],
             'capacity': 'editor'
         }])
-        dataset = factories.Dataset(owner_org=org['id'],
-                                    resources=[factories.Resource()])
+        dataset = factories.Dataset(owner_org=org['id'])
+        resource = factories.Resource(package_id=dataset["id"])
         context = {'user': user['name'], 'model': model}
 
         assert call_auth('resource_validation_delete',
                          context=context,
-                         resource_id=dataset['resources'][0]['id'])
+                         resource_id=resource['id'])
 
     @pytest.mark.ckan_config("ckanext.validation.run_on_create_sync", False)
     @pytest.mark.ckan_config("ckanext.validation.run_on_update_sync", False)
@@ -650,13 +651,13 @@ class TestAuth(object):
         user = factories.User()
         org = factories.Organization()
         dataset = factories.Dataset(owner_org=org['id'],
-                                    resources=[factories.Resource()],
                                     private=False)
+        resource = factories.Resource(package_id=dataset["id"])
         context = {'user': user['name'], 'model': model}
 
         assert call_auth('resource_validation_show',
                          context=context,
-                         resource_id=dataset['resources'][0]['id'])
+                         resource_id=resource['id'])
 
     @pytest.mark.ckan_config("ckanext.validation.run_on_create_sync", False)
     @pytest.mark.ckan_config("ckanext.validation.run_on_update_sync", False)
@@ -664,11 +665,11 @@ class TestAuth(object):
         user = factories.User()
         org = factories.Organization()
         dataset = factories.Dataset(owner_org=org['id'],
-                                    resources=[factories.Resource()],
                                     private=True)
+        resource = factories.Resource(package_id=dataset["id"])
         context = {'user': user['name'], 'model': model}
 
         with pytest.raises(tk.NotAuthorized):
             call_auth('resource_validation_run',
                       context=context,
-                      resource_id=dataset['resources'][0]['id'])
+                      resource_id=resource['id'])
