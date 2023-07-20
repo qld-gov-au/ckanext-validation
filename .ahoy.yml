@@ -12,7 +12,6 @@ commands:
       ahoy clean
       ahoy build-network
       ahoy up -- --build --force-recreate
-      ahoy install-site
       ahoy title "Build complete"
       ahoy doctor
       ahoy info 1
@@ -20,6 +19,7 @@ commands:
   build-network:
     usage: Ensure that the amazeeio network exists.
     cmd: |
+      ahoy title "Creating amazeeio Docker network"
       docker network prune -f > /dev/null
       docker network inspect amazeeio-network > /dev/null || docker network create amazeeio-network
 
@@ -35,12 +35,14 @@ commands:
   up:
     usage: Build and start Docker containers.
     cmd: |
+      ahoy title "Building and starting Docker containers"
       docker-compose up -d "$@"
-      sleep 10
-      docker-compose logs
+      echo "Initialising database schema"
+      ahoy cli '$APP_DIR/bin/init.sh'
+      echo "Waiting for containers to start listening..."
       ahoy cli "dockerize -wait tcp://ckan:5000 -timeout 1m"
-      if docker-compose logs | grep -q "\[Error\]"; then docker-compose logs; exit 1; fi
-      if docker-compose logs | grep -q "Exception"; then docker-compose logs; exit 1; fi
+      if docker-compose logs | grep -q "\[Error\]"; then exit 1; fi
+      if docker-compose logs | grep -q "Exception"; then exit 1; fi
       docker ps -a --filter name=^/${COMPOSE_PROJECT_NAME}_
       export DOCTOR_CHECK_CLI=0
 
@@ -66,7 +68,7 @@ commands:
 
   pull:
     usage: Pull latest docker images.
-    cmd: if [ ! -z "$(docker image ls -q)" ]; then docker image ls --format \"{{.Repository}}:{{.Tag}}\" | grep amazeeio/ | grep -v none | xargs -n1 docker pull | cat; fi
+    cmd: if [ ! -z "$(docker image ls -q)" ]; then docker image ls --format \"{{.Repository}}:{{.Tag}}\" | grep ckan/ckan- | grep -v none | xargs -n1 docker pull | cat; fi
 
   cli:
     usage: Start a shell inside CLI container or run a command.
@@ -80,11 +82,12 @@ commands:
     usage: Install test site data.
     cmd: |
       ahoy title "Installing a fresh site"
-      ahoy cli '$APP_DIR/bin/init.sh'
+      ahoy cli '$APP_DIR/bin/init.sh && $APP_DIR/bin/create-test-data.sh'
 
   clean:
     usage: Remove containers and all build files.
     cmd: |
+      ahoy title "Cleaning up old builds"
       ahoy down
       # Remove other directories.
       # @todo: Add destinations below.
@@ -106,6 +109,7 @@ commands:
   lint:
     usage: Lint code.
     cmd: |
+      ahoy title 'Check for lint'
       ahoy cli "flake8 ${@:-ckanext}" || \
       [ "${ALLOW_LINT_FAIL:-0}" -eq 1 ]
 
@@ -119,13 +123,16 @@ commands:
   test-unit:
     usage: Run unit tests.
     cmd: |
+      ahoy title 'Run unit tests'
       ahoy cli 'pytest --ckan-ini=${CKAN_INI} $APP_DIR/ckanext' || \
       [ "${ALLOW_UNIT_FAIL:-0}" -eq 1 ]
 
   test-bdd:
     usage: Run BDD tests.
     cmd: |
-      ahoy start-ckan-job-worker &
+      ahoy title 'Run scenario tests'
+      ahoy cli "rm -f test/screenshots/*"
+      ahoy start-ckan-job-worker
       sleep 5 &&
       ahoy cli "behave -k ${*:-test/features} --tags=-format_autocomplete" || \
       [ "${ALLOW_BDD_FAIL:-0}" -eq 1 ]
@@ -136,7 +143,7 @@ commands:
     cmd: |
       ahoy title 'Starting CKAN background job worker'
       ahoy cli "ckan_cli jobs clear && \
-                ckan_cli jobs worker"
+                ckan_cli jobs worker &"
 
   stop-ckan-job-worker:
     usage: Stops CKAN background job worker
