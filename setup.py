@@ -10,7 +10,7 @@ setup(
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # http://packaging.python.org/en/latest/tutorial.html#version
-    version='v0.0.8-qgov.10',
+    version='0.0.8',
 
     description='Data description and validation for CKAN with Frictionless Data tools.',
 
