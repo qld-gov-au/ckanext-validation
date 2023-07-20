@@ -5,6 +5,8 @@ from six.moves.urllib.parse import urlparse
 from six import string_types
 from ckantoolkit import url_for, _, config, asbool, literal, h
 
+from ckanext.validation.utils import get_default_schema
+
 
 def _get_helpers():
     validators = (
@@ -32,6 +34,9 @@ def get_validation_badge(resource, in_listing=False):
         return ''
 
     if not resource.get('validation_status'):
+        return ''
+
+    if not _get_schema_or_default_schema(resource):
         return ''
 
     statuses = {
@@ -65,6 +70,19 @@ def get_validation_badge(resource, in_listing=False):
         status=status,
         status_title=statuses[status],
         title=resource.get('validation_timestamp', ''))
+
+
+def _get_schema_or_default_schema(resource):
+
+    if asbool(resource.get('align_default_schema')):
+        schema = get_default_schema(resource['package_id'])
+    else:
+        schema = resource.get('schema')
+
+    if schema and isinstance(schema, string_types):
+        schema = schema if is_url_valid(schema) else json.loads(schema)
+
+    return schema
 
 
 def validation_extract_report_from_errors(errors):
