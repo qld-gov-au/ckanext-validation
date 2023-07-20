@@ -7,8 +7,10 @@ on:
       - master
 
 jobs:
+  # Quick check so we don't waste minutes if there's a Flake8 error
   lint:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v3
         timeout-minutes: 2
@@ -47,6 +49,11 @@ jobs:
       - name: Test
         run: bin/test.sh
         timeout-minutes: 20
+
+      - name: Retrieve logs
+        if: always()
+        run: ahoy logs
+        timeout-minutes: 5
 
       - name: Retrieve screenshots
         if: failure()
