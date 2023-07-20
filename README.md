@@ -3,7 +3,7 @@ ckanext-validation
 ==================
 
 [![CI Actions Status](https://github.com/qld-gov-au/ckanext-validation/actions/workflows/Tests/badge.svg)](https://github.com/qld-gov-au/ckanext-validation/actions)
-[![Coverage Status](https://coveralls.io/repos/github/frictionlessdata/ckanext-validation/badge.svg?branch=master)](https://coveralls.io/github/frictionlessdata/ckanext-validation?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/qld-gov-au/ckanext-validation/badge.svg?branch=master)](https://coveralls.io/github/qld-gov-au/ckanext-validation?branch=master)
 
 Data description and validation for CKAN with [Frictionless Data](https://frictionlessdata.io) tools.
 
