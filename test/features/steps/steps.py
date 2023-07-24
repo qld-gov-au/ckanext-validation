@@ -2,7 +2,16 @@ from behave import when, then
 from behaving.personas.steps import *  # noqa: F401, F403
 from behaving.web.steps import *  # noqa: F401, F403
 from behaving.web.steps.basic import should_see
-from behaving.web.steps.url import when_i_visit_url
+
+
+@when(u'I take a debugging screenshot')
+def debug_screenshot(context):
+    """ Take a screenshot only if debugging is enabled in the persona.
+    """
+    if context.persona and context.persona.get('debug') == 'True':
+        context.execute_steps(u"""
+            Then I take a screenshot
+        """)
 
 
 @when(u'I go to homepage')
