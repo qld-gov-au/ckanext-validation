@@ -133,8 +133,8 @@ commands:
       ahoy title 'Run scenario tests'
       ahoy cli "rm -f test/screenshots/*"
       ahoy start-ckan-job-worker
-      sleep 5 &&
-      ahoy cli "behave -k ${*:-test/features} --tags=-format_autocomplete" || \
+      sleep 5
+      ahoy cli "behave -k ${*:-test/features} $EXTRA_TAGS --tags=${BEHAVE_TAG:--format_autocomplete}" || \
       [ "${ALLOW_BDD_FAIL:-0}" -eq 1 ]
       ahoy stop-ckan-job-worker
 
