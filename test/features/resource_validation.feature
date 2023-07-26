@@ -56,7 +56,7 @@ Feature: Resource validation
         Then I should see "Test validation options"
         When I click the link with text that contains "Test validation options"
         And I click the link with text that contains "Manage"
-        And I should see text containing quotes `"delimiter": ","`
+        Then I should see text containing quotes `"delimiter": ","`
 
 
     Scenario: As an editor, I can create a resource with a valid CSV and see a success status
