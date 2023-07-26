@@ -1,11 +1,31 @@
 # encoding: utf-8
 import json
 
-from ckantoolkit import url_for, _, config, asbool,\
-    literal, check_ckan_version
+from six.moves.urllib.parse import urlparse
+from six import string_types
+from ckantoolkit import url_for, _, config, asbool, literal, h
+
+
+def _get_helpers():
+    validators = (
+        get_validation_badge,
+        validation_extract_report_from_errors,
+        dump_json_value,
+        bootstrap_version,
+        validation_hide_source,
+        is_url_valid
+    )
+
+    return {"{}".format(func.__name__): func for func in validators}
 
 
 def get_validation_badge(resource, in_listing=False):
+
+    afterDate = config.get('ckanext.validation.show_badges_after_last_modified_date', "")
+    if afterDate and (not resource.get('last_modified')
+                      or h.date_str_to_datetime(afterDate)
+                      >= h.date_str_to_datetime(resource['last_modified'])):
+        return ''
 
     if in_listing and not asbool(
             config.get('ckanext.validation.show_badges_in_listings', True)):
@@ -15,7 +35,7 @@ def get_validation_badge(resource, in_listing=False):
         return ''
 
     statuses = {
-        'success': _('success'),
+        'success': _('valid'),
         'failure': _('failure'),
         'invalid': _('invalid'),
         'error': _('error'),
@@ -29,10 +49,7 @@ def get_validation_badge(resource, in_listing=False):
     else:
         status = 'unknown'
 
-    if check_ckan_version(min_version='2.9.0'):
-        action = 'validation.read'
-    else:
-        action = 'validation_read'
+    action = 'validation.read'
 
     validation_url = url_for(
         action,
@@ -97,9 +114,25 @@ def bootstrap_version():
         return '2'
 
 
-def is_ckan_29():
+def validation_hide_source(type):
     """
-    Returns True if using CKAN 2.9+, with Flask and Webassets.
-    Returns False if those are not present.
+    Returns True if the given source type must be hidden on form.
+    Type is one of: upload, url or json.
+    For any unexpected type returns False
     """
-    return check_ckan_version(min_version='2.9.0')
+    return asbool(config.get(
+        "ckanext.validation.form.hide_{}_source".format(type),
+    ))
+
+
+def is_url_valid(url):
+    """Basic checks for url validity"""
+    if not isinstance(url, string_types):
+        return False
+
+    try:
+        tokens = urlparse(url)
+    except ValueError:
+        return False
+
+    return all([getattr(tokens, attr) for attr in ('scheme', 'netloc')])

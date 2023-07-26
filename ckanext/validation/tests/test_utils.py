@@ -1,160 +1,59 @@
-import os
-import uuid
-import mock
-
-from pyfakefs import fake_filesystem_unittest
+import pytest
 
 from ckan.tests.helpers import change_config
 
-from ckanext.validation.tests.helpers import mock_uploads
-from ckanext.validation.utils import (
-    get_create_mode_from_config, get_update_mode_from_config,
-    get_local_upload_path, delete_local_uploaded_file
-)
+from ckanext.validation import settings as s
 
 
-class TestConfig(object):
+class TestConfigValidationMode(object):
 
     def test_config_defaults(self):
 
-        assert get_update_mode_from_config() == 'async'
-        assert get_create_mode_from_config() == 'async'
+        assert s.get_update_mode({}, {}) == s.SYNC_MODE
+        assert s.get_create_mode({}, {}) == s.SYNC_MODE
 
-    @change_config('ckanext.validation.run_on_update_sync', True)
-    def test_config_update_true_sync(self):
+    @change_config(s.ASYNC_CREATE_KEY, True)
+    def test_set_async_as_default_create_mode(self):
 
-        assert get_update_mode_from_config() == 'sync'
+        assert s.get_create_mode({}, {}) == s.ASYNC_MODE
 
-    @change_config('ckanext.validation.run_on_update_sync', False)
-    def test_config_update_false_sync(self):
+    @change_config(s.ASYNC_UPDATE_KEY, True)
+    def test_set_async_as_default_update_mode(self):
 
-        assert get_update_mode_from_config() == 'async'
+        assert s.get_update_mode({}, {}) == s.ASYNC_MODE
 
-    @change_config('ckanext.validation.run_on_create_sync', True)
-    def test_config_create_true_sync(self):
+    @change_config(s.ASYNC_CREATE_KEY, False)
+    def test_set_sync_as_default_create_mode(self):
 
-        assert get_create_mode_from_config() == 'sync'
+        assert s.get_create_mode({}, {}) == s.SYNC_MODE
 
-    @change_config('ckanext.validation.run_on_create_sync', False)
-    def test_config_create_false_sync(self):
+    @change_config(s.ASYNC_UPDATE_KEY, False)
+    def test_set_sync_as_default_update_mode(self):
 
-        assert get_create_mode_from_config() == 'async'
+        assert s.get_update_mode({}, {}) == s.SYNC_MODE
 
-    @change_config('ckanext.validation.run_on_update_async', True)
-    def test_config_update_true_async(self):
+    @change_config(s.ASYNC_CREATE_KEY, False)
+    @change_config(s.ASYNC_UPDATE_KEY, False)
+    def test_set_sync_as_default_both_create_and_update(self):
 
-        assert get_update_mode_from_config() == 'async'
-
-    @change_config('ckanext.validation.run_on_update_async', False)
-    def test_config_update_false_async(self):
-
-        assert get_update_mode_from_config() is None
-
-    @change_config('ckanext.validation.run_on_create_async', True)
-    def test_config_create_true_async(self):
-
-        assert get_create_mode_from_config() == 'async'
-
-    @change_config('ckanext.validation.run_on_create_async', False)
-    def test_config_create_false_async(self):
-
-        assert get_create_mode_from_config() is None
-
-    @change_config('ckanext.validation.run_on_update_async', False)
-    @change_config('ckanext.validation.run_on_create_async', False)
-    def test_config_both_false(self):
-
-        assert get_update_mode_from_config() is None
-        assert get_create_mode_from_config() is None
+        assert s.get_create_mode({}, {}) == s.SYNC_MODE
+        assert s.get_update_mode({}, {}) == s.SYNC_MODE
 
 
-class TestFiles(object):
+class TestConfigSupportedFormats(object):
 
-    @mock_uploads
-    def test_local_path(self, mock_open):
+    def test_default_supported_formats(self):
+        assert s.DEFAULT_SUPPORTED_FORMATS == s.get_supported_formats()
 
-        resource_id = str(uuid.uuid4())
+    @change_config(s.SUPPORTED_FORMATS_KEY, "")
+    def test_empty_supported_formats(self):
+        assert s.DEFAULT_SUPPORTED_FORMATS == s.get_supported_formats()
 
-        assert get_local_upload_path(resource_id) ==\
-            '/doesnt_exist/resources/{}/{}/{}'.format(
-                resource_id[0:3], resource_id[3:6], resource_id[6:])
+    @change_config(s.SUPPORTED_FORMATS_KEY, "ttf")
+    def test_set_unsupported_format(self):
+        with pytest.raises(AssertionError, match="Format ttf is not supported"):
+            s.get_supported_formats()
 
-    @mock_uploads
-    def test_delete_upload_file(self, mock_open):
-
-        resource_id = str(uuid.uuid4())
-        path = '/doesnt_exist/resources/{}/{}/{}'.format(
-            resource_id[0:3], resource_id[3:6], resource_id[6:]
-        )
-
-        patcher = fake_filesystem_unittest.Patcher()
-        patcher.setUp()
-        patcher.fs.CreateFile(path)
-
-        assert os.path.exists(path)
-
-        delete_local_uploaded_file(resource_id)
-
-        assert not os.path.exists(path)
-
-        patcher.tearDown()
-
-    @mock_uploads
-    def test_delete_file_not_deleted_if_resources_first(self, mock_open):
-
-        resource_id = str(uuid.uuid4())
-        path = '/doesnt_exist/resources/{}'.format(resource_id)
-
-        patcher = fake_filesystem_unittest.Patcher()
-        patcher.setUp()
-        patcher.fs.CreateFile(path)
-
-        assert os.path.exists(path)
-        with mock.patch('ckanext.validation.utils.get_local_upload_path',
-                        return_value=path):
-            delete_local_uploaded_file(resource_id)
-
-        assert not os.path.exists(path)
-        assert os.path.exists('/doesnt_exist/resources')
-
-        patcher.tearDown()
-
-    @mock_uploads
-    def test_delete_file_not_deleted_if_resources_second(self, mock_open):
-
-        resource_id = str(uuid.uuid4())
-        path = '/doesnt_exist/resources/data/{}'.format(resource_id)
-
-        patcher = fake_filesystem_unittest.Patcher()
-        patcher.setUp()
-        patcher.fs.CreateFile(path)
-
-        assert os.path.exists(path)
-        with mock.patch('ckanext.validation.utils.get_local_upload_path',
-                        return_value=path):
-            delete_local_uploaded_file(resource_id)
-
-        assert not os.path.exists(path)
-        assert os.path.exists('/doesnt_exist/resources')
-
-        patcher.tearDown()
-
-    @mock_uploads
-    def test_delete_passes_if_os_exception(self, mock_open):
-
-        resource_id = str(uuid.uuid4())
-        path = '/doesnt_exist/resources/{}/{}/{}'.format(
-            resource_id[0:3], resource_id[3:6], resource_id[6:]
-        )
-
-        patcher = fake_filesystem_unittest.Patcher()
-        patcher.setUp()
-        patcher.fs.CreateFile(path)
-
-        assert os.path.exists(path)
-        with mock.patch('ckanext.validation.utils.os.remove',
-                        side_effect=OSError):
-
-            delete_local_uploaded_file(resource_id)
-
-        patcher.tearDown()
+    @change_config(s.SUPPORTED_FORMATS_KEY, "csv xlsx")
+    def test_set_supported_formats(self):
+        assert s.get_supported_formats() == ["csv", "xlsx"]

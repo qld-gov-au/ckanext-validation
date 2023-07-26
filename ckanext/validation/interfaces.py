@@ -39,3 +39,61 @@ class IDataValidation(Interface):
 
         '''
         return True
+
+    def set_update_mode(self, context, data_dict, current_mode):
+        '''
+        When implemented, this call can be used to control whether the
+        data validation for a specific rseource should be in async or sync mode.
+
+        Implementations will receive a context object, the data_dict of
+        the resource and a current_mode
+
+        It must return a validation mode, either `sync` or `async` string.
+
+        Here is an example implementation:
+
+
+        from ckan import plugins as p
+
+        from ckanext.validation.interfaces import IDataValidation
+
+
+        class MyPlugin(p.SingletonPlugin):
+
+            p.implements(IDataValidation, inherit=True)
+
+            def set_update_mode(self, context, data_dict, current_mode):
+
+                if data_dict.get('validate_sync'):
+                    return "sync"
+        '''
+        return current_mode
+
+    def set_create_mode(self, context, data_dict, current_mode):
+        '''
+        When implemented, this call can be used to control whether the
+        data validation for a specific rseource should be in async or sync mode.
+
+        Implementations will receive a context object, the data_dict of
+        the resource and a current_mode
+
+        It must return a validation mode, either `sync` or `async` string.
+
+        Here is an example implementation:
+
+
+        from ckan import plugins as p
+
+        from ckanext.validation.interfaces import IDataValidation
+
+
+        class MyPlugin(p.SingletonPlugin):
+
+            p.implements(IDataValidation, inherit=True)
+
+            def set_create_mode(self, context, data_dict, current_mode):
+
+                if data_dict.get('validate_sync'):
+                    return "sync"
+        '''
+        return current_mode
