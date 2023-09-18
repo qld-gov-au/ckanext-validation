@@ -39,7 +39,7 @@ class TestResourceValidationRun(object):
             call_action('resource_validation_run', resource_id='not_exists')
 
     def test_resource_validation_wrong_format(self):
-        resource = factories.Resource(format='pdf')
+        resource = factories.Resource(format='pdf', schema=SCHEMA)
 
         with pytest.raises(tk.ValidationError) as err:
             call_action('resource_validation_run', resource_id=resource['id'])
@@ -47,7 +47,7 @@ class TestResourceValidationRun(object):
         assert 'Unsupported resource format' in err.value.error_dict['format']
 
     def test_resource_validation_no_url_or_upload(self):
-        resource = factories.Resource(url='', format='csv')
+        resource = factories.Resource(url='', format='csv', schema=SCHEMA)
 
         with pytest.raises(tk.ValidationError) as err:
             call_action('resource_validation_run', resource_id=resource['id'])
@@ -59,7 +59,7 @@ class TestResourceValidationRun(object):
     def test_resource_validation_with_url(self, mocked_responses):
         url = 'http://example.com'
         mocked_responses.add(responses.GET, url, body=VALID_CSV, stream=True)
-        resource = factories.Resource(url=url, format='csv')
+        resource = factories.Resource(url=url, format='csv', schema=SCHEMA)
 
         call_action('resource_validation_run', resource_id=resource['id'])
 
@@ -90,7 +90,7 @@ class TestResourceValidationRun(object):
         url = 'https://some.url'
         mocked_responses.add(responses.GET, url, body=VALID_CSV, stream=True)
 
-        resource = {'format': 'csv', 'url': url}
+        resource = {'format': 'csv', 'url': url, 'schema': SCHEMA}
 
         dataset = factories.Dataset(resources=[resource])
 
@@ -249,6 +249,41 @@ class TestResourceValidationOnCreate(object):
                         upload=mock_upload,
                         url_type='upload',
                         schema=SCHEMA)
+
+        assert not Session.query(Validation).count()
+
+    def test_validation_skips_no_schema_provided(self):
+        """If the schema is missed - no validation entity should be saved in database"""
+        dataset = factories.Dataset()
+
+        mock_upload = MockFileStorage(io.BytesIO(VALID_CSV), 'valid.csv')
+
+        call_action('resource_create',
+                    package_id=dataset['id'],
+                    format='csv',
+                    upload=mock_upload,
+                    url_type='upload')
+
+        assert not Session.query(Validation).count()
+
+    def test_validation_report_delete_when_schema_removed(self):
+        """If the schema is deleted - no validation entity should be saved in database"""
+        dataset = factories.Dataset()
+
+        mock_upload = MockFileStorage(io.BytesIO(VALID_CSV), 'valid.csv')
+
+        resource_1 = call_action('resource_create',
+                                 package_id=dataset['id'],
+                                 format='csv',
+                                 upload=mock_upload,
+                                 url_type='upload',
+                                 schema=SCHEMA)
+
+        assert Session.query(Validation).count()
+
+        call_action('resource_patch',
+                    id=resource_1['id'],
+                    schema='')
 
         assert not Session.query(Validation).count()
 
@@ -522,14 +557,14 @@ class TestAuth(object):
     def test_run_non_auth_user(self):
         user = factories.User()
         org = factories.Organization()
-        dataset = factories.Dataset(owner_org=org['id'],
-                                    resources=[factories.Resource()])
+        dataset = factories.Dataset(owner_org=org['id'])
+        resource = factories.Resource(package_id=dataset["id"])
         context = {'user': user['name'], 'model': model}
 
         with pytest.raises(tk.NotAuthorized):
             call_auth('resource_validation_run',
                       context=context,
-                      resource_id=dataset['resources'][0]['id'])
+                      resource_id=resource['id'])
 
     @pytest.mark.ckan_config("ckanext.validation.run_on_create_sync", False)
     @pytest.mark.ckan_config("ckanext.validation.run_on_update_sync", False)
@@ -539,13 +574,13 @@ class TestAuth(object):
             'name': user['name'],
             'capacity': 'editor'
         }])
-        dataset = factories.Dataset(owner_org=org['id'],
-                                    resources=[factories.Resource()])
+        dataset = factories.Dataset(owner_org=org['id'])
+        resource = factories.Resource(package_id=dataset["id"])
         context = {'user': user['name'], 'model': model}
 
         assert call_auth('resource_validation_run',
                          context=context,
-                         resource_id=dataset['resources'][0]['id'])
+                         resource_id=resource['id'])
 
     @pytest.mark.ckan_config("ckanext.validation.run_on_create_sync", False)
     @pytest.mark.ckan_config("ckanext.validation.run_on_update_sync", False)
@@ -574,14 +609,15 @@ class TestAuth(object):
     def test_delete_non_auth_user(self):
         user = factories.User()
         org = factories.Organization()
-        dataset = factories.Dataset(owner_org=org['id'],
-                                    resources=[factories.Resource()])
+        dataset = factories.Dataset(owner_org=org['id'])
+        resource = factories.Resource(package_id=dataset["id"])
+
         context = {'user': user['name'], 'model': model}
 
         with pytest.raises(tk.NotAuthorized):
             call_auth('resource_validation_delete',
                       context=context,
-                      resource_id=dataset['resources'][0]['id'])
+                      resource_id=resource['id'])
 
     @pytest.mark.ckan_config("ckanext.validation.run_on_create_sync", False)
     @pytest.mark.ckan_config("ckanext.validation.run_on_update_sync", False)
@@ -591,13 +627,13 @@ class TestAuth(object):
             'name': user['name'],
             'capacity': 'editor'
         }])
-        dataset = factories.Dataset(owner_org=org['id'],
-                                    resources=[factories.Resource()])
+        dataset = factories.Dataset(owner_org=org['id'])
+        resource = factories.Resource(package_id=dataset["id"])
         context = {'user': user['name'], 'model': model}
 
         assert call_auth('resource_validation_delete',
                          context=context,
-                         resource_id=dataset['resources'][0]['id'])
+                         resource_id=resource['id'])
 
     @pytest.mark.ckan_config("ckanext.validation.run_on_create_sync", False)
     @pytest.mark.ckan_config("ckanext.validation.run_on_update_sync", False)
@@ -615,13 +651,13 @@ class TestAuth(object):
         user = factories.User()
         org = factories.Organization()
         dataset = factories.Dataset(owner_org=org['id'],
-                                    resources=[factories.Resource()],
                                     private=False)
+        resource = factories.Resource(package_id=dataset["id"])
         context = {'user': user['name'], 'model': model}
 
         assert call_auth('resource_validation_show',
                          context=context,
-                         resource_id=dataset['resources'][0]['id'])
+                         resource_id=resource['id'])
 
     @pytest.mark.ckan_config("ckanext.validation.run_on_create_sync", False)
     @pytest.mark.ckan_config("ckanext.validation.run_on_update_sync", False)
@@ -629,11 +665,11 @@ class TestAuth(object):
         user = factories.User()
         org = factories.Organization()
         dataset = factories.Dataset(owner_org=org['id'],
-                                    resources=[factories.Resource()],
                                     private=True)
+        resource = factories.Resource(package_id=dataset["id"])
         context = {'user': user['name'], 'model': model}
 
         with pytest.raises(tk.NotAuthorized):
             call_auth('resource_validation_run',
                       context=context,
-                      resource_id=dataset['resources'][0]['id'])
+                      resource_id=resource['id'])

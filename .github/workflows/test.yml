@@ -7,8 +7,10 @@ on:
       - master
 
 jobs:
+  # Quick check so we don't waste minutes if there's a Flake8 error
   lint:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v3
         timeout-minutes: 2
@@ -32,7 +34,7 @@ jobs:
 
     name: Continuous Integration build on CKAN ${{ matrix.ckan-version }}
     runs-on: ubuntu-latest
-    container: drevops/ci-builder
+    container: drevops/ci-builder:23.7.0
     env:
       CKAN_VERSION: ${{ matrix.ckan-version }}
 
@@ -48,8 +50,13 @@ jobs:
         run: bin/test.sh
         timeout-minutes: 20
 
+      - name: Retrieve logs
+        if: always()
+        run: ahoy logs
+        timeout-minutes: 1
+
       - name: Retrieve screenshots
-        if: failure()
+        if: always()
         run: bin/process-artifacts.sh
         timeout-minutes: 1
 
