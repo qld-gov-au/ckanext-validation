@@ -10,3 +10,4 @@ pytest-cov
 selenium==4.8.2
 splinter>=0.13.0
 faker==18.3.0
+setuptools>=65.5.1 # not directly required, pinned by Snyk to avoid a vulnerability
