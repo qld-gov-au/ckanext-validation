@@ -10,3 +10,5 @@ pytest-cov
 selenium==4.8.2
 splinter>=0.13.0
 faker==18.3.0
+
+git+https://github.com/ckan/ckanext-scheming.git@release-3.0.0#egg=ckanext-scheming
