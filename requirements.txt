@@ -1,4 +1,5 @@
 ckantoolkit>=0.0.4
 goodtables==1.5.1
 six>=1.13.0
+datapackage==1.15.2 # pin to preserve compatibility with older tableschema
 ckanext-scheming
