@@ -13,3 +13,5 @@ selenium==3.141.0
 splinter>=0.13.0,<0.17
 responses==0.17.0
 faker==3.0.1
+
+git+https://github.com/ckan/ckanext-scheming.git@release-3.0.0#egg=ckanext-scheming
