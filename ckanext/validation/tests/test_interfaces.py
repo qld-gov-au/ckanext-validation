@@ -14,11 +14,14 @@ from ckanext.validation.interfaces import IDataValidation, IPipeValidation
 class TestPlugin(p.SingletonPlugin):
 
     p.implements(IDataValidation, inherit=True)
+    p.implements(IPipeValidation, inherit=True)
 
     calls = 0
 
     def reset_counter(self):
         self.calls = 0
+
+    # IDataValidation
 
     def can_validate(self, context, data_dict):
         self.calls += 1
@@ -36,6 +39,11 @@ class TestPlugin(p.SingletonPlugin):
         is_async = data_dict.get('async')
         return settings.ASYNC_MODE if is_async else current_mode
 
+    # IPipeValidation
+
+    def receive_validation_report(self, validation_report):
+        self.calls += 1
+
 
 def _get_data_plugin_calls():
     for plugin in p.PluginImplementations(IDataValidation):
@@ -51,6 +59,9 @@ class BaseTestInterfaces(object):
 
     def setup(self):
         for plugin in p.PluginImplementations(IDataValidation):
+            return plugin.reset_counter()
+
+        for plugin in p.PluginImplementations(IPipeValidation):
             return plugin.reset_counter()
 
 
