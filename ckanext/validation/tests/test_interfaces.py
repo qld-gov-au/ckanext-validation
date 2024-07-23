@@ -109,7 +109,7 @@ class TestInterfaceSync(BaseTestInterfaces):
 
         assert mock_validation.called
         assert _get_data_plugin_calls() == 2
-        assert _get_pipe_plugin_calls() == 1
+        assert _get_pipe_plugin_calls() == 2
 
     def test_can_validate_called_on_update_sync_no_validation(
             self, mock_validation, resource_factory):
@@ -125,7 +125,7 @@ class TestInterfaceSync(BaseTestInterfaces):
         call_action('resource_update', **resource)
 
         assert _get_data_plugin_calls() == 2
-        assert _get_pipe_plugin_calls() == 1
+        assert _get_pipe_plugin_calls() == 2
         assert not mock_validation.called
 
 
@@ -176,7 +176,7 @@ class TestInterfaceAsync(BaseTestInterfaces):
         call_action('resource_update', **resource)
 
         assert _get_data_plugin_calls() == 3
-        assert _get_pipe_plugin_calls() == 1
+        assert _get_pipe_plugin_calls() == 3
         assert mock_validation.called
 
     def test_can_validate_called_on_update_async_no_validation(
@@ -197,5 +197,5 @@ class TestInterfaceAsync(BaseTestInterfaces):
         call_action('resource_update', **resource)
 
         assert _get_data_plugin_calls() == 2
-        assert _get_pipe_plugin_calls() == 1
+        assert _get_pipe_plugin_calls() == 2
         assert not mock_validation.called
