@@ -8,7 +8,7 @@ from ckan.tests.helpers import call_action
 
 import ckanext.validation.tests.helpers as helpers
 from ckanext.validation import settings
-from ckanext.validation.interfaces import IDataValidation
+from ckanext.validation.interfaces import IDataValidation, IPipeValidation
 
 
 class TestPlugin(p.SingletonPlugin):
@@ -37,8 +37,13 @@ class TestPlugin(p.SingletonPlugin):
         return settings.ASYNC_MODE if is_async else current_mode
 
 
-def _get_plugin_calls():
+def _get_data_plugin_calls():
     for plugin in p.PluginImplementations(IDataValidation):
+        return plugin.calls
+
+
+def _get_pipe_plugin_calls():
+    for plugin in p.PluginImplementations(IPipeValidation):
         return plugin.calls
 
 
@@ -60,7 +65,8 @@ class TestInterfaceSync(BaseTestInterfaces):
         """
         resource_factory()
 
-        assert _get_plugin_calls() == 1
+        assert _get_data_plugin_calls() == 1
+        assert _get_pipe_plugin_calls() == 1
         assert mock_validation.called
 
     def test_can_validate_called_on_create_sync_no_validation(
@@ -70,8 +76,8 @@ class TestInterfaceSync(BaseTestInterfaces):
         """
         resource_factory(do_not_validate=True)
 
-        assert _get_plugin_calls() == 1
-
+        assert _get_data_plugin_calls() == 1
+        assert _get_pipe_plugin_calls() == 1
         assert not mock_validation.called
 
     def test_can_validate_called_on_update_sync(self, mock_validation,
@@ -82,7 +88,8 @@ class TestInterfaceSync(BaseTestInterfaces):
         """
         resource = resource_factory()
 
-        assert _get_plugin_calls() == 1
+        assert _get_data_plugin_calls() == 1
+        assert _get_pipe_plugin_calls() == 1
 
         resource['format'] = 'CSV'
         resource['url'] = 'https://example.com/data.csv'
@@ -90,7 +97,8 @@ class TestInterfaceSync(BaseTestInterfaces):
         call_action('resource_update', **resource)
 
         assert mock_validation.called
-        assert _get_plugin_calls() == 2
+        assert _get_data_plugin_calls() == 2
+        assert _get_pipe_plugin_calls() == 1
 
     def test_can_validate_called_on_update_sync_no_validation(
             self, mock_validation, resource_factory):
@@ -99,12 +107,14 @@ class TestInterfaceSync(BaseTestInterfaces):
         2. resource before_update on resource update
         """
         resource = resource_factory(do_not_validate=True)
-        assert _get_plugin_calls() == 1
+        assert _get_data_plugin_calls() == 1
+        assert _get_pipe_plugin_calls() == 1
 
         resource['format'] = 'TTF'
         call_action('resource_update', **resource)
 
-        assert _get_plugin_calls() == 2
+        assert _get_data_plugin_calls() == 2
+        assert _get_pipe_plugin_calls() == 1
         assert not mock_validation.called
 
 
@@ -121,7 +131,8 @@ class TestInterfaceAsync(BaseTestInterfaces):
         """
         resource_factory()
 
-        assert _get_plugin_calls() == 1
+        assert _get_data_plugin_calls() == 1
+        assert _get_pipe_plugin_calls() == 1
 
         assert mock_validation.called
 
@@ -132,7 +143,8 @@ class TestInterfaceAsync(BaseTestInterfaces):
         """
         resource_factory(do_not_validate=True)
 
-        assert _get_plugin_calls() == 1
+        assert _get_data_plugin_calls() == 1
+        assert _get_pipe_plugin_calls() == 1
 
         assert not mock_validation.called
 
@@ -145,13 +157,15 @@ class TestInterfaceAsync(BaseTestInterfaces):
         """
         resource = resource_factory(format="PDF")
 
-        assert _get_plugin_calls() == 1
+        assert _get_data_plugin_calls() == 1
+        assert _get_pipe_plugin_calls() == 1
 
         resource['format'] = 'CSV'
 
         call_action('resource_update', **resource)
 
-        assert _get_plugin_calls() == 3
+        assert _get_data_plugin_calls() == 3
+        assert _get_pipe_plugin_calls() == 1
         assert mock_validation.called
 
     def test_can_validate_called_on_update_async_no_validation(
@@ -165,10 +179,12 @@ class TestInterfaceAsync(BaseTestInterfaces):
         """
         resource = resource_factory(format="PDF")
 
-        assert _get_plugin_calls() == 1
+        assert _get_data_plugin_calls() == 1
+        assert _get_pipe_plugin_calls() == 1
 
         resource['format'] = "TTF"
         call_action('resource_update', **resource)
 
-        assert _get_plugin_calls() == 2
+        assert _get_data_plugin_calls() == 2
+        assert _get_pipe_plugin_calls() == 1
         assert not mock_validation.called

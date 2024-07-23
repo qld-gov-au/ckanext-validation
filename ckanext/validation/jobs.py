@@ -108,6 +108,7 @@ def run_validation_job(resource):
         {'id': resource['id'],
          'validation_status': validation_record.status,
          'validation_timestamp': validation_record.finished.isoformat()})
+    utils.send_validation_report(utils.validation_dictize(validation_record))
 
 
 def _validate_table(source, _format=u'csv', schema=None, **options):
