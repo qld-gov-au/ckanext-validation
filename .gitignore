@@ -102,3 +102,5 @@ Dockerfile.ckan
 
 # bdd tests
 /test/screenshots
+
+.idea
