@@ -19,7 +19,7 @@ import ckan.lib.uploader as uploader
 from ckan import model
 
 import ckanext.validation.settings as s
-from ckanext.validation.interfaces import IDataValidation
+from ckanext.validation.interfaces import IDataValidation, IPipeValidation
 from ckanext.validation.validation_status_helper import ValidationStatusHelper, StatusTypes
 from ckanext.validation.validators import resource_schema_validator
 
@@ -365,3 +365,30 @@ def get_site_user_api_key():
 def is_uploaded_file(upload):
     return isinstance(upload,
                       uploader.ALLOWED_UPLOAD_TYPES) and upload.filename
+
+
+def validation_dictize(validation):
+    out = {
+        'id': validation.id,
+        'resource_id': validation.resource_id,
+        'status': validation.status,
+        'report': validation.report,
+        'error': validation.error,
+    }
+    out['created'] = (validation.created.isoformat()
+                      if validation.created else None)
+    out['finished'] = (validation.finished.isoformat()
+                       if validation.finished else None)
+
+    return out
+
+
+def send_validation_report(validation_report):
+    for observer in plugins.PluginImplementations(IPipeValidation):
+        try:
+            observer.receive_validation_report(validation_report)
+        except Exception as ex:
+            log.exception(ex)
+            # We reraise all exceptions so they are obvious there
+            # is something wrong
+            raise

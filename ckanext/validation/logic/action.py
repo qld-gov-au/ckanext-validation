@@ -10,6 +10,7 @@ from ckanext.validation.jobs import run_validation_job
 from ckanext.validation import settings
 from ckanext.validation.validation_status_helper import (
     ValidationStatusHelper, ValidationJobAlreadyEnqueued)
+from ckanext.validation.utils import validation_dictize
 
 log = logging.getLogger(__name__)
 
@@ -156,7 +157,7 @@ def resource_validation_show(context, data_dict):
         raise tk.ObjectNotFound(
             'No validation report exists for this resource')
 
-    return _validation_dictize(validation)
+    return validation_dictize(validation)
 
 
 def resource_validation_delete(context, data_dict):
@@ -385,22 +386,6 @@ def _add_default_formats(search_data_dict):
         '+res_format:"{0}"'.format(_format) for _format in filter_formats
     ]
     search_data_dict['fq_list'].append(' OR '.join(filter_formats_query))
-
-
-def _validation_dictize(validation):
-    out = {
-        'id': validation.id,
-        'resource_id': validation.resource_id,
-        'status': validation.status,
-        'report': validation.report,
-        'error': validation.error,
-    }
-    out['created'] = (validation.created.isoformat()
-                      if validation.created else None)
-    out['finished'] = (validation.finished.isoformat()
-                       if validation.finished else None)
-
-    return out
 
 
 @tk.chained_action
