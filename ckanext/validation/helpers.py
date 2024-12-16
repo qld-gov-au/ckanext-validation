@@ -8,7 +8,7 @@ from ckantoolkit import url_for, _, config, asbool, literal, h
 from ckanext.validation.utils import get_default_schema
 
 
-def _get_helpers():
+def get_helpers():
     validators = (
         get_validation_badge,
         validation_extract_report_from_errors,
