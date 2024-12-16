@@ -207,11 +207,12 @@ def _get_new_file_stream(file):
 
 
 def run_async_validation(resource_id):
-    context = {u'ignore_auth': True}
-    data_dict = {u'resource_id': resource_id, u'async': True}
 
     try:
-        tk.get_action(u'resource_validation_run')(context, data_dict)
+        tk.get_action(u'resource_validation_run')(
+            {u'ignore_auth': True},
+            {u'resource_id': resource_id,
+             u'async': True})
     except tk.ValidationError as e:
         log.warning(u'Could not run validation for resource {}: {}'.format(
             resource_id, e))
