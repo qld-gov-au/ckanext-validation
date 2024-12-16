@@ -223,6 +223,9 @@ Please run the following to create the database tables:
 
             utils.validate_resource(context, resource)
 
+    # IPackageController
+
+    # CKAN < 2.10
     def before_index(self, index_dict):
         if (self._data_dict_is_dataset(index_dict)):
             return self.before_dataset_index(index_dict)
