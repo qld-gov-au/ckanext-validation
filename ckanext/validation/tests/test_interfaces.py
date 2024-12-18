@@ -45,6 +45,11 @@ class TestPlugin(p.SingletonPlugin):
         self.calls += 1
 
 
+def _reset_plugin_counter():
+    for plugin in p.PluginImplementations(IDataValidation):
+        plugin.reset_counter()
+
+
 def _get_data_plugin_calls():
     for plugin in p.PluginImplementations(IDataValidation):
         return plugin.calls
@@ -71,6 +76,7 @@ class TestInterfaceSync(BaseTestInterfaces):
 
     def test_can_validate_called_on_create_sync(self, mock_validation,
                                                 resource_factory):
+        _reset_plugin_counter()
         """Plugin must be called once for SYNC mode on create
         1. resource before_create
         """
@@ -82,6 +88,7 @@ class TestInterfaceSync(BaseTestInterfaces):
 
     def test_can_validate_called_on_create_sync_no_validation(
             self, mock_validation, resource_factory):
+        _reset_plugin_counter()
         """Plugin must be called once for SYNC mode on create
         1. resource before_create
         """
@@ -93,6 +100,7 @@ class TestInterfaceSync(BaseTestInterfaces):
 
     def test_can_validate_called_on_update_sync(self, mock_validation,
                                                 resource_factory):
+        _reset_plugin_counter()
         """Plugin must be called 2 times for SYNC mode.
         1. resource before_create on resource create
         2. resource before_update on resource update
@@ -113,6 +121,7 @@ class TestInterfaceSync(BaseTestInterfaces):
 
     def test_can_validate_called_on_update_sync_no_validation(
             self, mock_validation, resource_factory):
+        _reset_plugin_counter()
         """Plugin must be called 2 times for SYNC mode.
         1. resource before_create on resource create
         2. resource before_update on resource update
@@ -137,6 +146,7 @@ class TestInterfaceAsync(BaseTestInterfaces):
 
     def test_can_validate_called_on_create_async(self, mock_validation,
                                                  resource_factory):
+        _reset_plugin_counter()
         """Plugin must be called once for ASYNC mode on create
         1. resource after_create
         """
@@ -149,6 +159,7 @@ class TestInterfaceAsync(BaseTestInterfaces):
 
     def test_can_validate_called_on_create_async_no_validation(
             self, mock_validation, resource_factory):
+        _reset_plugin_counter()
         """Plugin must be called once for ASYNC mode on create
         1. resource after_create
         """
@@ -161,6 +172,7 @@ class TestInterfaceAsync(BaseTestInterfaces):
 
     def test_can_validate_called_on_update_async(self, mock_validation,
                                                  resource_factory):
+        _reset_plugin_counter()
         """Plugin must be called 3 times for ASYNC mode.
         1. resource after_create on resource create
         2. resource before_update on resource update
@@ -181,6 +193,7 @@ class TestInterfaceAsync(BaseTestInterfaces):
 
     def test_can_validate_called_on_update_async_no_validation(
             self, mock_validation, resource_factory):
+        _reset_plugin_counter()
         """Plugin must be called 2 times for ASYNC mode.
         1. resource after_create on resource create
         2. resource before_update on resource update

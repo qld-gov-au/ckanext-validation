@@ -696,6 +696,10 @@ To run the tests, do:
 
     pytest --ckan-ini=test.ini ckanext/validation/tests/
 
+## CICD Github actions locally
+
+act -W '.github/workflows/test.yml' --matrix ckan-version:2.9 --container-architecture linux/amd64
+
 
 ## Copying and License
 
