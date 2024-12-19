@@ -24,7 +24,7 @@ jobs:
           - ckan-version: "2.11"
             ckan-image: "2.11-py3.10"
             ckan-solr: "2.11-solr9"
-            experimental: false
+            experimental: true
           - ckan-version: "2.10"
             ckan-image: "2.10-py3.10"
             ckan-solr: "2.10-solr9"
@@ -39,7 +39,7 @@ jobs:
 #            experimental: true  # master is unstable, good to know if we are compatible or not
       fail-fast: false
 
-    name: CKAN ${{ matrix.ckan-version }}
+    name: ${{ matrix.experimental && '**Fail_Ignored** ' || '' }} CKAN ${{ matrix.ckan-version }}
     runs-on: ubuntu-latest
     container:
       image: ckan/ckan-dev:${{ matrix.ckan-image }}
