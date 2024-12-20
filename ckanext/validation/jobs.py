@@ -115,9 +115,8 @@ def _validate_table(source, _format=u'csv', schema=None, **options):
 
     http_session = options.pop('http_session', None) or requests.Session()
 
-    use_proxy = 'ckan.download_proxy' in t.config
-    if use_proxy:
-        proxy = t.config.get('ckan.download_proxy')
+    proxy = t.config.get('ckan.download_proxy', None)
+    if proxy is not None:
         log.debug(u'Download resource for validation via proxy: %s', proxy)
         http_session.proxies.update({'http': proxy, 'https': proxy})
     report = validate(source, format=_format, schema=schema, http_session=http_session, **options)
