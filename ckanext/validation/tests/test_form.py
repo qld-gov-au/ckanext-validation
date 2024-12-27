@@ -280,10 +280,20 @@ class TestResourceValidationOptionsForm(object):
         assert dataset['resources'][0]['validation_options'] == value
 
     def test_resource_form_update(self, app, resource_factory):
+        # options = {
+        #     'delimiter': ',',
+        #     'headers': 1,
+        #     'skip_rows': ['#'],
+        # }
         options = {
-            'delimiter': ',',
-            'headers': 1,
-            'skip_rows': ['#'],
+            "dialect": {
+                "header": True,
+                "headerRows": [1],
+                "commentChar": "#",
+                "csv": {
+                    "delimiter": ","
+                }
+            }
         }
 
         resource = resource_factory(validation_options=options)
@@ -297,11 +307,22 @@ class TestResourceValidationOptionsForm(object):
                          attrs={'name': 'validation_options'}).text ==\
             json.dumps(options, indent=2, sort_keys=True)
 
+        # new_options = {
+        #     'delimiter': ',',
+        #     'headers': 4,
+        #     'skip_rows': ['#'],
+        #     'skip_tests': ['blank-rows'],
+        # }
         new_options = {
-            'delimiter': ',',
-            'headers': 4,
-            'skip_rows': ['#'],
-            'skip_tests': ['blank-rows'],
+            "dialect": {
+                "header": True,
+                "headerRows": [4],
+                "commentChar": "#",
+                "csv": {
+                    "delimiter": ","
+                },
+                "skip": ["blank-rows"]  # Skip blank rows (maps to `skip_tests`)
+            }
         }
 
         params = {
@@ -364,8 +385,8 @@ class TestResourceValidationOnCreateForm(object):
                   upload=[('upload', 'data.csv', INVALID_CSV)]))
 
         assert 'validation' in response
-        assert 'missing-value' in response
-        assert 'Row 2 has a missing value in column 4' in response
+        assert 'missing-cell' in response
+        assert ('Row at position \\&#34;2\\&#34; has a missing cell in field \\&#34;d\\&#34; at position \\&#34;4\\&#34;' in response)
 
 
 @pytest.mark.usefixtures("clean_db", "validation_setup")
@@ -392,9 +413,9 @@ class TestResourceValidationOnUpdateForm(object):
                   params,
                   upload=[('upload', 'data.csv', VALID_CSV)]))
 
-        assert 'missing-value' not in response
-        assert 'Row 2 has a missing value in column 4' not in response
+        assert 'missing-cell' not in response
 
+        assert ('has a missing cell in field' not in response)
         resource = call_action('resource_show', id=resource['id'])
 
         assert resource['validation_status'] == 'success'
@@ -419,14 +440,14 @@ class TestResourceValidationOnUpdateForm(object):
                   upload=[('upload', 'data.csv', INVALID_CSV)]))
 
         assert 'validation' in response
-        assert 'missing-value' in response
-        assert 'Row 2 has a missing value in column 4' in response
+        assert 'missing-cell' in response
+        assert ('Row at position \\&#34;2\\&#34; has a missing cell in field \\&#34;d\\&#34; at position \\&#34;4\\&#34;' in response)
 
 
 @pytest.mark.usefixtures("clean_db", "validation_setup")
 class TestResourceValidationFieldsPersisted(object):
 
-    @mock.patch('ckanext.validation.utils.validate', return_value=VALID_REPORT)
+    @mock.patch('ckanext.validation.jobs.validate', return_value=VALID_REPORT)
     def test_resource_form_fields_are_persisted(self, mock_report, app,
                                                 resource_factory):
         dataset = Dataset()
@@ -443,10 +464,12 @@ class TestResourceValidationFieldsPersisted(object):
             'schema': json.dumps(SCHEMA)
         }
 
-        _post(app, EDIT_RESOURCE_URL.format(dataset['id'], resource['id']), params)
-
+        response_post = _post(app, EDIT_RESOURCE_URL.format(dataset['id'], resource['id']), params)
         resource = call_action('resource_show', id=resource['id'])
 
+        assert resource['description'] == 'test desc'
         assert resource['validation_timestamp']
         assert resource['validation_status'] == 'success'
-        assert resource['description'] == 'test desc'
+
+        assert '<th scope="row">Validation status</th>\n                <td>success</td>' in response_post.body
+        assert '<th scope="row">Validation timestamp</th>\n                <td>' + resource['validation_timestamp'] + '</td>' in response_post.body

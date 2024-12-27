@@ -21,6 +21,7 @@ fake = Faker()
 def validation_setup(monkeypatch, ckan_config, tmpdir):
     monkeypatch.setitem(ckan_config, u'ckan.storage_path', str(tmpdir))
     monkeypatch.setattr(uploader, u'get_storage_path', lambda: str(tmpdir))
+    monkeypatch.setattr(uploader, "_storage_path", str(tmpdir))
 
     if not tables_exist():
         create_tables()
