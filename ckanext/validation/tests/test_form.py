@@ -280,11 +280,6 @@ class TestResourceValidationOptionsForm(object):
         assert dataset['resources'][0]['validation_options'] == value
 
     def test_resource_form_update(self, app, resource_factory):
-        # options = {
-        #     'delimiter': ',',
-        #     'headers': 1,
-        #     'skip_rows': ['#'],
-        # }
         options = {
             "dialect": {
                 "header": True,
@@ -307,12 +302,6 @@ class TestResourceValidationOptionsForm(object):
                          attrs={'name': 'validation_options'}).text ==\
             json.dumps(options, indent=2, sort_keys=True)
 
-        # new_options = {
-        #     'delimiter': ',',
-        #     'headers': 4,
-        #     'skip_rows': ['#'],
-        #     'skip_tests': ['blank-rows'],
-        # }
         new_options = {
             "dialect": {
                 "header": True,
@@ -323,6 +312,44 @@ class TestResourceValidationOptionsForm(object):
                 },
                 "skip": ["blank-rows"]  # Skip blank rows (maps to `skip_tests`)
             }
+        }
+
+        params = {
+            'id': resource_id,
+            'name': 'test_resource_form_update',
+            'url': 'https://example.com/data.csv',
+            'validation_options': json.dumps(new_options)
+        }
+
+        _post(app, EDIT_RESOURCE_URL.format(resource['package_id'],
+                                            resource_id), params)
+        resource = call_action('resource_show', id=resource['id'])
+
+        assert resource['validation_options'] == new_options
+
+    def test_resource_form_update_goodtables_options(self, app, resource_factory):
+        options = {
+            'delimiter': ',',
+            'headers': 1,
+            'skip_rows': ['#'],
+        }
+
+        resource = resource_factory(validation_options=options)
+        resource_id = resource['id']
+
+        response = _get_resource_update_page_as_sysadmin(
+            app, resource['package_id'], resource_id)
+        form = _get_form(response)
+
+        assert form.find("textarea",
+                         attrs={'name': 'validation_options'}).text ==\
+            json.dumps(options, indent=2, sort_keys=True)
+
+        new_options = {
+            'delimiter': ',',
+            'headers': 4,
+            'skip_rows': ['#'],
+            'skip_tests': ['blank-rows'],
         }
 
         params = {

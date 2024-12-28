@@ -202,10 +202,12 @@ class TestValidationJob(object):
         assert source.endswith('invalid.csv')
 
     def test_job_pass_validation_options(self, resource_factory):
-        valid_csv = b'a,b,c,d\n#comment\n1,2,3,4'
+        valid_csv = b'''a,b,c,d
+#comment
+1,2,3,4'''
+
         upload = MockFileStorage(io.BytesIO(valid_csv), 'valid.csv')
 
-        # validation_options = {'headers': 1, 'skip_rows': ['#']}
         validation_options = {
             "dialect": {
                 "header": True,
@@ -228,27 +230,17 @@ class TestValidationJob(object):
 
         assert '"valid": true' in str(validation.report)
 
-    def test_job_pass_validation_options_string(self, resource_factory):
+    def test_job_pass_validation_options_string_goodtables_options(self, resource_factory):
         invalid_csv = b'''a;b;c;d
 #comment
 1;2;3;4
 '''
 
-        # validation_options = '''{
-        #             "headers": 1,
-        #             "skip_rows": ["#"],
-        #             "delimiter": ";"
-        #         }'''
         validation_options = '''{
-            "dialect": {
-                    "header": true,
-                    "headerRows": [1],
-                    "commentChar": "#",
-                    "csv": {
-                        "delimiter": ";"
-                    }
-                }
-        }'''
+    "headers": 1,
+    "skip_rows": ["#"],
+    "delimiter": ";"
+}'''
 
         mock_upload = MockFileStorage(io.BytesIO(invalid_csv), 'invalid.csv')
 

@@ -155,6 +155,22 @@ def validate_table(source, _format=u'csv', schema=None, **options):
     frictionless_context['http_session'] = http_session
     resource_schema = Schema.from_descriptor(schema) if schema else None
 
+    # Goodtable's conversion to dialect for backwards compatability
+    if any(options.get(key) for key in ['headers', 'skip_rows', 'delimiter']):
+        dialect_descriptor = options.get('dialect', {})
+
+        if options.get('headers'):
+            dialect_descriptor["header"] = True
+            dialect_descriptor["headerRows"] = [options['headers']]
+            options.pop('headers', None)
+        if options.get('skip_rows') and options.get('skip_rows')[0]:
+            dialect_descriptor["commentChar"] = str(options['skip_rows'][0])
+            options.pop('skip_rows', None)
+        if options.get('delimiter'):
+            dialect_descriptor["csv"] = {"delimiter": str(options['delimiter'])}
+            options.pop('delimiter', None)
+        options['dialect'] = dialect_descriptor
+
     # Load the Resource Dialect as described in https://framework.frictionlessdata.io/docs/framework/Dialect.html
     if 'dialect' in options:
         dialect = Dialect.from_descriptor(options['dialect'])
