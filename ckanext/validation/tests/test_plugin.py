@@ -3,6 +3,7 @@ import io
 
 import mock
 import pytest
+from faker import Faker
 
 from ckan.tests.helpers import call_action
 from ckan.tests import factories
@@ -154,7 +155,7 @@ class TestPackageControllerHooksCreate(object):
 
     def test_validation_run_with_upload(self, mock_enqueue):
         resource = {
-            'id': 'test-resource-id',
+            'id': Faker().uuid4(),
             'format': 'CSV',
             'url_type': 'upload',
             'schema': helpers.SCHEMA
@@ -165,7 +166,7 @@ class TestPackageControllerHooksCreate(object):
 
     def test_validation_run_with_url(self, mock_enqueue):
         resource = {
-            'id': 'test-resource-id',
+            'id': Faker().uuid4(),
             'format': 'CSV',
             'url': 'http://some.data',
             'schema': helpers.SCHEMA
@@ -178,13 +179,13 @@ class TestPackageControllerHooksCreate(object):
     def test_validation_run_only_supported_formats(self, mock_enqueue):
 
         resource1 = {
-            'id': 'test-resource-id-1',
+            'id': Faker().uuid4(),
             'format': 'CSV',
             'url': 'http://some.data',
             'schema': helpers.SCHEMA
         }
         resource2 = {
-            'id': 'test-resource-id-2',
+            'id': Faker().uuid4(),
             'format': 'PDF',
             'url': 'http://some.doc',
             'schema': helpers.SCHEMA
@@ -220,7 +221,7 @@ class TestPackageControllerHooksUpdate(object):
     def test_validation_does_not_run_on_other_formats(self, mock_enqueue):
 
         resource = {
-            'id': 'test-resource-id',
+            'id': Faker().uuid4(),
             'format': 'PDF',
             'url': 'http://some.doc'
         }
@@ -237,13 +238,13 @@ class TestPackageControllerHooksUpdate(object):
     def test_validation_run_only_supported_formats(self, mock_enqueue):
 
         resource1 = {
-            'id': 'test-resource-id-1',
+            'id': Faker().uuid4(), # must uuid
             'format': 'CSV',
             'url': 'http://some.data',
             'schema': helpers.SCHEMA
         }
         resource2 = {
-            'id': 'test-resource-id-2',
+            'id': Faker().uuid4(),
             'format': 'PDF',
             'url': 'http://some.doc',
             'schema': helpers.SCHEMA
