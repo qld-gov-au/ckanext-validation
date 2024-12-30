@@ -3,7 +3,7 @@ import datetime
 import logging
 
 import sqlalchemy
-from sqlalchemy import create_engine, Column, Unicode, DateTime
+from sqlalchemy import create_engine, Column, Unicode, DateTime, inspect
 from sqlalchemy.dialects.postgresql import JSON
 
 import ckantoolkit as t
@@ -51,21 +51,12 @@ def create_tables():
     log.info(u'Validation database tables created')
 
 
-# Check the version of SQLAlchemy manually
-def is_sqlalchemy_14_or_newer():
-    return sqlalchemy.__version__.startswith('1.4') or sqlalchemy.__version__.startswith('2.')
-
-
 def tables_exist():
-    if is_sqlalchemy_14_or_newer():
-        from sqlalchemy import inspect
-        if model.meta.engine is None:
-            # Unsure why this is None when it should be set at this stage.
-            log.info("Database engine is not initialized. Going direct")
-            engine = create_engine(t.config.get("sqlalchemy.url"))
-        else:
-            engine = model.meta.engine
-        inspector = inspect(engine)
-        return 'validation' in inspector.get_table_names()
+    if model.meta.engine is None:
+        # Unsure why this is None when it should be set at this stage.
+        log.debug("Database engine is not initialized. Going direct")
+        engine = create_engine(t.config.get("sqlalchemy.url"))
     else:
-        return Validation.__table__.exists()
+        engine = model.meta.engine
+    inspector = inspect(engine)
+    return 'validation' in inspector.get_table_names()
