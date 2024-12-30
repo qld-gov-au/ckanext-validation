@@ -238,7 +238,7 @@ class TestPackageControllerHooksUpdate(object):
     def test_validation_run_only_supported_formats(self, mock_enqueue):
 
         resource1 = {
-            'id': Faker().uuid4(), # must uuid
+            'id': Faker().uuid4(),
             'format': 'CSV',
             'url': 'http://some.data',
             'schema': helpers.SCHEMA
