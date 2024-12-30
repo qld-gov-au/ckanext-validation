@@ -3,10 +3,10 @@ import datetime
 import logging
 
 import sqlalchemy
-from sqlalchemy import Column, Unicode, DateTime
+from sqlalchemy import create_engine, Column, Unicode, DateTime
 from sqlalchemy.dialects.postgresql import JSON
 
-
+import ckantoolkit as t
 from ckan import model
 from ckan.model import types as _types
 from ckan.model.meta import metadata
@@ -61,9 +61,11 @@ def tables_exist():
         from sqlalchemy import inspect
         if model.meta.engine is None:
             # Unsure why this is None when it should be set at this stage.
-            log.critical("Database engine is not initialized. Ensure CKAN is properly configured. returning false")
-            return False
-        inspector = inspect(model.meta.engine)
+            log.info("Database engine is not initialized. Going direct")
+            engine = create_engine(t.config.get("sqlalchemy.url"))
+        else:
+            engine = model.meta.engine
+        inspector = inspect(engine)
         return 'validation' in inspector.get_table_names()
     else:
         return Validation.__table__.exists()
