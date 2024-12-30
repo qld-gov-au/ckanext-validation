@@ -100,6 +100,11 @@ def go_to_new_resource_form(context, name):
         context.execute_steps(u"""
             When I press "Next:"
         """)
+    elif context.browser.is_element_present_by_xpath("//*[contains(string(), 'Add new resource')]"):
+        # Existing dataset, browse to the resource form
+        context.execute_steps(u"""
+                   And I press "Add new resource"
+               """)
     else:
         # Existing dataset, browse to the resource form
         if context.browser.is_element_present_by_xpath(

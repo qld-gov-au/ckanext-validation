@@ -2,7 +2,6 @@
 import datetime
 import logging
 
-import sqlalchemy
 from sqlalchemy import create_engine, Column, Unicode, DateTime, inspect
 from sqlalchemy.dialects.postgresql import JSON
 

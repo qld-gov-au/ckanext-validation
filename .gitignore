@@ -102,5 +102,13 @@ Dockerfile.ckan
 
 # bdd tests
 /test/screenshots
+/gcm
+/mail
+/sms
 
 .idea
+
+## Junit test outputs
+/TESTS*.xml
+/coverage.xml
+
