@@ -34,16 +34,18 @@ install_requirements () {
 
 . "${APP_DIR}"/bin/activate
 
-if [ "$CKAN_VERSION" == "2.9" ]; then
-  echo "CKAN 2.9 last supported Jinja2 is less than 3.1"
-  pip install "jinja2<3.1"
-fi
 
 install_requirements . dev-requirements requirements-dev
 for extension in . `ls -d $SRC_DIR/ckanext-*`; do
     install_requirements $extension requirements pip-requirements
 done
 pip install -e .
+
+if [ "$CKAN_VERSION" == "2.9" ]; then
+  echo "CKAN 2.9 last supported Jinja2 is less than 3.1"
+  pip install "jinja2<3.1"
+fi
+
 installed_name=$(grep '^\s*name=' setup.py |sed "s|[^']*'\([-a-zA-Z0-9]*\)'.*|\1|")
 
 # Validate that the extension was installed correctly.
