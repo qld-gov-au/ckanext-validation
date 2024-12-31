@@ -7,7 +7,7 @@ Feature: Resource UI
         When I create a resource with name "<name>" and URL "<url>"
         And I press the element with xpath "//a[contains(@title, '<name>') and contains(string(), '<name>')]"
         Then I take a debugging screenshot
-        And I should see "<url>"
+        And I should see "<url>" within 2 seconds
 
         Examples:
         | name | url |
