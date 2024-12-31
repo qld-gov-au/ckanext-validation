@@ -45,11 +45,12 @@ jobs:
             experimental: true  # master is unstable, good to know if we are compatible or not
       fail-fast: false
 
-    name: ${{ matrix.experimental && '**Fail_Ignored** ' || '' }} CKAN ${{ matrix.ckan-version }}
+    name: ${{ matrix.experimental && '**Fail_Ignored** ' || '' }}CKAN ${{ matrix.ckan-version }}
     runs-on: ubuntu-latest
     container:
       image: ckan/ckan-dev:${{ matrix.ckan-image }}
-      options: --user root
+      # --hostname ckan allows chrome container to access this container for bdd testing
+      options: --user root  --hostname ckan
     services:
       solr:
         image: ckan/ckan-solr:${{ matrix.ckan-solr }}
@@ -66,7 +67,7 @@ jobs:
         image: redis:3
       chrome:
         image: selenium/standalone-chrome:3.141.59-oxygen
-        options: --add-host=ckan:host-gateway --add-host=host.docker.internal:host-gateway
+        #options: --add-host=ckan:host-gateway --add-host=host.docker.internal:host-gateway
 
     env:
       CKAN_SQLALCHEMY_URL: postgresql://ckan_default:pass@postgres/ckan_test
@@ -134,10 +135,10 @@ jobs:
         echo "cat /srv/app/ckan.ini"
         cat /srv/app/ckan.ini
         echo "/etc/hosts"
-        if ! grep -q "127.0.0.1 ckan" /etc/hosts; then
-          echo "" >> /etc/hosts
-          echo "127.0.0.1 ckan" >> /etc/hosts
-        fi
+        #        if ! grep -q "127.0.0.1 ckan" /etc/hosts; then
+        #          echo "" >> /etc/hosts
+        #          echo "127.0.0.1 ckan" >> /etc/hosts
+        #        fi
         cat /etc/hosts
         echo "::endgroup::"
         
@@ -151,8 +152,7 @@ jobs:
         echo "::endgroup::"
 
     - name: Run BDD tests
-#      continue-on-error: ${{ matrix.experimental }}
-      continue-on-error: true
+      continue-on-error: ${{ matrix.experimental }}
       run: |
         rm -rf test/screenshots/*
         mkdir -p test/screenshots
