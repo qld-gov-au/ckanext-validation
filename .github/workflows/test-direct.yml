@@ -66,7 +66,7 @@ jobs:
       redis:
         image: redis:3
       chrome:
-        image: selenium/standalone-chrome:3.141.59-oxygen
+        image: selenium/standalone-chrome:131.0-chromedriver-131.0-grid-4.27.0-20241225
         #options: --add-host=ckan:host-gateway --add-host=host.docker.internal:host-gateway
 
     env:
@@ -75,6 +75,8 @@ jobs:
       CKAN_DATASTORE_READ_URL: postgresql://datastore_read:pass@postgres/datastore_test
       CKAN_SOLR_URL: http://solr:8983/solr/ckan
       CKAN_REDIS_URL: redis://redis:6379/1
+      CKAN_SITE_URL: http://ckan:5000
+      CKAN__PLUGINS: "datastore envvars validation scheming_datasets test_validation_plugin"
 
     steps:
     - uses: actions/checkout@v4
@@ -158,13 +160,10 @@ jobs:
         mkdir -p test/screenshots
         
         export CKAN_INI=/srv/app/ckan.ini
-        # export APP_DIR=`pwd`
         export CKAN_SITE_URL=http://ckan:5000/
-        # export PATH=./bin:$PATH
-        
         
         ckan -c $CKAN_INI run -H 0.0.0.0 > test/screenshots/ckan.log 2>&1 &
-        ckan -c /srv/app/ckan.ini jobs worker > test/screenshots/ckan-worker.log 2>&1  &
+        ckan -c $CKAN_INI jobs worker > test/screenshots/ckan-worker.log 2>&1  &
         sleep 5
         
         echo "::group::ckan clean db and init"
