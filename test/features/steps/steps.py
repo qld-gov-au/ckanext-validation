@@ -150,7 +150,7 @@ def go_to_dataset(context, name):
 def edit_dataset(context, name):
     context.execute_steps(u"""
         When I go to dataset "{0}"
-        And I click the link with text that contains "Manage"
+        When I click the link with text that contains "Manage"
     """.format(name))
 
 

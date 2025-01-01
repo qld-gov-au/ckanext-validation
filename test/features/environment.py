@@ -3,8 +3,11 @@
 import os
 
 from behaving import environment as benv
-from splinter.browser import Browser
 
+from selenium.webdriver import ChromeOptions
+from selenium.webdriver import Remote
+
+_DOWNLOAD_PATH = "/tmp"
 # Path to the root of the project.
 ROOT_PATH = os.path.realpath(os.path.join(
     os.path.dirname(os.path.realpath(__file__)),
@@ -83,10 +86,27 @@ def after_feature(context, feature):
 
 def before_scenario(context, scenario):
     benv.before_scenario(context, scenario)
+
+    chrome_options = ChromeOptions()
+    chrome_options.add_argument("--use-fake-device-for-media-stream")
+    chrome_options.add_argument("--use-fake-ui-for-media-stream")
+
+    prefs = {
+        "profile.default_content_settings.popups": 0,
+        "download.default_directory": _DOWNLOAD_PATH,
+        "download.prompt_for_download": False,
+        "download.directory_upgrade": True,
+        "safebrowsing.enabled": True,
+        "safebrowsing.disable_download_protection": True,
+    }
+
+    chrome_options.add_experimental_option("prefs", prefs)
+    chrome_options.add_argument('--headless')  # Example, if you want headless mode.
+    chrome_options.add_argument('--disable-gpu')
+
     # Always use remote browser.
-    remote_browser = Browser(
-        driver_name="remote", browser="chrome",
-        command_executor=REMOTE_CHROME_URL
+    remote_browser = Remote(
+        command_executor=REMOTE_CHROME_URL, options=chrome_options
     )
     for persona_name in PERSONAS.keys():
         context.browsers[persona_name] = remote_browser
