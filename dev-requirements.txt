@@ -1,7 +1,7 @@
 beautifulsoup4==4.9.1
 behave==1.2.6
 behaving==1.5.6
-ckanapi==4.3
+ckanapi>=4.3
 flake8==3.8.3
 mock
 pyfakefs==2.7
@@ -11,4 +11,4 @@ selenium==4.8.2
 splinter>=0.13.0
 faker==18.3.0
 
-git+https://github.com/ckan/ckanext-scheming.git@release-3.0.0#egg=ckanext-scheming
+git+https://github.com/ckan/ckanext-scheming.git@master#egg=ckanext-scheming

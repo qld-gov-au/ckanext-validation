@@ -95,7 +95,7 @@ jobs:
 
     - name: Run tests
       continue-on-error: ${{ matrix.experimental }}
-      run: pytest --ckan-ini=test.ini --cov=ckanext.validation --cov-report=xml --cov-append --disable-warnings ckanext/validation/tests -vv  --junit-xml=/tmp/artifacts/junit/results.xml
+      run: pytest --ckan-ini=test.ini --cov=ckanext.validation --cov-report=xml:coverage.xml --cov-append --disable-warnings ckanext/validation/tests -vv  --junit-xml=/tmp/artifacts/junit/results.xml
 
     - name: Test Summary
       uses: test-summary/action@v2

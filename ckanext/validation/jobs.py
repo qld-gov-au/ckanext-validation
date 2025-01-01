@@ -5,7 +5,7 @@ import json
 import re
 
 import requests
-from goodtables import validate
+from frictionless import validate, system, Report, Schema, Dialect, Check
 from six import string_types
 
 from ckan.model import Session
@@ -13,7 +13,7 @@ import ckan.lib.uploader as uploader
 
 import ckantoolkit as t
 
-from ckanext.validation import utils
+from . import utils
 from ckanext.validation.validation_status_helper import (ValidationStatusHelper, ValidationJobDoesNotExist,
                                                          ValidationJobAlreadyRunning, StatusTypes)
 
@@ -83,22 +83,36 @@ def run_validation_job(resource):
 
     _format = resource[u'format'].lower()
 
-    report = _validate_table(source, _format=_format, schema=schema, **options)
+    report = validate_table(source, _format=_format, schema=schema, **options)
 
     # Hide uploaded files
-    for table in report.get('tables', []):
-        if table['source'].startswith('/'):
-            table['source'] = resource['url']
-    for index, warning in enumerate(report.get('warnings', [])):
-        report['warnings'][index] = re.sub(r'Table ".*"', 'Table', warning)
+    if isinstance(report, Report):
+        report = report.to_dict()
 
-    if report['table-count'] > 0:
-        status = StatusTypes.success if report[u'valid'] else StatusTypes.failure
-        validation_record = vsh.updateValidationJobStatus(Session, resource['id'], status, report, None, validation_record)
+    if 'tasks' in report:
+        for table in report['tasks']:
+            if table['place'].startswith('/'):
+                table['place'] = resource['url']
+
+    error_payload = None
+    if 'warnings' in report:
+        for index, warning in enumerate(report['warnings']):
+            report['warnings'][index] = re.sub(r'Table ".*"', 'Table', warning)
+
+    if not contains_major_error(report) and u'valid' in report:
+        if report[u'valid']:
+            status = StatusTypes.success
+        else:
+            status = StatusTypes.failure
     else:
         status = StatusTypes.error
-        error_payload = {'message': '\n'.join(report['warnings']) or u'No tables found'}
-        validation_record = vsh.updateValidationJobStatus(Session, resource['id'], status, None, error_payload, validation_record)
+        # report['errors'] not used anymore, is now inside tasks.
+        if 'tasks' in report and 'errors' in report['tasks'][0]:
+            error_payload = {'message': [str(err) for err in report['tasks'][0]['errors']]}
+        else:
+            error_payload = {'message': ['Errors validating the data']}
+
+    validation_record = vsh.updateValidationJobStatus(Session, resource['id'], status, json.dumps(report), error_payload, validation_record)
 
     # Store result status in resource
     t.get_action('resource_patch')(
@@ -111,16 +125,64 @@ def run_validation_job(resource):
     utils.send_validation_report(utils.validation_dictize(validation_record))
 
 
-def _validate_table(source, _format=u'csv', schema=None, **options):
+def contains_major_error(data):
+    # https://github.com/frictionlessdata/frictionless-py/blob/v5.18.0/frictionless/errors/resource.py
+    error_types = {"resource-error", "source-error", "scheme-error", "format-error", "encoding-error", "compression-error"}
 
+    # Safely get tasks
+    tasks = data.get("tasks", [])
+
+    for task in tasks:
+        errors = task.get("errors", [])
+        for error in errors:
+            if error.get("type") in error_types:
+                return True
+
+    return False
+
+
+def validate_table(source, _format=u'csv', schema=None, **options):
+
+    # This option is needed to allow Frictionless Framework to validate absolute paths
+    frictionless_context = {'trusted': True}
     http_session = options.pop('http_session', None) or requests.Session()
 
     proxy = t.config.get('ckan.download_proxy', None)
     if proxy is not None:
         log.debug(u'Download resource for validation via proxy: %s', proxy)
         http_session.proxies.update({'http': proxy, 'https': proxy})
-    report = validate(source, format=_format, schema=schema, http_session=http_session, **options)
 
-    log.debug(u'Validating source: %s', source)
+    frictionless_context['http_session'] = http_session
+    resource_schema = Schema.from_descriptor(schema) if schema else None
+
+    # Goodtable's conversion to dialect for backwards compatability
+    if any(options.get(key) for key in ['headers', 'skip_rows', 'delimiter']):
+        dialect_descriptor = options.get('dialect', {})
+
+        if options.get('headers'):
+            dialect_descriptor["header"] = True
+            dialect_descriptor["headerRows"] = [options['headers']]
+            options.pop('headers', None)
+        if options.get('skip_rows') and options.get('skip_rows')[0]:
+            dialect_descriptor["commentChar"] = str(options['skip_rows'][0])
+            options.pop('skip_rows', None)
+        if options.get('delimiter'):
+            dialect_descriptor["csv"] = {"delimiter": str(options['delimiter'])}
+            options.pop('delimiter', None)
+        options['dialect'] = dialect_descriptor
+
+    # Load the Resource Dialect as described in https://framework.frictionlessdata.io/docs/framework/Dialect.html
+    if 'dialect' in options:
+        dialect = Dialect.from_descriptor(options['dialect'])
+        options['dialect'] = dialect
+
+    # Load the list of checks and its parameters declaratively as in https://framework.frictionlessdata.io/docs/checks/table.html
+    if 'checks' in options:
+        checklist = [Check.from_descriptor(c) for c in options['checks']]
+        options['checks'] = checklist
+
+    with system.use_context(**frictionless_context):
+        log.debug(u'Validating source: %s', source)
+        report = validate(source, format=_format, schema=resource_schema, **options)
 
     return report
