@@ -14,13 +14,8 @@ sed -i -e "s/##//" docker-compose.yml
 # Pull the latest images.
 ahoy pull
 
-PYTHON=python
-if [ "$CKAN_VERSION" = "2.9-py2" ]; then
-    PYTHON_VERSION=py2
-else
-    PYTHON_VERSION=py3
-    PYTHON="${PYTHON}3"
-fi
+PYTHON=python3
+PYTHON_VERSION=py3
 
 sed "s|{CKAN_VERSION}|$CKAN_VERSION|g" .docker/Dockerfile-template.ckan \
     | sed "s|{SOLR_VERSION}|$SOLR_VERSION|g" \

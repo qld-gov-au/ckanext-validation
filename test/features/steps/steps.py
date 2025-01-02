@@ -1,7 +1,7 @@
 from behave import when, then
 from behaving.personas.steps import *  # noqa: F401, F403
 from behaving.web.steps import *  # noqa: F401, F403
-from behaving.web.steps.basic import should_see
+from behaving.web.steps.basic import should_see_within_timeout
 
 
 @when(u'I take a debugging screenshot')
@@ -23,7 +23,7 @@ def go_to_home(context):
 
 @then(u'I should see text containing quotes `{text}`')
 def should_see_backquoted(context, text):
-    should_see(context, text)
+    should_see_within_timeout(context, text)
 
 
 @when(u'I go to register page')
@@ -88,9 +88,14 @@ def go_to_new_resource_form(context, name):
         """)
     else:
         # Existing dataset, browse to the resource form
+        if context.browser.is_element_present_by_xpath(
+                "//a[contains(string(), 'Resources') and contains(@href, '/dataset/resources/')]"):
+            context.execute_steps(u"""
+                When I press "Resources"
+            """)
         context.execute_steps(u"""
-            When I press "Resources"
-            And I press "Add new resource"
+            When I press "Add new resource"
+            And I take a debugging screenshot
         """)
 
 
@@ -118,6 +123,7 @@ def go_to_dataset_page(context):
 def go_to_dataset(context, name):
     context.execute_steps(u"""
         When I visit "/dataset/{0}"
+        And I take a debugging screenshot
     """.format(name))
 
 

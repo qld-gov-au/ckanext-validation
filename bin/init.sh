@@ -9,4 +9,4 @@ CLICK_ARGS="--yes" ckan_cli db clean
 ckan_cli db init
 
 # Initialise validation tables
-PASTER_PLUGIN=ckanext-validation ckan_cli validation init-db
+ckan_cli validation init-db
