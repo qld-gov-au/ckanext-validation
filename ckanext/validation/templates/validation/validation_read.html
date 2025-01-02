@@ -1,7 +1,3 @@
-{% set type = 'asset' %}
-
-{% include 'validation/snippets/validation_style_' ~ type ~ '.html' %}
-
 {% extends "package/base.html" %}
 
 {%- block subtitle %}{{ _('Validation Report') }}{% endblock -%}
@@ -37,11 +33,10 @@
             <div id="report" {% if h.bootstrap_version() == '2' %}class="bs2"{% endif %} data-module="validation-report" data-module-report="{{ h.dump_json_value(validation.report) }}"></div>
         {% endif %}
 
-        </div>
       </div>
     </section>
 
-    {% include 'validation/snippets/validation_report_' ~ type ~ '.html' %}
+    {% include 'validation/snippets/validation_report_asset.html' %}
 
 {% endblock %}
 

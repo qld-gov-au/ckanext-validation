@@ -16,7 +16,7 @@ from ckan.tests.helpers import call_action, call_auth
 from ckan.tests import factories
 
 from ckanext.validation.model import Validation
-from ckanext.validation.tests.helpers import (
+from .helpers import (
     VALID_CSV,
     INVALID_CSV,
     SCHEMA,
@@ -233,8 +233,8 @@ class TestResourceValidationOnCreate(object):
                         schema=SCHEMA)
 
         assert 'validation' in e.value.error_dict
-        assert 'missing-value' in str(e.value)
-        assert 'Row 2 has a missing value in column 4' in str(e.value)
+        assert 'missing-cell' in str(e.value)
+        assert 'Row at position "2" has a missing cell in field "d" at position "4"' in str(e.value)
 
     def test_validation_fails_no_validation_object_stored(self):
         """If the validation failed - no validation entity should be saved in database"""
@@ -340,8 +340,8 @@ class TestResourceValidationOnUpdate(object):
                         schema=SCHEMA)
 
         assert 'validation' in e.value.error_dict
-        assert 'missing-value' in str(e.value)
-        assert 'Row 2 has a missing value in column 4' in str(e.value)
+        assert 'missing-cell' in str(e.value)
+        assert 'Row at position "2" has a missing cell in field "d" at position "4"' in str(e.value)
 
     def test_validation_fails_no_validation_object_stored(
             self, resource_factory):
@@ -415,7 +415,7 @@ class TestResourceValidationOnUpdate(object):
 
 
 @pytest.mark.usefixtures("clean_db", "validation_setup")
-@mock.patch('ckanext.validation.utils.validate', return_value=VALID_REPORT)
+@mock.patch('ckanext.validation.jobs.validate', return_value=VALID_REPORT)
 class TestSchemaFields(object):
 
     def test_schema_field(self, mocked_report):
@@ -468,7 +468,7 @@ class TestSchemaFields(object):
 
 
 @pytest.mark.usefixtures("clean_db", "validation_setup")
-@mock.patch('ckanext.validation.utils.validate', return_value=VALID_REPORT)
+@mock.patch('ckanext.validation.jobs.validate', return_value=VALID_REPORT)
 class TestValidationOptionsField(object):
 
     def test_validation_options_field(self, mocked_report):

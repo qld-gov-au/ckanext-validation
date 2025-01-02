@@ -8,7 +8,7 @@ from ckan.tests.helpers import call_action
 from ckan.tests import factories
 
 import ckanext.validation.settings as s
-import ckanext.validation.tests.helpers as helpers
+from . import helpers
 from ckanext.validation.jobs import run_validation_job
 
 

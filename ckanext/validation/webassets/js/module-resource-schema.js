@@ -1,7 +1,9 @@
- /* Image Upload
+"use strict";
+
+/* Image Upload
  *
  */
-this.ckan.module('resource-schema', function($) {
+ckan.module('resource-schema', function($) {
   return {
     /* options object can be extended using data-module-* attributes */
     options: {
@@ -34,10 +36,11 @@ this.ckan.module('resource-schema', function($) {
       $.proxyAll(this, /_on/);
       var options = this.options;
 
-      var field_upload = 'input[name="' + options.field_upload + '"]';
-      var field_url = 'input[name="' + options.field_url + '"]';
-      var field_json = 'textarea[name="' + options.field_json +'"]';
-      var field_schema = 'input[name="' + options.field_schema +'"]';
+      // Ensure matches option names.
+      var field_upload = 'input[name="schema_upload"]';
+      var field_url = 'input[name="schema_url"]';
+      var field_json = 'textarea[name="schema_json"]';
+      var field_schema = 'input[name="field_schema"]';
 
       this.align_block = $(".schema-align")
       this.field_align = $('#' + options.align_id);
@@ -46,14 +49,12 @@ this.ckan.module('resource-schema', function($) {
       this.field_upload = $(field_upload, this.el).parents('.form-group');
       this.field_url = $(field_url, this.el).parents('.form-group');
       this.field_json = $(field_json, this.el).parents('.form-group');
-
       if (!this.field_upload.length) {
         this.field_upload = $(field_upload, this.el).parents('.control-group');
         this.field_url = $(field_url, this.el).parents('.control-group');
         this.field_json = $(field_json, this.el).parents('.control-group');
 
       }
-
       this.field_upload_input = $('input', this.field_upload);
       this.field_url_input = $('input', this.field_url);
       this.field_json_input = $('textarea', this.field_json);

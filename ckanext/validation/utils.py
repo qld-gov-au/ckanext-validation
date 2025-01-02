@@ -2,26 +2,28 @@
 
 import logging
 import json
+import re
 import os
+
 from six import ensure_str
-from io import BytesIO
+import tempfile
 from datetime import datetime as dt
 from cgi import FieldStorage
 
 import requests
+from frictionless import Report
 import ckantoolkit as tk
 from requests.exceptions import RequestException
-from goodtables import validate
 from six import string_types
 
 import ckan.plugins as plugins
 import ckan.lib.uploader as uploader
 from ckan import model
 
-import ckanext.validation.settings as s
-from ckanext.validation.interfaces import IDataValidation
-from ckanext.validation.validation_status_helper import ValidationStatusHelper, StatusTypes
-from ckanext.validation.validators import resource_schema_validator
+from . import settings as s, jobs
+from .interfaces import IDataValidation, IPipeValidation
+from .validation_status_helper import ValidationStatusHelper, StatusTypes
+from .validators import resource_schema_validator
 
 log = logging.getLogger(__name__)
 
@@ -101,7 +103,12 @@ def run_sync_validation(resource_data):
         schema = get_default_schema(resource_data["package_id"])
 
     if schema and isinstance(schema, string_types):
-        schema = schema if tk.h.is_url_valid(schema) else json.loads(schema)
+        # schema = schema if tk.h.is_url_valid(schema) else json.loads(schema)
+        if tk.h.is_url_valid(schema):
+            r = requests.get(schema)
+            schema = r.json()
+        else:
+            schema = json.loads(schema)
 
     if not schema:
         resource_id = resource_data.get('id')
@@ -130,20 +137,42 @@ def run_sync_validation(resource_data):
         else:
             source = _get_uploaded_resource_path(resource_data)
 
-    report = validate(source,
-                      format=_format,
-                      schema=schema or None,
-                      http_session=_get_session(resource_data),
-                      **options)
+    report = jobs.validate_table(source,
+                                 _format=_format,
+                                 schema=schema or None,
+                                 **options)
 
-    if report and not report['valid']:
+    # Hide uploaded files
+    if isinstance(report, Report):
+        report = report.to_dict()
+
+    if u'tasks' in report:
+        for table in report['tasks']:
+            if table['place'].startswith('/'):
+                table['place'] = resource_data['url']
+
+    status = StatusTypes.running
+    if u'warnings' in report:
+        if (report['warnings'] is not True):
+            status = StatusTypes.failure
+        for index, warning in enumerate(report['warnings']):
+            report['warnings'][index] = re.sub(r'Table ".*"', 'Table', warning)
+
+    if (
+            status == StatusTypes.error
+            or (u'valid' not in report)
+            or ('valid' in report and not report['valid'])
+    ):
         for table in report.get('tables', []):
-            table['source'] = resource_data['url']
+            table['place'] = resource_data['url']
 
         raise tk.ValidationError({u'validation': [report]})
     else:
-        _table_count = report.get('table-count', 0) > 0
-
+        # get row count from stats located in tasks array 0
+        try:
+            _table_count = report['tasks'][0]['stats'].get('rows', 0) > 0
+        except (KeyError, TypeError, IndexError):
+            _table_count = 0
         resource_data[
             'validation_status'] = StatusTypes.success if _table_count else ""
         resource_data['validation_timestamp'] = str(
@@ -200,18 +229,23 @@ def _get_new_file_stream(file):
     if isinstance(file, FieldStorage):
         file = file.file
 
-    stream = BytesIO(file.read())
+    # frictionless needs a file on disk, it can't work with in memory file streams :'(
+    with tempfile.NamedTemporaryFile(delete=False, mode='wb') as temp_file:
+        temp_file.write(file.read())
+        temp_file_path = temp_file.name
+
     file.seek(0)
 
-    return stream
+    return temp_file_path
 
 
 def run_async_validation(resource_id):
-    context = {u'ignore_auth': True}
-    data_dict = {u'resource_id': resource_id, u'async': True}
 
     try:
-        tk.get_action(u'resource_validation_run')(context, data_dict)
+        tk.get_action(u'resource_validation_run')(
+            {u'ignore_auth': True},
+            {u'resource_id': resource_id,
+             u'async': True})
     except tk.ValidationError as e:
         log.warning(u'Could not run validation for resource {}: {}'.format(
             resource_id, e))
@@ -365,3 +399,30 @@ def get_site_user_api_key():
 def is_uploaded_file(upload):
     return isinstance(upload,
                       uploader.ALLOWED_UPLOAD_TYPES) and upload.filename
+
+
+def validation_dictize(validation):
+    out = {
+        'id': validation.id,
+        'resource_id': validation.resource_id,
+        'status': validation.status,
+        'report': validation.report,
+        'error': validation.error,
+    }
+    out['created'] = (validation.created.isoformat()
+                      if validation.created else None)
+    out['finished'] = (validation.finished.isoformat()
+                       if validation.finished else None)
+
+    return out
+
+
+def send_validation_report(validation_report):
+    for observer in plugins.PluginImplementations(IPipeValidation):
+        try:
+            observer.receive_validation_report(validation_report)
+        except Exception as ex:
+            log.exception(ex)
+            # We reraise all exceptions so they are obvious there
+            # is something wrong
+            raise

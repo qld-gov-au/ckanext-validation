@@ -1,5 +1,7 @@
 ckantoolkit>=0.0.4
-goodtables==1.5.1
+frictionless==5.18.0
 six>=1.13.0
-datapackage==1.15.2 # pin to preserve compatibility with older tableschema
+markupsafe
+jinja2<3.1
+tableschema
 ckanext-scheming

@@ -18,6 +18,8 @@ def get_validators():
     return {"{}".format(func.__name__): func for func in validators}
 
 
+# Input validators
+
 def resource_schema_validator(value, context):
 
     if not value:
@@ -25,7 +27,11 @@ def resource_schema_validator(value, context):
 
     msg = None
 
-    if isinstance(value, string_types):
+    if isinstance(value, dict):
+        descriptor = value
+
+    elif isinstance(value, string_types):
+        value = str(value)
 
         if value.lower().startswith('http'):
             return value
