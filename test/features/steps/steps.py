@@ -76,6 +76,20 @@ def attempt_login(context, password):
     """.format(password))
 
 
+@when(u'I fill in "{name}" with "{value}" if present')
+def fill_in_field_if_present(context, name, value):
+    context.execute_steps(u"""
+        When I execute the script "field = $('#{0}'); if (!field.length) field = $('[name={0}]'); if (!field.length) field = $('#field-{0}'); field.val('{1}'); field.keyup();"
+    """.format(name, value))
+
+
+@when(u'I clear the URL field')
+def clear_url(context):
+    context.execute_steps(u"""
+        When I execute the script "$('a.btn-remove-url:contains(Clear)').click();"
+    """)
+
+
 @when(u'I open the new resource form for dataset "{name}"')
 def go_to_new_resource_form(context, name):
     context.execute_steps(u"""
@@ -133,6 +147,81 @@ def edit_dataset(context, name):
         When I go to dataset "{0}"
         And I click the link with text that contains "Manage"
     """.format(name))
+
+
+@when(u'I select the "{licence_id}" licence')
+def select_licence(context, licence_id):
+    # Licence requires special interaction due to fancy JavaScript
+    context.execute_steps(u"""
+        When I execute the script "$('#field-license_id').val('{0}').trigger('change')"
+    """.format(licence_id))
+
+
+@when(u'I select the organisation with title "{title}"')
+def select_organisation(context, title):
+    # Organisation requires special interaction due to fancy JavaScript
+    context.execute_steps(u"""
+        When I execute the script "org_uuid=$('#field-organizations').find('option:contains({0})').val(); $('#field-organizations').val(org_uuid).trigger('change')"
+        And I take a debugging screenshot
+    """.format(title))
+
+
+@when(u'I enter the resource URL "{url}"')
+def enter_resource_url(context, url):
+    if url != "default":
+        context.execute_steps(u"""
+            When I clear the URL field
+            When I execute the script "$('#resource-edit [name=url]').val('{0}')"
+        """.format(url))
+
+
+@when(u'I fill in default dataset fields')
+def fill_in_default_dataset_fields(context):
+    context.execute_steps(u"""
+        When I fill in title with random text
+        And I fill in "notes" with "Description"
+        And I fill in "version" with "1.0"
+        And I fill in "author_email" with "test@me.com"
+        And I select the "other-open" licence
+        And I fill in "de_identified_data" with "NO" if present
+    """)
+
+
+@when(u'I fill in default resource fields')
+def fill_in_default_resource_fields(context):
+    context.execute_steps(u"""
+        When I fill in "name" with "Test Resource"
+        And I fill in "description" with "Test Resource Description"
+        And I fill in "size" with "1024" if present
+    """)
+
+
+@when(u'I fill in link resource fields')
+def fill_in_default_link_resource_fields(context):
+    context.execute_steps(u"""
+        When I enter the resource URL "https://example.com"
+        And I execute the script "document.getElementById('field-format').value='HTML'"
+        And I fill in "size" with "1024" if present
+    """)
+
+
+@when(u'I upload "{file_name}" of type "{file_format}" to resource')
+def upload_file_to_resource(context, file_name, file_format):
+    context.execute_steps(u"""
+        When I execute the script "$('.resource-upload-field .btn-remove-url').trigger('click'); $('#resource-upload-button').trigger('click');"
+        And I attach the file "{file_name}" to "upload"
+        # Don't quote the injected string since it can have trailing spaces
+        And I execute the script "document.getElementById('field-format').value='{file_format}'"
+        And I fill in "size" with "1024" if present
+    """.format(file_name=file_name, file_format=file_format))
+
+
+@when(u'I upload schema file "{file_name}" to resource')
+def upload_schema_file_to_resource(context, file_name):
+    context.execute_steps(u"""
+        When I execute the script "$('div[data-module=resource-schema] a.btn-remove-url').trigger('click'); $('input[name=schema_upload]').show().parent().show().parent().show();"
+        And I attach the file "{file_name}" to "schema_upload"
+    """.format(file_name=file_name))
 
 
 @when(u'I go to organisation page')
