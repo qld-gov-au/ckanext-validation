@@ -10,7 +10,7 @@ def debug_screenshot(context):
     """
     if context.persona and context.persona.get('debug') == 'True':
         context.execute_steps(u"""
-            Then I take a screenshot
+            When I take a screenshot
         """)
 
 
@@ -47,7 +47,7 @@ def log_in(context):
 @when(u'I expand the browser height')
 def expand_height(context):
     # Work around x=null bug in Selenium set_window_size
-    context.browser.driver.set_window_rect(x=0, y=0, width=1024, height=4096)
+    context.browser.driver.set_window_rect(x=0, y=0, width=1024, height=3072)
 
 
 @when(u'I log in directly')
@@ -58,10 +58,11 @@ def log_in_directly(context):
     :return:
     """
 
-    assert context.persona, "A persona is required to log in, found [{}] in context. Have you configured the personas in before_scenario?".format(context.persona)
+    assert context.persona, "A persona is required to log in, found [{}] in context." \
+        " Have you configured the personas in before_scenario?".format(context.persona)
     context.execute_steps(u"""
         When I attempt to log in with password "$password"
-        Then I should see an element with xpath "//a[@title='Log out']"
+        Then I should see an element with xpath "//*[@title='Log out' or @data-bs-title='Log out']/i[contains(@class, 'fa-sign-out')]"
     """)
 
 
