@@ -6,6 +6,30 @@ from behaving.personas.steps import *  # noqa: F401, F403
 from behaving.web.steps import *  # noqa: F401, F403
 from behaving.web.steps.basic import should_see_within_timeout
 
+# Monkey-patch Behaving to handle function rename
+from behaving.web.steps import forms
+if not hasattr(forms, 'fill_in_elem_by_name'):
+    forms.fill_in_elem_by_name = forms.i_fill_in_field
+
+
+dataset_default_schema = """
+    {"fields": [
+        {"format": "default", "name": "Game Number", "type": "integer"},
+        {"format": "default", "name": "Game Length", "type": "integer"}
+    ],
+    "missingValues": ["Default schema"]
+    }
+"""
+
+resource_default_schema = """
+    {"fields": [
+        {"format": "default", "name": "Game Number", "type": "integer"},
+        {"format": "default", "name": "Game Length", "type": "integer"}
+    ],
+    "missingValues": ["Resource schema"]
+    }
+"""
+
 
 @when(u'I take a debugging screenshot')
 def debug_screenshot(context):
@@ -142,7 +166,8 @@ def title_random_text_with_prefix(context, prefix):
 def add_resource(context, name, url):
     context.execute_steps(u"""
         When I log in
-        And I open the new resource form for dataset "warandpeace"
+        And I create a dataset with key-value parameters "notes=Link testing"
+        And I open the new resource form for dataset "$last_generated_name"
         And I execute the script "$('#resource-edit [name=url]').val('{url}')"
         And I fill in "name" with "{name}"
         And I fill in "description" with "description"

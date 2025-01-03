@@ -66,8 +66,4 @@ api_call '{"id": "'"${TEST_ORG_ID}"'", "object": "test_org_member", "object_type
 # END.
 #
 
-# Creating basic test data which has datasets with resources
-api_call '{"name": "warandpeace", "owner_org": "'"${TEST_ORG_ID}"'",
-"author_email": "admin@localhost", "license_id": "other-open", "notes": "test"}' package_create
-
 . "${APP_DIR}"/bin/deactivate
