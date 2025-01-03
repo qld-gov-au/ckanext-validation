@@ -33,9 +33,6 @@ jobs:
           - ckan-version: "2.10"
             solr-version: "9"
             experimental: false
-          - ckan-version: "2.9"
-            solr-version: "8"
-            experimental: false
           - ckan-version: "master"
             solr-version: "9"
             experimental: true
