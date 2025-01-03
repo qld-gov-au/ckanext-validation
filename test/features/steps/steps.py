@@ -1,3 +1,6 @@
+import six
+import uuid
+
 from behave import when, then
 from behaving.personas.steps import *  # noqa: F401, F403
 from behaving.web.steps import *  # noqa: F401, F403
@@ -111,6 +114,28 @@ def go_to_new_resource_form(context, name):
             When I press "Add new resource"
             And I take a debugging screenshot
         """)
+
+
+@when(u'I fill in title with random text')
+def title_random_text(context):
+    context.execute_steps(u"""
+        When I fill in title with random text starting with "Test Title "
+    """)
+
+
+@when(u'I fill in title with random text starting with "{prefix}"')
+def title_random_text_with_prefix(context, prefix):
+    random_text = str(uuid.uuid4())
+    title = prefix + random_text
+    name = prefix.lower().replace(" ", "-") + random_text
+    assert context.persona
+    context.execute_steps(f"""
+        When I fill in "title" with "{title}"
+        And I fill in "name" with "{name}" if present
+        And I set "last_generated_title" to "{title}"
+        And I set "last_generated_name" to "{name}"
+        And I take a debugging screenshot
+    """)
 
 
 @when(u'I create a resource with name "{name}" and URL "{url}"')
@@ -280,6 +305,141 @@ def go_to_group_including_users(context, group_id, group_type, including):
     context.execute_steps(u"""
         When I visit "/api/3/action/{1}_show?id={0}&include_users={2}"
     """.format(group_id, group_type, including in ['with', 'including']))
+
+
+# Parse a "key=value::key2=value2" parameter string and return an iterator of (key, value) pairs.
+def _parse_params(param_string):
+    params = {}
+    for param in param_string.split("::"):
+        entry = param.split("=", 1)
+        params[entry[0]] = entry[1] if len(entry) > 1 else ""
+    return six.iteritems(params)
+
+
+# Enter a JSON schema value
+# This can require JavaScript interaction, and doesn't fit well into
+# a step invocation due to all the double quotes.
+def _enter_manual_schema(context, schema_json):
+    # Click the button to select manual JSON input if it exists
+    context.execute_steps(u"""
+        When I execute the script "$('a.btn[title*=JSON]:contains(JSON)').click();"
+    """)
+    # Call function directly so we can properly quote our parameter
+    forms.fill_in_elem_by_name(context, "schema_json", schema_json)
+
+
+def _create_dataset_from_params(context, params):
+    context.execute_steps(u"""
+        When I visit "/dataset/new"
+        And I fill in default dataset fields
+    """)
+    if 'private' not in params:
+        params = params + "::private=False"
+    for key, value in _parse_params(params):
+        if key == "name":
+            # 'name' doesn't need special input, but we want to remember it
+            context.execute_steps(u"""
+                When I set "last_generated_name" to "{0}"
+            """.format(value))
+
+        # Don't use elif here, we still want to type 'name' as usual
+        if key == "owner_org":
+            # Owner org uses UUIDs as its values, so we need to rely on displayed text
+            context.execute_steps(u"""
+                When I select the organisation with title "{0}"
+            """.format(value))
+        elif key in ["update_frequency", "request_privacy_assessment", "private"]:
+            context.execute_steps(u"""
+                When I select "{1}" from "{0}"
+            """.format(key, value))
+        elif key == "license_id":
+            context.execute_steps(u"""
+                When I select the "{0}" licence
+            """.format(value))
+        elif key == "schema_json":
+            if value == "default":
+                value = dataset_default_schema
+            _enter_manual_schema(context, value)
+        else:
+            context.execute_steps(u"""
+                When I fill in "{0}" with "{1}" if present
+            """.format(key, value))
+    context.execute_steps(u"""
+        When I take a debugging screenshot
+        And I press "Add Data"
+        Then I should see "Add New Resource"
+    """)
+
+
+@when(u'I create a dataset with key-value parameters "{params}"')
+def create_dataset_from_params(context, params):
+    _create_dataset_from_params(context, params)
+    context.execute_steps(u"""
+        When I go to dataset "$last_generated_name"
+    """)
+
+
+@when(u'I create a dataset and resource with key-value parameters "{params}" and "{resource_params}"')
+def create_dataset_and_resource_from_params(context, params, resource_params):
+    _create_dataset_from_params(context, params)
+    context.execute_steps(u"""
+        When I create a resource with key-value parameters "{0}"
+        Then I should see "Data and Resources"
+    """.format(resource_params))
+
+
+def _is_truthy(text):
+    return text and text.lower() in ["true", "t", "yes", "y"]
+
+
+def _get_yn_value(value, y_value="TRUE", n_value="FALSE"):
+    return y_value if _is_truthy(value) else n_value
+
+
+# Creates a resource using default values apart from the ones specified.
+# The browser should already be on the create/edit resource page.
+@when(u'I create a resource with key-value parameters "{resource_params}"')
+def create_resource_from_params(context, resource_params):
+    context.execute_steps(u"""
+        When I fill in default resource fields
+        And I fill in link resource fields
+    """)
+    for key, value in _parse_params(resource_params):
+        if key == "url":
+            context.execute_steps(u"""
+                When I enter the resource URL "{0}"
+            """.format(value))
+        elif key == "upload":
+            if value == "default":
+                value = "test_game_data.csv"
+            context.execute_steps(u"""
+                When I clear the URL field
+                And I execute the script "$('#resource-upload-button').click();"
+                And I attach the file "{0}" to "upload"
+            """.format(value))
+        elif key == "format":
+            context.execute_steps(u"""
+                When I execute the script "document.getElementById('field-format').value='{0}'"
+            """.format(value))
+        elif key == "schema":
+            if value == "default":
+                value = resource_default_schema
+            _enter_manual_schema(context, value)
+        elif key == "schema_upload":
+            if value == "default":
+                value = "test-resource_schemea.json"
+            context.execute_steps(u"""
+                When I upload schema file "{0}" to resource
+            """.format(value))
+        else:
+            context.execute_steps(u"""
+                When I fill in "{0}" with "{1}" if present
+            """.format(key, value))
+    context.execute_steps(u"""
+        When I take a debugging screenshot
+        And I press the element with xpath "//form[contains(@data-module, 'resource-form')]//button[contains(@class, 'btn-primary')]"
+        And I take a debugging screenshot
+    """)
 
 
 # ckanext-validation

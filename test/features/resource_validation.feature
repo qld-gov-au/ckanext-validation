@@ -4,7 +4,8 @@ Feature: Resource validation
     Scenario: As an editor, I can create and update a resource with an uploaded validation schema
         Given "TestOrgEditor" as the persona
         When I log in
-        And I open the new resource form for dataset "warandpeace"
+        And I create a dataset with key-value parameters "notes=Test uploaded schema"
+        And I open the new resource form for dataset "$last_generated_name"
         And I upload "test.csv" of type "CSV" to resource
         And I fill in "name" with "Test validation schema"
         And I fill in "description" with "Testing validation schema"
@@ -31,7 +32,8 @@ Feature: Resource validation
     Scenario: As an editor, I can create and update a resource with validation options
         Given "TestOrgEditor" as the persona
         When I log in
-        And I open the new resource form for dataset "warandpeace"
+        And I create a dataset with key-value parameters "notes=Test validation options"
+        And I open the new resource form for dataset "$last_generated_name"
         And I upload "test.csv" of type "CSV" to resource
         And I fill in "name" with "Test validation options"
         And I fill in "description" with "Testing validation options"
@@ -58,7 +60,8 @@ Feature: Resource validation
     Scenario: As an editor, I can create a resource with a valid CSV and see a success status
         Given "TestOrgEditor" as the persona
         When I log in
-        And I open the new resource form for dataset "warandpeace"
+        And I create a dataset with key-value parameters "notes=Test valid CSV"
+        And I open the new resource form for dataset "$last_generated_name"
         And I upload "test.csv" of type "CSV" to resource
         And I fill in "name" with "Test valid CSV create"
         And I upload schema file "test_schema.json" to resource
@@ -75,7 +78,8 @@ Feature: Resource validation
     Scenario: As an editor, I can update a resource with a valid CSV and see a success status
         Given "TestOrgEditor" as the persona
         When I log in
-        And I open the new resource form for dataset "warandpeace"
+        And I create a dataset with key-value parameters "notes=Test valid CSV"
+        And I open the new resource form for dataset "$last_generated_name"
         And I upload "invalid.csv" of type "CSV" to resource
         And I fill in "name" with "Test valid CSV update"
         And I fill in "description" with "Testing validation that should pass on update"
@@ -95,7 +99,8 @@ Feature: Resource validation
     Scenario: As an editor, I can update a resource with an invalid CSV and see a validation error
         Given "TestOrgEditor" as the persona
         When I log in
-        And I open the new resource form for dataset "warandpeace"
+        And I create a dataset with key-value parameters "notes=Test invalid CSV"
+        And I open the new resource form for dataset "$last_generated_name"
         And I upload "test.csv" of type "CSV" to resource
         And I fill in "name" with "Test invalid CSV update"
         And I upload schema file "test_schema.json" to resource
