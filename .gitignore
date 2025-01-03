@@ -111,4 +111,4 @@ Dockerfile.ckan
 ## Junit test outputs
 /TESTS*.xml
 /coverage.xml
-
+/reports

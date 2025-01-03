@@ -3,7 +3,7 @@
 import os
 
 from behaving import environment as benv
-
+from splinter.driver.webdriver import BaseWebDriver
 from selenium.webdriver import ChromeOptions
 from selenium.webdriver import Remote
 
@@ -105,8 +105,8 @@ def before_scenario(context, scenario):
     chrome_options.add_argument('--disable-gpu')
 
     # Always use remote browser.
-    remote_browser = Remote(
-        command_executor=REMOTE_CHROME_URL, options=chrome_options
+    remote_browser = BaseWebDriver(Remote(
+        command_executor=REMOTE_CHROME_URL, options=chrome_options)
     )
     for persona_name in PERSONAS.keys():
         context.browsers[persona_name] = remote_browser
