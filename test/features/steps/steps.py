@@ -1,7 +1,7 @@
 from behave import when, then
 from behaving.personas.steps import *  # noqa: F401, F403
 from behaving.web.steps import *  # noqa: F401, F403
-from behaving.web.steps.basic import should_see
+from behaving.web.steps.basic import should_see_within_timeout
 
 
 @when(u'I take a debugging screenshot')
@@ -10,7 +10,7 @@ def debug_screenshot(context):
     """
     if context.persona and context.persona.get('debug') == 'True':
         context.execute_steps(u"""
-            Then I take a screenshot
+            When I take a screenshot
         """)
 
 
@@ -23,7 +23,7 @@ def go_to_home(context):
 
 @then(u'I should see text containing quotes `{text}`')
 def should_see_backquoted(context, text):
-    should_see(context, text)
+    should_see_within_timeout(context, text)
 
 
 @when(u'I go to register page')
@@ -47,7 +47,7 @@ def log_in(context):
 @when(u'I expand the browser height')
 def expand_height(context):
     # Work around x=null bug in Selenium set_window_size
-    context.browser.driver.set_window_rect(x=0, y=0, width=1024, height=4096)
+    context.browser.driver.set_window_rect(x=0, y=0, width=1024, height=3072)
 
 
 @when(u'I log in directly')
@@ -58,10 +58,11 @@ def log_in_directly(context):
     :return:
     """
 
-    assert context.persona, "A persona is required to log in, found [{}] in context. Have you configured the personas in before_scenario?".format(context.persona)
+    assert context.persona, "A persona is required to log in, found [{}] in context." \
+        " Have you configured the personas in before_scenario?".format(context.persona)
     context.execute_steps(u"""
         When I attempt to log in with password "$password"
-        Then I should see an element with xpath "//a[@title='Log out']"
+        Then I should see an element with xpath "//*[@title='Log out' or @data-bs-title='Log out']/i[contains(@class, 'fa-sign-out')]"
     """)
 
 
@@ -73,6 +74,20 @@ def attempt_login(context, password):
         And I fill in "password" with "{}"
         And I press the element with xpath "//button[contains(string(), 'Login')]"
     """.format(password))
+
+
+@when(u'I fill in "{name}" with "{value}" if present')
+def fill_in_field_if_present(context, name, value):
+    context.execute_steps(u"""
+        When I execute the script "field = $('#{0}'); if (!field.length) field = $('[name={0}]'); if (!field.length) field = $('#field-{0}'); field.val('{1}'); field.keyup();"
+    """.format(name, value))
+
+
+@when(u'I clear the URL field')
+def clear_url(context):
+    context.execute_steps(u"""
+        When I execute the script "$('a.btn-remove-url:contains(Clear)').click();"
+    """)
 
 
 @when(u'I open the new resource form for dataset "{name}"')
@@ -87,9 +102,14 @@ def go_to_new_resource_form(context, name):
         """)
     else:
         # Existing dataset, browse to the resource form
+        if context.browser.is_element_present_by_xpath(
+                "//a[contains(string(), 'Resources') and contains(@href, '/dataset/resources/')]"):
+            context.execute_steps(u"""
+                When I press "Resources"
+            """)
         context.execute_steps(u"""
-            When I press "Resources"
-            And I press "Add new resource"
+            When I press "Add new resource"
+            And I take a debugging screenshot
         """)
 
 
@@ -117,6 +137,7 @@ def go_to_dataset_page(context):
 def go_to_dataset(context, name):
     context.execute_steps(u"""
         When I visit "/dataset/{0}"
+        And I take a debugging screenshot
     """.format(name))
 
 
@@ -126,6 +147,81 @@ def edit_dataset(context, name):
         When I go to dataset "{0}"
         And I click the link with text that contains "Manage"
     """.format(name))
+
+
+@when(u'I select the "{licence_id}" licence')
+def select_licence(context, licence_id):
+    # Licence requires special interaction due to fancy JavaScript
+    context.execute_steps(u"""
+        When I execute the script "$('#field-license_id').val('{0}').trigger('change')"
+    """.format(licence_id))
+
+
+@when(u'I select the organisation with title "{title}"')
+def select_organisation(context, title):
+    # Organisation requires special interaction due to fancy JavaScript
+    context.execute_steps(u"""
+        When I execute the script "org_uuid=$('#field-organizations').find('option:contains({0})').val(); $('#field-organizations').val(org_uuid).trigger('change')"
+        And I take a debugging screenshot
+    """.format(title))
+
+
+@when(u'I enter the resource URL "{url}"')
+def enter_resource_url(context, url):
+    if url != "default":
+        context.execute_steps(u"""
+            When I clear the URL field
+            When I execute the script "$('#resource-edit [name=url]').val('{0}')"
+        """.format(url))
+
+
+@when(u'I fill in default dataset fields')
+def fill_in_default_dataset_fields(context):
+    context.execute_steps(u"""
+        When I fill in title with random text
+        And I fill in "notes" with "Description"
+        And I fill in "version" with "1.0"
+        And I fill in "author_email" with "test@me.com"
+        And I select the "other-open" licence
+        And I fill in "de_identified_data" with "NO" if present
+    """)
+
+
+@when(u'I fill in default resource fields')
+def fill_in_default_resource_fields(context):
+    context.execute_steps(u"""
+        When I fill in "name" with "Test Resource"
+        And I fill in "description" with "Test Resource Description"
+        And I fill in "size" with "1024" if present
+    """)
+
+
+@when(u'I fill in link resource fields')
+def fill_in_default_link_resource_fields(context):
+    context.execute_steps(u"""
+        When I enter the resource URL "https://example.com"
+        And I execute the script "document.getElementById('field-format').value='HTML'"
+        And I fill in "size" with "1024" if present
+    """)
+
+
+@when(u'I upload "{file_name}" of type "{file_format}" to resource')
+def upload_file_to_resource(context, file_name, file_format):
+    context.execute_steps(u"""
+        When I execute the script "$('.resource-upload-field .btn-remove-url').trigger('click'); $('#resource-upload-button').trigger('click');"
+        And I attach the file "{file_name}" to "upload"
+        # Don't quote the injected string since it can have trailing spaces
+        And I execute the script "document.getElementById('field-format').value='{file_format}'"
+        And I fill in "size" with "1024" if present
+    """.format(file_name=file_name, file_format=file_format))
+
+
+@when(u'I upload schema file "{file_name}" to resource')
+def upload_schema_file_to_resource(context, file_name):
+    context.execute_steps(u"""
+        When I execute the script "$('div[data-module=resource-schema] a.btn-remove-url').trigger('click'); $('input[name=schema_upload]').show().parent().show().parent().show();"
+        And I attach the file "{file_name}" to "schema_upload"
+    """.format(file_name=file_name))
 
 
 @when(u'I go to organisation page')
