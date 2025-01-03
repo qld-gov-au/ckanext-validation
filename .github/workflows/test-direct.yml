@@ -10,16 +10,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        timeout-minutes: 5
       - uses: actions/setup-python@v5
-        timeout-minutes: 5
         with:
           python-version: '3.10'
       - name: Install requirements
-        timeout-minutes: 5
         run: pip install flake8 pycodestyle
       - name: Check syntax
-        timeout-minutes: 5
         run: flake8
 
   test:
@@ -152,7 +148,7 @@ jobs:
         fi
         echo "::endgroup::"
         
-        pip install test/dev-requirements.txt
+        pip install -r test/dev-requirements.txt
 
     - name: Run BDD tests
       continue-on-error: ${{ matrix.experimental }}
