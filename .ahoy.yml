@@ -165,6 +165,7 @@ commands:
       ahoy title 'Run scenario tests'
       ahoy cli "rm -f test/screenshots/*"
       ahoy start-ckan-job-worker
+      pip install -r test/dev-requirements.txt
       sleep 5
       JUNIT_OUTPUT="--junit --junit-directory=test/junit/"
       ahoy cli "behave $JUNIT_OUTPUT -k ${*:-test/features} $EXTRA_TAGS --tags=${BEHAVE_TAG:--format_autocomplete}" || \

@@ -102,9 +102,9 @@ jobs:
         ckan -c test.ini db init
         ckan -c test.ini validation init-db
 
-#    - name: Run tests
-#      continue-on-error: ${{ matrix.experimental }}
-#      run: pytest --ckan-ini=test.ini --cov=ckanext.validation --cov-report=xml --cov-append --disable-warnings ckanext/validation/tests -vv  --junit-xml=TESTS-results.xml
+    - name: Run tests
+      continue-on-error: ${{ matrix.experimental }}
+      run: pytest --ckan-ini=test.ini --cov=ckanext.validation --cov-report=xml --cov-append --disable-warnings ckanext/validation/tests -vv  --junit-xml=TESTS-results.xml
 
     - name: Config for BDD testing
       run: |
@@ -149,6 +149,11 @@ jobs:
         echo "::endgroup::"
         
         pip install -r test/dev-requirements.txt
+
+    - name: Pin urllib3 for ckan 2.9 only (last urllib3 version that requests is happy with)
+      if: ${{ matrix.ckan-version == 2.9 }}
+      run: pip install "urllib3<1.27"
+      continue-on-error: ${{ matrix.experimental }}
 
     - name: Run BDD tests
       continue-on-error: ${{ matrix.experimental }}
