@@ -63,7 +63,7 @@ jobs:
         image: redis:3
       chrome:
         image: selenium/standalone-chrome:131.0-chromedriver-131.0-grid-4.27.0-20241225
-        options: --shm-size='1gb'
+        options: --shm-size=1gb
 
     env:
       CKAN_SQLALCHEMY_URL: postgresql://ckan_default:pass@postgres/ckan_test
