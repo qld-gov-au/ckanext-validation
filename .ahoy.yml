@@ -165,7 +165,11 @@ commands:
       ahoy title 'Run scenario tests'
       ahoy cli "rm -f test/screenshots/*"
       ahoy start-ckan-job-worker
-      pip install -r test/dev-requirements.txt
+      ahoy cli "pip install -r test/dev-requirements.txt"
+      if [ "$CKAN_VERSION" = "2.9" ]; then
+        echo "CKAN 2.9 last supported urllib3 is less than 1.27"
+        ahoy cli "pip install 'urllib3<1.27'"
+      fi
       sleep 5
       JUNIT_OUTPUT="--junit --junit-directory=test/junit/"
       ahoy cli "behave $JUNIT_OUTPUT -k ${*:-test/features} $EXTRA_TAGS --tags=${BEHAVE_TAG:--format_autocomplete}" || \
