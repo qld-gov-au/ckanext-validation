@@ -14,7 +14,7 @@ Feature: Resource validation
         Then I should see "Test validation schema"
 
         When I click the link with text that contains "Test validation schema"
-        And I click the link with text that contains "Manage"
+        And I press the element with xpath "//div[contains(@class, 'action')]//a[contains(@href, '/resource/') and contains(@href, '/edit')]"
         Then I should see text containing quotes `"fields": [`
         And I should see text containing quotes `"name": "field1"`
         And I should see text containing quotes `"name": "field2"`
@@ -22,7 +22,7 @@ Feature: Resource validation
         And I press the element with xpath "//button[contains(@class, 'btn-primary')]"
         Then I should see "Test validation schema"
         When I click the link with text that contains "Test validation schema"
-        And I click the link with text that contains "Manage"
+        And I press the element with xpath "//div[contains(@class, 'action')]//a[contains(@href, '/resource/') and contains(@href, '/edit')]"
         Then I should see text containing quotes `"fields": [`
         And I should see text containing quotes `"name": "field1"`
         And I should see text containing quotes `"name": "field2"`
@@ -44,17 +44,17 @@ Feature: Resource validation
         Then I should see "Test validation options"
 
         When I click the link with text that contains "Test validation options"
-        And I click the link with text that contains "Manage"
+        And I press the element with xpath "//div[contains(@class, 'action')]//a[contains(@href, '/resource/') and contains(@href, '/edit')]"
         Then I should see text containing quotes `"headers": 1`
 
         When I click the link with text that contains "Test validation options"
-        And I click the link with text that contains "Manage"
+        And I press the element with xpath "//div[contains(@class, 'action')]//a[contains(@href, '/resource/') and contains(@href, '/edit')]"
         And I fill in "validation_options" with "{"delimiter": ","}"
 
         And I press the element with xpath "//button[contains(@class, 'btn-primary')]"
         Then I should see "Test validation options"
         When I click the link with text that contains "Test validation options"
-        And I click the link with text that contains "Manage"
+        And I press the element with xpath "//div[contains(@class, 'action')]//a[contains(@href, '/resource/') and contains(@href, '/edit')]"
         Then I should see text containing quotes `"delimiter": ","`
 
     Scenario: As an editor, I can create a resource with a valid CSV and see a success status
@@ -86,7 +86,7 @@ Feature: Resource validation
         And I press the element with xpath "//button[contains(@class, 'btn-primary')]"
         Then I should see "Test valid CSV update"
         When I click the link with text that contains "Test valid CSV update"
-        And I click the link with text that contains "Manage"
+        And I press the element with xpath "//div[contains(@class, 'action')]//a[contains(@href, '/resource/') and contains(@href, '/edit')]"
         And I upload "test.csv" of type "CSV" to resource
         And I upload schema file "test_schema.json" to resource
         And I press the element with xpath "//button[contains(@class, 'btn-primary')]"
@@ -108,7 +108,7 @@ Feature: Resource validation
         And I press the element with xpath "//button[contains(@class, 'btn-primary')]"
         Then I should see "Test invalid CSV update"
         When I click the link with text that contains "Test invalid CSV update"
-        And I click the link with text that contains "Manage"
+        And I press the element with xpath "//div[contains(@class, 'action')]//a[contains(@href, '/resource/') and contains(@href, '/edit')]"
         And I upload "invalid.csv" of type "CSV" to resource
         And I press the element with xpath "//button[contains(@class, 'btn-primary')]"
         Then I should see "The form contains invalid entries"
