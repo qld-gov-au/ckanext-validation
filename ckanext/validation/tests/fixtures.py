@@ -10,7 +10,7 @@ import ckan.plugins.toolkit as tk
 from ckan.lib import uploader
 from ckan.tests import factories
 
-from ckanext.validation.model import create_tables, tables_exist
+from ckanext.validation.model import create_tables
 from ckanext.validation.tests.helpers import VALID_CSV, MockFileStorage, SCHEMA
 
 
@@ -22,8 +22,7 @@ def validation_setup(monkeypatch, ckan_config, tmpdir):
     monkeypatch.setitem(ckan_config, u'ckan.storage_path', str(tmpdir))
     monkeypatch.setattr(uploader, u'get_storage_path', lambda: str(tmpdir))
 
-    if not tables_exist():
-        create_tables()
+    create_tables()
 
 
 @pytest.fixture

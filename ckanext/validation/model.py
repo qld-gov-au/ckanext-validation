@@ -4,12 +4,12 @@ import datetime
 import uuid
 import logging
 
-from sqlalchemy import Column, Unicode, DateTime
-from sqlalchemy.ext.declarative import declarative_base
+import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSON
 from six import text_type
 
-from ckan.model.meta import metadata
+from ckan import model
+from ckan.model.meta import mapper, metadata
 
 log = logging.getLogger(__name__)
 
@@ -18,36 +18,28 @@ def make_uuid():
     return text_type(uuid.uuid4())
 
 
-Base = declarative_base(metadata=metadata)
+class Validation(model.DomainObject):
+    @classmethod
+    def get(cls, **kw):
+        '''Finds all the instances required.'''
+        query = model.Session.query(cls).autoflush(False)
+        return query.filter_by(**kw).all()
 
 
-class Validation(Base):
-    __tablename__ = u'validation'
+validation_table = sa.Table('validation', metadata,
+                            sa.Column('id', sa.types.UnicodeText, primary_key=True, default=make_uuid),
+                            sa.Column('resource_id', sa.types.UnicodeText, primary_key=False),
+                            sa.Column('status', sa.types.UnicodeText, primary_key=False, default='created'),
+                            sa.Column('created', sa.types.DateTime, primary_key=False, default=datetime.datetime.utcnow),
+                            sa.Column('finished', sa.types.DateTime, primary_key=False),
+                            sa.Column('report', JSON, primary_key=False),
+                            sa.Column('error', JSON, primary_key=False)
+                            )
 
-    id = Column(Unicode, primary_key=True, default=make_uuid)
-    resource_id = Column(Unicode)
-    #  status can be one of these values:
-    #     created: Job created and put onto queue
-    #     running: Job picked up by worker and being processed
-    #     success: Validation Successful and report attached
-    #     failure: Validation Failed and report attached
-    #     error: Validation Job could not create validation report
-    status = Column(Unicode, default=u'created')
-    # created is when job was added
-    created = Column(DateTime, default=datetime.datetime.utcnow)
-    # finished is when report was generated, is None when new or restarted
-    finished = Column(DateTime)
-    # json object of report, can be None
-    report = Column(JSON)
-    # json object of error, can be None
-    error = Column(JSON)
+mapper(Validation, validation_table)
 
 
 def create_tables():
-    Validation.__table__.create()
+    metadata.create_all(model.meta.engine)
 
     log.info(u'Validation database tables created')
-
-
-def tables_exist():
-    return Validation.__table__.exists()
