@@ -4,6 +4,7 @@ version: 2
 updates:
   - package-ecosystem: "pip"
     directory: "/"
+    target-branch: "develop"
     # https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file#insecure-external-code-execution
     # PIP needs this flag.
     insecure-external-code-execution: allow
@@ -19,6 +20,7 @@ updates:
     directories:
      - "/"
      - "/.docker"
+    target-branch: "develop"
     schedule:
       interval: daily
       time: "08:00"
@@ -29,6 +31,7 @@ updates:
 
   - package-ecosystem: "github-actions"
     directory: "/"
+    target-branch: "develop"
     schedule:
       interval: daily
       time: "08:00"
