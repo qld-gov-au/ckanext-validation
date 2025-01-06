@@ -35,10 +35,10 @@ jobs:
             ckan-image: "2.9-py3.9"
             ckan-solr: "2.9-solr8"
             experimental: false
-#          - ckan-version: "master"
-#            ckan-image: "master"
-#            ckan-solr: "master-solr9"
-#            experimental: true  # master is unstable, good to know if we are compatible or not
+          - ckan-version: "master"
+            ckan-image: "master"
+            ckan-solr: "master-solr9"
+            experimental: true  # master is unstable, good to know if we are compatible or not
       fail-fast: false
 
     name: ${{ matrix.experimental && '**Fail_Ignored** ' || '' }} CKAN ${{ matrix.ckan-version }}
@@ -68,48 +68,48 @@ jobs:
       CKAN_REDIS_URL: redis://redis:6379/1
 
     steps:
-    - uses: actions/checkout@v4
-      continue-on-error: ${{ matrix.experimental }}
+      - uses: actions/checkout@v4
+        continue-on-error: ${{ matrix.experimental }}
 
-    - name: Pin setuptools for ckan 2.9 only
-      if: ${{ matrix.ckan-version == 2.9 }}
-      run: pip install "setuptools>=44.1.0,<71"
-      continue-on-error: ${{ matrix.experimental }}
+      - name: Pin setuptools for ckan 2.9 only
+        if: ${{ matrix.ckan-version == 2.9 }}
+        run: pip install "setuptools>=44.1.0,<71"
+        continue-on-error: ${{ matrix.experimental }}
 
-    - name: Install requirements
-      continue-on-error: ${{ matrix.experimental }}
-      run: |
-        pip install -r dev-requirements.txt
-        pip install -r requirements.txt
-        pip install -e .
-        # Replace default path to CKAN core config file with the one on the container
-        sed -i -e 's/use = config:.*/use = config:\/srv\/app\/src\/ckan\/test-core.ini/' test.ini
+      - name: Install requirements
+        continue-on-error: ${{ matrix.experimental }}
+        run: |
+          pip install -r dev-requirements.txt
+          pip install -r requirements.txt
+          pip install -e .
+          # Replace default path to CKAN core config file with the one on the container
+          sed -i -e 's/use = config:.*/use = config:\/srv\/app\/src\/ckan\/test-core.ini/' test.ini
 
-    - name: Pin jinja2 for ckan 2.9 only (last jinja version that had escape class)
-      if: ${{ matrix.ckan-version == 2.9 }}
-      run: pip install "jinja2<3.1"
-      continue-on-error: ${{ matrix.experimental }}
+      - name: Pin jinja2 for ckan 2.9 only (last jinja version that had escape class)
+        if: ${{ matrix.ckan-version == 2.9 }}
+        run: pip install "jinja2<3.1"
+        continue-on-error: ${{ matrix.experimental }}
 
-    - name: Setup extension
-      continue-on-error: ${{ matrix.experimental }}
-      run: |
-        ckan -c test.ini db init
+      - name: Setup extension
+        continue-on-error: ${{ matrix.experimental }}
+        run: |
+          ckan -c test.ini db init
 
-    - name: Run tests
-      continue-on-error: ${{ matrix.experimental }}
-      run: pytest --ckan-ini=test.ini --cov=ckanext.validation --cov-report=xml:coverage.xml --cov-append --disable-warnings ckanext/validation/tests -vv  --junit-xml=/tmp/artifacts/junit/results.xml
+      - name: Run tests
+        continue-on-error: ${{ matrix.experimental }}
+        run: pytest --ckan-ini=test.ini --cov=ckanext.validation --cov-report=xml:coverage.xml --cov-append --disable-warnings ckanext/validation/tests -vv  --junit-xml=/tmp/artifacts/junit/results.xml
 
-    - name: Test Summary
-      uses: test-summary/action@v2
-      continue-on-error: ${{ matrix.experimental }}
-      with:
-        paths: "/tmp/artifacts/junit/*.xml"
-      if: always()
+      - name: Test Summary
+        uses: test-summary/action@v2
+        continue-on-error: ${{ matrix.experimental }}
+        with:
+          paths: "/tmp/artifacts/junit/*.xml"
+        if: always()
 
-    - name: "Upload coverage report to codecov flag: ${{ matrix.ckan-version }}"
-      uses: codecov/codecov-action@v5
-      continue-on-error: ${{ matrix.experimental }}
-      with:
-        file: ./coverage.xml
-        token: ${{ secrets.CODECOV_TOKEN }}
-        flags: "${{ matrix.ckan-version }}"
+      - name: "Upload coverage report to codecov flag: ${{ matrix.ckan-version }}"
+        uses: codecov/codecov-action@v5
+        continue-on-error: ${{ matrix.experimental }}
+        with:
+          file: ./coverage.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
+          flags: "${{ matrix.ckan-version }}"
