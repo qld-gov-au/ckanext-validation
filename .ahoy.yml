@@ -8,13 +8,29 @@ commands:
     usage: Build or rebuild project.
     cmd: |
       ahoy title "Building project"
+      echo "::group::pre-flight"
       ahoy pre-flight
+      echo "::endgroup::"
+      
+      echo "::group::clean"
       ahoy clean
+      echo "::endgroup::"
+      
+      echo "::group::network"
       ahoy build-network
+      echo "::endgroup::"
+      
+      echo "::group::build"
       ahoy up -- --build --force-recreate
       ahoy title "Build complete"
+      echo "::endgroup::"
+      
+      echo "::group::doctor"
       ahoy doctor
+      echo "::endgroup::"
+      echo "::group::info"
       ahoy info 1
+      echo "::endgroup::"
 
   build-network:
     usage: Ensure that the amazeeio network exists.
@@ -68,7 +84,13 @@ commands:
     usage: Show Docker logs.
     cmd: |
         ahoy title "Output logs"
-        sh bin/docker-compose.sh logs "$@"
+        # Loop through each container and wrap with github log groups
+        services=$(bin/docker-compose.sh ps --services)
+        for service in $services; do
+          echo "::group::$service"
+          sh bin/docker-compose.sh logs "$service"
+          echo "::endgroup::"
+        done
 
   pull:
     usage: Pull latest docker images.
@@ -134,7 +156,7 @@ commands:
     usage: Run unit tests.
     cmd: |
       ahoy title 'Run unit tests'
-      ahoy cli 'pytest --ckan-ini=${CKAN_INI} "${APP_DIR}"/ckanext --junit-xml=test/junit/results.xml' || \
+      ahoy cli 'pytest --cov-report=xml --cov-append --ckan-ini=${CKAN_INI} "${APP_DIR}"/ckanext --junit-xml=test/junit/results.xml' || \
       [ "${ALLOW_UNIT_FAIL:-0}" -eq 1 ]
 
   test-bdd:
@@ -143,6 +165,11 @@ commands:
       ahoy title 'Run scenario tests'
       ahoy cli "rm -f test/screenshots/*"
       ahoy start-ckan-job-worker
+      ahoy cli "pip install -r test/dev-requirements.txt"
+      if [ "$CKAN_VERSION" = "2.9" ]; then
+        echo "CKAN 2.9 last supported urllib3 is less than 1.27"
+        ahoy cli "pip install 'urllib3<1.27'"
+      fi
       sleep 5
       JUNIT_OUTPUT="--junit --junit-directory=test/junit/"
       ahoy cli "behave $JUNIT_OUTPUT -k ${*:-test/features} $EXTRA_TAGS --tags=${BEHAVE_TAG:--format_autocomplete}" || \

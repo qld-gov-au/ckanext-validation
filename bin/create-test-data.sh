@@ -4,6 +4,14 @@
 #
 set -ex
 
+# Set APP_DIR if not already set
+
+# Set path to source bin if not found on path
+if ! type ckan_cli &> /dev/null; then
+  APP_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+  export PATH=${APP_DIR}/bin:$PATH
+fi
+
 CKAN_ACTION_URL=${CKAN_SITE_URL}api/action
 CKAN_USER_NAME="${CKAN_USER_NAME:-admin}"
 CKAN_DISPLAY_NAME="${CKAN_DISPLAY_NAME:-Administrator}"
@@ -51,8 +59,8 @@ TEST_ORG=$( \
     api_call '{"name": "'"${TEST_ORG_NAME}"'", "title": "'"${TEST_ORG_TITLE}"'",
         "description": "Organisation for testing issues"}' organization_create
 )
-
-TEST_ORG_ID=$(echo $TEST_ORG | $PYTHON "${APP_DIR}"/bin/extract-id.py)
+#echo $TEST_ORG
+TEST_ORG_ID=$(echo $TEST_ORG | ${PYTHON-python3} "${APP_DIR}"/bin/extract-id.py)
 
 echo "Assigning test users to '${TEST_ORG_TITLE}' organisation (${TEST_ORG_ID}):"
 
@@ -65,9 +73,5 @@ api_call '{"id": "'"${TEST_ORG_ID}"'", "object": "test_org_member", "object_type
 ##
 # END.
 #
-
-# Creating basic test data which has datasets with resources
-api_call '{"name": "warandpeace", "owner_org": "'"${TEST_ORG_ID}"'",
-"author_email": "admin@localhost", "license_id": "other-open", "notes": "test"}' package_create
 
 . "${APP_DIR}"/bin/deactivate

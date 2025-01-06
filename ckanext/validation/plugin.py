@@ -13,7 +13,6 @@ from ckan.lib.plugins import DefaultTranslation
 from . import settings as s, cli, utils, validators, views
 from .helpers import get_helpers
 from .logic import action, auth
-from .model import tables_exist
 
 log = logging.getLogger(__name__)
 
@@ -51,16 +50,6 @@ class ValidationPlugin(p.SingletonPlugin, DefaultTranslation):
     # IConfigurer
 
     def update_config(self, config_):
-        if not tables_exist():
-            init_command = 'ckan validation init-db'
-            log.critical(u'''
-The validation extension requires a database setup.
-Validation pages will not be enabled.
-Please run the following to create the database tables:
-    %s''', init_command)
-        else:
-            log.debug(u'Validation tables exist')
-
         tk.add_template_directory(config_, u'templates')
         tk.add_resource(u'webassets', 'ckanext-validation')
 
