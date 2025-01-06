@@ -2,6 +2,7 @@
 
 import io
 import json
+from faker import Faker
 
 import responses
 import mock
@@ -74,7 +75,7 @@ class TestValidationJob(object):
                             mock_validate, dataset):
         json_schema = json.dumps(SCHEMA)
         resource = {
-            'id': 'test',
+            'id': Faker().uuid4(),
             'url': 'http://example.com/file.csv',
             'format': 'csv',
             'schema': json_schema,
@@ -101,7 +102,7 @@ class TestValidationJob(object):
                                    mock_commit, mock_uploader, mock_validate,
                                    dataset):
         resource = {
-            'id': 'test',
+            'id': Faker().uuid4(),
             'url': '__upload',
             'url_type': 'upload',
             'format': 'csv',

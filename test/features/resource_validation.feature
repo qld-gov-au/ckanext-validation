@@ -11,7 +11,7 @@ Feature: Resource validation
         And I fill in "description" with "Testing validation schema"
         And I upload schema file "test_schema.json" to resource
         And I press the element with xpath "//button[contains(@class, 'btn-primary')]"
-        Then I should see "Test validation schema"
+        Then I should see "Test validation schema" within 2 seconds
 
         When I click the link with text that contains "Test validation schema"
         And I press the element with xpath "//div[contains(@class, 'action')]//a[contains(@href, '/resource/') and contains(@href, '/edit')]"
@@ -20,7 +20,7 @@ Feature: Resource validation
         And I should see text containing quotes `"name": "field2"`
         When I upload schema file "test_schema2.json" to resource
         And I press the element with xpath "//button[contains(@class, 'btn-primary')]"
-        Then I should see "Test validation schema"
+        Then I should see "Test validation schema" within 2 seconds
         When I click the link with text that contains "Test validation schema"
         And I press the element with xpath "//div[contains(@class, 'action')]//a[contains(@href, '/resource/') and contains(@href, '/edit')]"
         Then I should see text containing quotes `"fields": [`
@@ -41,7 +41,7 @@ Feature: Resource validation
         And I fill in "validation_options" with "{"headers": 1}"
         And I execute the script "document.getElementById('field-format').value='CSV'"
         And I press the element with xpath "//button[contains(@class, 'btn-primary')]"
-        Then I should see "Test validation options"
+        Then I should see "Test validation options" within 2 seconds
 
         When I click the link with text that contains "Test validation options"
         And I press the element with xpath "//div[contains(@class, 'action')]//a[contains(@href, '/resource/') and contains(@href, '/edit')]"
@@ -52,7 +52,7 @@ Feature: Resource validation
         And I fill in "validation_options" with "{"delimiter": ","}"
 
         And I press the element with xpath "//button[contains(@class, 'btn-primary')]"
-        Then I should see "Test validation options"
+        Then I should see "Test validation options" within 2 seconds
         When I click the link with text that contains "Test validation options"
         And I press the element with xpath "//div[contains(@class, 'action')]//a[contains(@href, '/resource/') and contains(@href, '/edit')]"
         Then I should see text containing quotes `"delimiter": ","`
@@ -68,11 +68,11 @@ Feature: Resource validation
         And I fill in "description" with "Testing validation that should pass"
         And I execute the script "document.getElementById('field-format').value='CSV'"
         And I press the element with xpath "//button[contains(@class, 'btn-primary')]"
-        Then I should see "Test valid CSV"
+        Then I should see "Test valid CSV" within 2 seconds
         When I click the link with text that contains "Test valid CSV"
-        Then I should see "Validation status"
-        And I should see "success"
-        And I should not see "failure"
+        Then I should see "Validation status" within 2 seconds
+        And I should see "success" within 2 seconds
+        And I should not see "failure" within 2 seconds
         And I should see a validation timestamp
 
     Scenario: As an editor, I can update a resource with a valid CSV and see a success status
@@ -84,16 +84,16 @@ Feature: Resource validation
         And I fill in "name" with "Test valid CSV update"
         And I fill in "description" with "Testing validation that should pass on update"
         And I press the element with xpath "//button[contains(@class, 'btn-primary')]"
-        Then I should see "Test valid CSV update"
+        Then I should see "Test valid CSV update" within 2 seconds
         When I click the link with text that contains "Test valid CSV update"
         And I press the element with xpath "//div[contains(@class, 'action')]//a[contains(@href, '/resource/') and contains(@href, '/edit')]"
         And I upload "test.csv" of type "CSV" to resource
         And I upload schema file "test_schema.json" to resource
         And I press the element with xpath "//button[contains(@class, 'btn-primary')]"
         And I click the link with text that contains "Test valid CSV update"
-        Then I should see "Validation status"
-        And I should see "success"
-        And I should not see "failure"
+        Then I should see "Validation status" within 2 seconds
+        And I should see "success" within 2 seconds
+        And I should not see "failure" within 2 seconds
         And I should see a validation timestamp
 
     Scenario: As an editor, I can update a resource with an invalid CSV and see a validation error
@@ -106,15 +106,15 @@ Feature: Resource validation
         And I upload schema file "test_schema.json" to resource
         And I fill in "description" with "Testing validation that should fail on update"
         And I press the element with xpath "//button[contains(@class, 'btn-primary')]"
-        Then I should see "Test invalid CSV update"
+        Then I should see "Test invalid CSV update" within 2 seconds
         When I click the link with text that contains "Test invalid CSV update"
         And I press the element with xpath "//div[contains(@class, 'action')]//a[contains(@href, '/resource/') and contains(@href, '/edit')]"
         And I upload "invalid.csv" of type "CSV" to resource
         And I press the element with xpath "//button[contains(@class, 'btn-primary')]"
-        Then I should see "The form contains invalid entries"
-        And I should see "There are validation issues with this file"
+        Then I should see "The form contains invalid entries" within 2 seconds
+        And I should see "There are validation issues with this file" within 2 seconds
         When I click the link with text that contains "report"
-        Then I should see "Data Validation Report"
-        And I should see "Incorrect Label"
-        And I should see "Extra Label"
-        And I should see "Extra Cell"
+        Then I should see "Data Validation Report" within 2 seconds
+        And I should see "Incorrect Label" within 2 seconds
+        And I should see "Extra Label" within 2 seconds
+        And I should see "Extra Cell" within 2 seconds
