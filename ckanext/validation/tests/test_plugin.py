@@ -154,7 +154,7 @@ class TestPackageControllerHooksCreate(object):
 
     def test_validation_run_with_upload(self, mock_enqueue):
         resource = {
-            'id': 'test-resource-id',
+            'id': 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
             'format': 'CSV',
             'url_type': 'upload',
             'schema': helpers.SCHEMA
@@ -165,7 +165,7 @@ class TestPackageControllerHooksCreate(object):
 
     def test_validation_run_with_url(self, mock_enqueue):
         resource = {
-            'id': 'test-resource-id',
+            'id': 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
             'format': 'CSV',
             'url': 'http://some.data',
             'schema': helpers.SCHEMA
@@ -178,13 +178,13 @@ class TestPackageControllerHooksCreate(object):
     def test_validation_run_only_supported_formats(self, mock_enqueue):
 
         resource1 = {
-            'id': 'test-resource-id-1',
+            'id': 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
             'format': 'CSV',
             'url': 'http://some.data',
             'schema': helpers.SCHEMA
         }
         resource2 = {
-            'id': 'test-resource-id-2',
+            'id': 'ffffffff-0000-1111-2222-333333333333',
             'format': 'PDF',
             'url': 'http://some.doc',
             'schema': helpers.SCHEMA
@@ -220,7 +220,7 @@ class TestPackageControllerHooksUpdate(object):
     def test_validation_does_not_run_on_other_formats(self, mock_enqueue):
 
         resource = {
-            'id': 'test-resource-id',
+            'id': 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
             'format': 'PDF',
             'url': 'http://some.doc'
         }
@@ -237,13 +237,13 @@ class TestPackageControllerHooksUpdate(object):
     def test_validation_run_only_supported_formats(self, mock_enqueue):
 
         resource1 = {
-            'id': 'test-resource-id-1',
+            'id': 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
             'format': 'CSV',
             'url': 'http://some.data',
             'schema': helpers.SCHEMA
         }
         resource2 = {
-            'id': 'test-resource-id-2',
+            'id': 'ffffffff-0000-1111-2222-333333333333',
             'format': 'PDF',
             'url': 'http://some.doc',
             'schema': helpers.SCHEMA
