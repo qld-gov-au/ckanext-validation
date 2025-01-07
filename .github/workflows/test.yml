@@ -12,17 +12,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v3
-        timeout-minutes: 2
-      - uses: actions/setup-python@v4
-        timeout-minutes: 5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.x'
       - name: Install requirements
-        timeout-minutes: 5
         run: pip install flake8 pycodestyle
       - name: Check syntax
-        timeout-minutes: 5
         run: flake8
 
   test:
@@ -30,40 +26,86 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ckan-version: ["2.10", 2.9]
+        include: #ckan-image see https://github.com/ckan/ckan-docker-base, ckan-version controls other image tags
+          - ckan-version: "2.11"
+            solr-version: "9"
+            experimental: false
+          - ckan-version: "2.10"
+            solr-version: "9"
+            experimental: false
+          - ckan-version: "2.9"
+            solr-version: "8"
+            experimental: false
+          - ckan-version: "master"
+            solr-version: "9"
+            experimental: true
 
-    name: Continuous Integration build on CKAN ${{ matrix.ckan-version }}
+    name: ${{ matrix.experimental && '**Fail_Ignored** ' || '' }} CKAN ${{ matrix.ckan-version }} - Continuous Integration build
     runs-on: ubuntu-latest
-    container: drevops/ci-builder:23.7.0
+    container: drevops/ci-runner:23.12.0
     env:
       CKAN_VERSION: ${{ matrix.ckan-version }}
+      SOLR_VERSION: ${{ matrix.solr-version }}
 
     steps:
-      - uses: actions/checkout@v3
+      # Patch https://github.com/actions/runner/issues/863
+      - name: Preserve $HOME set in the container
+        run: echo HOME=/root >> "$GITHUB_ENV"
+
+      - uses: actions/checkout@v4
+        continue-on-error: ${{ matrix.experimental }}
         timeout-minutes: 2
 
       - name: Build
         run: bin/build.sh
         timeout-minutes: 15
+        continue-on-error: ${{ matrix.experimental }}
 
       - name: Test
         run: bin/test.sh
         timeout-minutes: 20
+        continue-on-error: ${{ matrix.experimental }}
 
       - name: Retrieve logs
         if: always()
         run: ahoy logs
         timeout-minutes: 1
+        continue-on-error: ${{ matrix.experimental }}
 
-      - name: Retrieve screenshots
+      - name: Retrieve results
         if: always()
         run: bin/process-artifacts.sh
         timeout-minutes: 1
+        continue-on-error: ${{ matrix.experimental }}
+
+      - name: Test Summary
+        uses: test-summary/action@v2
+        continue-on-error: ${{ matrix.experimental }}
+        with:
+          paths: "/tmp/artifacts/junit/*.xml"
+        if: always()
 
       - name: Upload screenshots
-        if: failure()
-        uses: actions/upload-artifact@v3
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
           name: CKAN ${{ matrix.ckan-version }} screenshots
           path: /tmp/artifacts/behave/screenshots
         timeout-minutes: 1
+        continue-on-error: ${{ matrix.experimental }}
+
+
+      - name: Test Summary
+        uses: test-summary/action@v2
+        continue-on-error: ${{ matrix.experimental }}
+        with:
+          paths: "TESTS-*.xml"
+        if: always()
+
+      - name: "Upload coverage report to codecov flag: ${{ matrix.ckan-version }}"
+        uses: codecov/codecov-action@v5
+        continue-on-error: ${{ matrix.experimental }}
+        with:
+          file: ./coverage.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
+          flags: "${{ matrix.ckan-version }}"

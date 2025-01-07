@@ -15,9 +15,9 @@ for i in `seq 1 60`; do
     fi
 done
 
-. ${APP_DIR}/bin/activate
+. "${APP_DIR}"/bin/activate
 if (which ckan > /dev/null); then
-    ckan -c ${CKAN_INI} run -r -t
+    ckan -c ${CKAN_INI} run --disable-reloader --threaded
 else
     paster serve ${CKAN_INI}
 fi

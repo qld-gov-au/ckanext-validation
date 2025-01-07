@@ -7,18 +7,17 @@ import os
 import ckantoolkit as tk
 
 import ckan.plugins as p
+
 from ckan.lib.plugins import DefaultTranslation
 
-from . import settings as s, utils, validators
-from .helpers import _get_helpers
+from . import settings as s, cli, utils, validators, views
+from .helpers import get_helpers
 from .logic import action, auth
-from .model import tables_exist
-from .plugin_mixins.flask_plugin import MixinPlugin
 
 log = logging.getLogger(__name__)
 
 
-class ValidationPlugin(MixinPlugin, p.SingletonPlugin, DefaultTranslation):
+class ValidationPlugin(p.SingletonPlugin, DefaultTranslation):
     p.implements(p.IConfigurer)
     p.implements(p.IActions)
     p.implements(p.IAuthFunctions)
@@ -27,6 +26,18 @@ class ValidationPlugin(MixinPlugin, p.SingletonPlugin, DefaultTranslation):
     p.implements(p.ITemplateHelpers)
     p.implements(p.IValidators)
     p.implements(p.ITranslation, inherit=True)
+    p.implements(p.IClick)
+    p.implements(p.IBlueprint)
+
+    # IClick
+
+    def get_commands(self):
+        return cli.get_commands()
+
+    # IBlueprint
+
+    def get_blueprint(self):
+        return views.get_blueprints()
 
     # ITranslation
     def i18n_directory(self):
@@ -39,14 +50,6 @@ class ValidationPlugin(MixinPlugin, p.SingletonPlugin, DefaultTranslation):
     # IConfigurer
 
     def update_config(self, config_):
-        if not tables_exist():
-            init_command = 'ckan validation init-db'
-            log.critical(u'''
-The validation extension requires a database setup.
-Validation pages will not be enabled.
-Please run the following to create the database tables:
-    %s''', init_command)
-
         tk.add_template_directory(config_, u'templates')
         tk.add_resource(u'webassets', 'ckanext-validation')
 
@@ -63,7 +66,7 @@ Please run the following to create the database tables:
     # ITemplateHelpers
 
     def get_helpers(self):
-        return _get_helpers()
+        return get_helpers()
 
     # IValidators
 
@@ -209,6 +212,9 @@ Please run the following to create the database tables:
 
             utils.validate_resource(context, resource)
 
+    # IPackageController
+
+    # CKAN < 2.10
     def before_index(self, index_dict):
         if (self._data_dict_is_dataset(index_dict)):
             return self.before_dataset_index(index_dict)
