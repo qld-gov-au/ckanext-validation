@@ -1,0 +1,7 @@
+ckantoolkit>=0.0.4
+frictionless==5.18.0
+six>=1.13.0
+markupsafe
+jinja2<3
+tableschema
+ckanext-scheming
