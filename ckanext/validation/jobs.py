@@ -153,7 +153,13 @@ def validate_table(source, _format=u'csv', schema=None, **options):
         http_session.proxies.update({'http': proxy, 'https': proxy})
 
     frictionless_context['http_session'] = http_session
-    resource_schema = Schema.from_descriptor(schema) if schema else None
+    resource_schema = None
+    if schema:
+        if hasattr(Schema, 'from_descriptor'):
+            # Frictionless 5+
+            resource_schema = Schema.from_descriptor(schema)
+        else:
+            resource_schema = Schema.from_jsonschema(schema)
 
     # Goodtable's conversion to dialect for backwards compatability
     if any(options.get(key) for key in ['headers', 'skip_rows', 'delimiter']):
