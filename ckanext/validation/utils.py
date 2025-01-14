@@ -402,11 +402,14 @@ def is_uploaded_file(upload):
 
 
 def validation_dictize(validation):
+    report = validation.report
+    if not isinstance(report, dict):
+        report = json.loads(str(report))
     out = {
         'id': validation.id,
         'resource_id': validation.resource_id,
         'status': validation.status,
-        'report': validation.report,
+        'report': report,
         'error': validation.error,
     }
     out['created'] = (validation.created.isoformat()
