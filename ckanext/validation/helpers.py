@@ -47,10 +47,16 @@ def get_validation_badge(resource, in_listing=False):
         'unknown': _('unknown'),
     }
 
-    if resource['validation_status'] in ['success', 'failure', 'error']:
+    messages = {
+        'success': _('Valid data'),
+        'failure': _('Invalid data'),
+        'invalid': _('invalid data'),
+        'error': _('Error during validation'),
+        'unknown': _('Data validation unknown'),
+    }
+
+    if resource['validation_status'] in ['success', 'failure',  'invalid', 'error']:
         status = resource['validation_status']
-        if status == 'failure':
-            status = 'invalid'
     else:
         status = 'unknown'
 
@@ -62,13 +68,14 @@ def get_validation_badge(resource, in_listing=False):
         resource_id=resource['id'])
 
     return u'''
-<a href="{validation_url}" class="validation-badge" title="{title}">
+<a href="{validation_url}" class="validation-badge" title="{alt} {title}">
     <span class="prefix">{prefix}</span><span class="status {status}">{status_title}</span>
 </a>'''.format(
         validation_url=validation_url,
         prefix=_('data'),
         status=status,
         status_title=statuses[status],
+        alt=messages[status],
         title=resource.get('validation_timestamp', ''))
 
 

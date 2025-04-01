@@ -31,14 +31,6 @@ class TestPlugin(p.SingletonPlugin):
 
         return True
 
-    def set_create_mode(self, context, data_dict, current_mode):
-        is_async = data_dict.get('async')
-        return settings.ASYNC_MODE if is_async else current_mode
-
-    def set_update_mode(self, context, data_dict, current_mode):
-        is_async = data_dict.get('async')
-        return settings.ASYNC_MODE if is_async else current_mode
-
     # IPipeValidation
 
     def receive_validation_report(self, validation_report):
