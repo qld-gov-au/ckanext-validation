@@ -1,8 +1,14 @@
+# encoding: utf-8
+
+import io
+import json
 import pytest
 
 from ckan.tests.helpers import change_config
 
-from ckanext.validation import settings as s
+from ckanext.validation import settings as s, utils
+
+from .helpers import MockFileStorage, SCHEMA
 
 
 class TestConfigValidationMode(object):
@@ -57,3 +63,60 @@ class TestConfigSupportedFormats(object):
     @change_config(s.SUPPORTED_FORMATS_KEY, "csv xlsx")
     def test_set_supported_formats(self):
         assert s.get_supported_formats() == ["csv", "xlsx"]
+
+
+class TestProcessingSchemaFields(object):
+
+    schema_url = 'https://github.com/qld-gov-au/ckanext-validation/raw/refs/heads/master/test/fixtures/test_schema.json'
+    mock_schema_json = '{"fields": [{"type": "integer", "name": "foo", "format": "default"}]}'
+    mock_schema = '{"fields": [{"type": "string", "name": "baz", "format": "default"}]}'
+
+    def test_schema_upload_populates_schema_first(self):
+        data_dict = {
+            'schema_upload': MockFileStorage(io.StringIO(json.dumps(SCHEMA)), "mock-schema-upload"),
+            'schema_url': self.schema_url,
+            'schema_json': self.mock_schema_json,
+            'schema': self.mock_schema
+        }
+
+        result = utils.process_schema_fields(data_dict)
+        assert json.loads(result['schema']) == SCHEMA
+
+    def test_schema_url_populates_schema_second(self):
+        data_dict = {
+            'schema_upload': None,
+            'schema_url': self.schema_url,
+            'schema_json': self.mock_schema_json,
+            'schema': self.mock_schema
+        }
+
+        result = utils.process_schema_fields(data_dict)
+        assert result['schema'] == {"fields": [{"name": "field1", "type": "string"}, {"name": "field2", "type": "string"}]}
+
+    def test_schema_json_populates_schema_third(self):
+        data_dict = {
+            'schema_upload': None,
+            'schema_url': None,
+            'schema_json': self.mock_schema_json,
+            'schema': self.mock_schema
+        }
+
+        result = utils.process_schema_fields(data_dict)
+        assert result['schema'] == self.mock_schema_json
+
+    def test_schema_is_retained_without_other_fields(self):
+        data_dict = {
+            'schema': self.mock_schema
+        }
+
+        result = utils.process_schema_fields(data_dict)
+        assert result['schema'] == self.mock_schema
+
+    def test_schema_is_overwritten_by_empty_json_field(self):
+        data_dict = {
+            'schema_json': ' ',
+            'schema': self.mock_schema
+        }
+
+        result = utils.process_schema_fields(data_dict)
+        assert not result['schema']
