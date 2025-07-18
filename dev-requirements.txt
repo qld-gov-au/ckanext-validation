@@ -4,7 +4,6 @@ Appium-Python-Client==2.10.1
 ckanapi>=4.3
 flake8==3.8.3
 mock
-pyfakefs==2.7
 pytest-ckan
 pytest-cov
 selenium==4.8.2
