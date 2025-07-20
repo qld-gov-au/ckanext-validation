@@ -35,9 +35,9 @@ def process_schema_fields(data_dict):
     1. If `schema_upload` is provided and it's a valid file, the contents
         are read into `schema`.
     2. If `schema_url` is provided and looks like a valid URL, it's copied
-        to `schema`
-    3. If `schema_json` is provided, it's copied to `schema`.
-    4. If `schema_json` is provided but blank, the schema is deleted.
+        to `schema`.
+    3. If `schema_json` is present, even if blank or empty, it's stripped of
+        leading/trailing whitespace and copied to `schema`.
 
     All the 3 `schema_*` fields are removed from the data_dict.
     Note that the data_dict still needs to pass validation
