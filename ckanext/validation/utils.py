@@ -71,12 +71,8 @@ def process_schema_fields(data_dict):
 
         data_dict[u'schema'] = schema
 
-    elif schema_json:
-        data_dict[u'schema'] = schema_json
-
     elif has_schema_json:
-        # Blank schema was explicitly sent through, delete the schema
-        data_dict[u'schema'] = None
+        data_dict[u'schema'] = schema_json
 
     if not data_dict.get('schema'):
         return data_dict
