@@ -11,8 +11,14 @@ INVALID_CSV = b'''a,b,c,d
 1,2,3
 '''
 VALID_CSV = b'''a,b,c,d
-1,2,3,4
+1,2,foo,4
 '''
+
+# Test a string that eventually contains Windows encoding
+# but not within the first 10000 characters.
+LATIN1_CSV = '''a,b,c,d
+1,2,{}CAFÚ VILA FRANCA,4
+'''.format('a' * 10000).encode(encoding='iso-8859-1', errors='strict')
 
 SCHEMA = {
     "fields": [{
@@ -24,7 +30,7 @@ SCHEMA = {
         "name": "b",
         "format": "default"
     }, {
-        "type": "integer",
+        "type": "string",
         "name": "c",
         "format": "default"
     }, {

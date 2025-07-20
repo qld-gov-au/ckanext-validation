@@ -16,6 +16,10 @@ ahoy pull
 
 PYTHON=python3
 PYTHON_VERSION=py3
+SOLR_VERSION=9
+if [ "$CKAN_VERSION" = "2.10" ]; then
+    SOLR_VERSION=8
+fi
 
 sed "s|{CKAN_VERSION}|$CKAN_VERSION|g" .docker/Dockerfile-template.ckan \
     | sed "s|{SOLR_VERSION}|$SOLR_VERSION|g" \
@@ -23,4 +27,5 @@ sed "s|{CKAN_VERSION}|$CKAN_VERSION|g" .docker/Dockerfile-template.ckan \
     | sed "s|{PYTHON}|$PYTHON|g" \
     > .docker/Dockerfile.ckan
 
+export SOLR_VERSION
 ahoy build

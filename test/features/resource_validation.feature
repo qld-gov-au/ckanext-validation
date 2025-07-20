@@ -114,7 +114,7 @@ Feature: Resource validation
         Then I should see "The form contains invalid entries" within 2 seconds
         And I should see "There are validation issues with this file" within 2 seconds
         When I click the link with text that contains "report"
-        Then I should see "Data Validation Report" within 2 seconds
+        Then I should see "Validation Report" within 2 seconds
         And I should see "Incorrect Label" within 2 seconds
         And I should see "Extra Label" within 2 seconds
         And I should see "Extra Cell" within 2 seconds
