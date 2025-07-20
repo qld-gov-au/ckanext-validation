@@ -20,6 +20,10 @@ from ckanext.validation.validation_status_helper import (ValidationStatusHelper,
 log = logging.getLogger(__name__)
 
 
+def _ensure_report_dict(report):
+    return report.to_dict() if isinstance(report, Report) else report
+
+
 def run_validation_job(resource):
     vsh = ValidationStatusHelper()
     # handle either a resource dict or just an ID
@@ -83,11 +87,7 @@ def run_validation_job(resource):
 
     _format = resource[u'format'].lower()
 
-    report = validate_table(source, _format=_format, schema=schema, **options)
-
-    # Hide uploaded files
-    if isinstance(report, Report):
-        report = report.to_dict()
+    report = _ensure_report_dict(validate_table(source, _format=_format, schema=schema, **options))
 
     if 'tasks' in report:
         for table in report['tasks']:
@@ -141,6 +141,16 @@ def contains_major_error(data):
     return False
 
 
+def _report_has_encoding_error(report):
+    report = _ensure_report_dict(report)
+    if 'tasks' not in report:
+        return False
+    for task in report['tasks']:
+        if task['errors'] and task['errors'][0]['type'] == 'encoding-error':
+            return True
+    return False
+
+
 def validate_table(source, _format=u'csv', schema=None, **options):
 
     # This option is needed to allow Frictionless Framework to validate absolute paths
@@ -184,5 +194,10 @@ def validate_table(source, _format=u'csv', schema=None, **options):
     with system.use_context(**frictionless_context):
         log.debug(u'Validating source: %s', source)
         report = validate(source, format=_format, schema=resource_schema, **options)
+        if _report_has_encoding_error(report):
+            log.warn(u'Default encoding failed, attempting ISO-8859-1')
+            fallback_report = validate(source, format=_format, encoding='iso-8859-1', schema=resource_schema, **options)
+            if not _report_has_encoding_error(fallback_report):
+                report = fallback_report
 
     return report

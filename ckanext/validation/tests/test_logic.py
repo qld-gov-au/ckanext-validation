@@ -19,6 +19,7 @@ from ckanext.validation.model import Validation
 from .helpers import (
     VALID_CSV,
     INVALID_CSV,
+    LATIN1_CSV,
     SCHEMA,
     VALID_REPORT,
     MockFileStorage,
@@ -291,6 +292,21 @@ class TestResourceValidationOnCreate(object):
         dataset = factories.Dataset()
 
         mock_upload = MockFileStorage(io.BytesIO(VALID_CSV), 'valid.csv')
+
+        resource = call_action('resource_create',
+                               package_id=dataset['id'],
+                               format='csv',
+                               upload=mock_upload,
+                               url_type='upload',
+                               schema=SCHEMA)
+
+        assert resource['validation_status'] == 'success'
+        assert 'validation_timestamp' in resource
+
+    def test_validation_passes_on_upload_with_latin_encoding(self):
+        dataset = factories.Dataset()
+
+        mock_upload = MockFileStorage(io.BytesIO(LATIN1_CSV), 'latin1.csv')
 
         resource = call_action('resource_create',
                                package_id=dataset['id'],
