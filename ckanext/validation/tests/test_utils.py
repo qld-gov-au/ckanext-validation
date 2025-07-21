@@ -65,6 +65,12 @@ class TestConfigSupportedFormats(object):
         assert s.get_supported_formats() == ["csv", "xlsx"]
 
 
+def _assert_schema_inputs_cleared(data_dict):
+    assert 'schema_upload' not in data_dict
+    assert 'schema_url' not in data_dict
+    assert 'schema_json' not in data_dict
+
+
 class TestProcessingSchemaFields(object):
 
     schema_url = 'https://github.com/qld-gov-au/ckanext-validation/raw/refs/heads/master/test/fixtures/test_schema.json'
@@ -81,6 +87,7 @@ class TestProcessingSchemaFields(object):
 
         result = utils.process_schema_fields(data_dict)
         assert json.loads(result['schema']) == SCHEMA
+        _assert_schema_inputs_cleared(data_dict)
 
     def test_schema_url_populates_schema_second(self):
         data_dict = {
@@ -92,6 +99,7 @@ class TestProcessingSchemaFields(object):
 
         result = utils.process_schema_fields(data_dict)
         assert result['schema'] == {"fields": [{"name": "field1", "type": "string"}, {"name": "field2", "type": "string"}]}
+        _assert_schema_inputs_cleared(data_dict)
 
     def test_schema_json_populates_schema_third(self):
         data_dict = {
@@ -103,6 +111,7 @@ class TestProcessingSchemaFields(object):
 
         result = utils.process_schema_fields(data_dict)
         assert result['schema'] == self.mock_schema_json
+        _assert_schema_inputs_cleared(data_dict)
 
     def test_schema_is_retained_without_other_fields(self):
         data_dict = {
@@ -111,6 +120,7 @@ class TestProcessingSchemaFields(object):
 
         result = utils.process_schema_fields(data_dict)
         assert result['schema'] == self.mock_schema
+        _assert_schema_inputs_cleared(data_dict)
 
     def test_schema_is_overwritten_by_empty_json_field(self):
         data_dict = {
@@ -120,3 +130,4 @@ class TestProcessingSchemaFields(object):
 
         result = utils.process_schema_fields(data_dict)
         assert not result['schema']
+        _assert_schema_inputs_cleared(data_dict)
