@@ -74,7 +74,7 @@ def log_in(context):
 @when(u'I expand the browser height')
 def expand_height(context):
     # Work around x=null bug in Selenium set_window_size
-    context.browser.driver.set_window_rect(x=0, y=0, width=1024, height=3072)
+    context.browser.driver.set_window_rect(x=0, y=0, width=1366, height=3072)
 
 
 @when(u'I log in directly')
@@ -226,7 +226,7 @@ def enter_resource_url(context, url):
     if url != "default":
         context.execute_steps(u"""
             When I clear the URL field
-            When I execute the script "$('#resource-edit [name=url]').val('{0}')"
+            And I execute the script "$('#resource-edit [name=url]').val('{0}')"
         """.format(url))
 
 

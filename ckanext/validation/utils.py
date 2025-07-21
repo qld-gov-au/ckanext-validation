@@ -35,8 +35,9 @@ def process_schema_fields(data_dict):
     1. If `schema_upload` is provided and it's a valid file, the contents
         are read into `schema`.
     2. If `schema_url` is provided and looks like a valid URL, it's copied
-        to `schema`
-    3. If `schema_json` is provided, it's copied to `schema`.
+        to `schema`.
+    3. If `schema_json` is present, even if blank or empty, it's stripped of
+        leading/trailing whitespace and copied to `schema`.
 
     All the 3 `schema_*` fields are removed from the data_dict.
     Note that the data_dict still needs to pass validation
@@ -44,7 +45,12 @@ def process_schema_fields(data_dict):
 
     schema_upload = data_dict.pop(u'schema_upload', None)
     schema_url = data_dict.pop(u'schema_url', None)
-    schema_json = data_dict.pop(u'schema_json', None)
+    # Distinguish blank field (likely web UI) from absent field (likely API).
+    # Absent fields do not overwrite the existing schema,
+    # but fields that are present and blank can.
+    has_schema_json = u'schema_json' in data_dict
+    if has_schema_json:
+        schema_json = data_dict.pop(u'schema_json')
 
     if is_uploaded_file(schema_upload):
         data_dict[u'schema'] = ensure_str(
@@ -63,7 +69,9 @@ def process_schema_fields(data_dict):
 
         data_dict[u'schema'] = schema
 
-    elif schema_json:
+    elif has_schema_json:
+        if isinstance(schema_json, str):
+            schema_json = schema_json.strip()
         data_dict[u'schema'] = schema_json
 
     if not data_dict.get('schema'):
