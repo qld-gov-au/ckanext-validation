@@ -12,8 +12,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
         with:
           python-version: '3.x'
       - name: Install requirements
@@ -26,44 +26,51 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include: #ckan-image see https://github.com/ckan/ckan-docker-base, ckan-version controls other image tags
-          - ckan-version: "2.11"
-            solr-version: "9"
-            experimental: false
-          - ckan-version: "2.10"
-            solr-version: "9"
-            experimental: false
-          - ckan-version: "2.9"
-            solr-version: "8"
-            experimental: false
-          - ckan-version: "master"
-            solr-version: "9"
-            experimental: true
+        ckan-version: ['2.12', '2.11', '2.10', 2.9]
+        experimental: [false]
+        include:
+          - ckan-version: 'master'
+            experimental: true  # master is unstable, good to know if we are compatible or not
 
     name: ${{ matrix.experimental && '**Fail_Ignored** ' || '' }} CKAN ${{ matrix.ckan-version }} - Continuous Integration build
     runs-on: ubuntu-latest
-    container: drevops/ci-runner:23.12.0
     env:
       CKAN_VERSION: ${{ matrix.ckan-version }}
-      SOLR_VERSION: ${{ matrix.solr-version }}
 
     steps:
-      # Patch https://github.com/actions/runner/issues/863
-      - name: Preserve $HOME set in the container
-        run: echo HOME=/root >> "$GITHUB_ENV"
-
-      - uses: actions/checkout@v4
-        continue-on-error: ${{ matrix.experimental }}
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         timeout-minutes: 2
+        continue-on-error: ${{ matrix.experimental }}
+
+      - name: Install Ahoy and dependencies
+        continue-on-error: ${{ matrix.experimental }}
+        run: |
+          sudo wget https://github.com/ahoy-cli/ahoy/releases/download/v2.5.0/ahoy-bin-linux-amd64 -O /usr/local/bin/ahoy \
+            && sudo chown $USER /usr/local/bin/ahoy \
+            && chmod +x /usr/local/bin/ahoy
+          sudo wget https://github.com/pygmystack/pygmy/releases/download/v0.14.0/pygmy_0.14.0_linux_amd64.tar.gz -O - | tar xvzf - -C /tmp/ \
+            && sudo mv /tmp/pygmy /usr/local/bin/pygmy
 
       - name: Build
         run: bin/build.sh
         timeout-minutes: 15
         continue-on-error: ${{ matrix.experimental }}
 
-      - name: Test
-        run: bin/test.sh
-        timeout-minutes: 20
+      - name: Lint
+        run: ahoy lint
+        timeout-minutes: 1
+        continue-on-error: ${{ matrix.experimental }}
+
+      - name: Unit test
+        run: ahoy test-unit
+        timeout-minutes: 5
+        continue-on-error: ${{ matrix.experimental }}
+
+      - name: Scenario test
+        run: |
+          ahoy install-site
+          ahoy test-bdd
+        timeout-minutes: 10
         continue-on-error: ${{ matrix.experimental }}
 
       - name: Retrieve logs
@@ -79,7 +86,7 @@ jobs:
         continue-on-error: ${{ matrix.experimental }}
 
       - name: Test Summary
-        uses: test-summary/action@v2
+        uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5  # v2.6
         continue-on-error: ${{ matrix.experimental }}
         with:
           paths: "/tmp/artifacts/junit/*.xml"
@@ -87,7 +94,7 @@ jobs:
 
       - name: Upload screenshots
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: CKAN ${{ matrix.ckan-version }} screenshots
           path: /tmp/artifacts/behave/screenshots
@@ -96,14 +103,14 @@ jobs:
 
 
       - name: Test Summary
-        uses: test-summary/action@v2
-        continue-on-error: ${{ matrix.experimental }}
+        uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5  # v2.6
         with:
           paths: "TESTS-*.xml"
         if: always()
+        continue-on-error: ${{ matrix.experimental }}
 
       - name: "Upload coverage report to codecov flag: ${{ matrix.ckan-version }}"
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f  # v6.0.2
         continue-on-error: ${{ matrix.experimental }}
         with:
           file: ./coverage.xml
