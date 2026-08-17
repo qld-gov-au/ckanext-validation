@@ -11,20 +11,20 @@ commands:
       echo "::group::pre-flight"
       ahoy pre-flight
       echo "::endgroup::"
-      
+
       echo "::group::clean"
       ahoy clean
       echo "::endgroup::"
-      
+
       echo "::group::network"
       ahoy build-network
       echo "::endgroup::"
-      
+
       echo "::group::build"
       ahoy up -- --build --force-recreate
       ahoy title "Build complete"
       echo "::endgroup::"
-      
+
       echo "::group::doctor"
       ahoy doctor
       echo "::endgroup::"
@@ -174,10 +174,6 @@ commands:
       ahoy cli "rm -f test/screenshots/*"
       ahoy start-ckan-job-worker
       ahoy cli "pip install -r test/dev-requirements.txt"
-      if [ "$CKAN_VERSION" = "2.9" ]; then
-        echo "CKAN 2.9 last supported urllib3 is less than 1.27"
-        ahoy cli "pip install 'urllib3<1.27'"
-      fi
       sleep 5
       JUNIT_OUTPUT="--junit --junit-directory=test/junit/"
       ahoy cli "behave $JUNIT_OUTPUT --no-skipped ${*:-test/features} $EXTRA_TAGS --tags=${BEHAVE_TAG:--format_autocomplete}" || \
