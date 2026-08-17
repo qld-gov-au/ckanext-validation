@@ -6,7 +6,7 @@ from faker import Faker
 
 import responses
 import pytest
-from unittest.mock import mock_open, patch
+from unittest.mock import patch
 
 import ckantoolkit
 from ckan.lib.uploader import ResourceUpload
@@ -248,10 +248,10 @@ class TestValidationJob(object):
                                     validation_options=validation_options,
                                     do_not_validate=True)
 
-        def invalid_stream():
+        def invalid_stream(*args, **kwargs):
             return io.BufferedReader(io.BytesIO(invalid_csv))
 
-        with patch("io.open", mock_open(side_effect=invalid_stream)):
+        with patch("io.open", side_effect=invalid_stream):
             run_validation_job(resource)
 
         validation = Session.query(Validation).filter(
