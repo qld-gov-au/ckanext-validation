@@ -11,7 +11,7 @@ from six import string_types
 from ckan.model import Session
 import ckan.lib.uploader as uploader
 
-import ckantoolkit as t
+import ckan.plugins.toolkit as t
 
 from . import utils
 from ckanext.validation.validation_status_helper import (ValidationStatusHelper, ValidationJobDoesNotExist,

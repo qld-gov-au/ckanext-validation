@@ -3,7 +3,7 @@
 import logging
 import json
 
-import ckantoolkit as tk
+from ckan.plugins import toolkit as tk
 from six import string_types
 
 from ckanext.validation.jobs import run_validation_job

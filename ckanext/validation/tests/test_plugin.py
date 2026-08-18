@@ -1,10 +1,11 @@
 # encoding: utf-8
 import io
 
-import mock
-import pytest
 from faker import Faker
+import pytest
+from unittest.mock import patch
 
+from ckan import model
 from ckan.tests.helpers import call_action
 from ckan.tests import factories
 
@@ -23,7 +24,7 @@ def _assert_validation_enqueued(mock_enqueue, resource_id):
 @pytest.mark.usefixtures("clean_db", "validation_setup")
 @pytest.mark.ckan_config(s.ASYNC_UPDATE_KEY, True)
 @pytest.mark.ckan_config(s.ASYNC_CREATE_KEY, True)
-@mock.patch(helpers.MOCK_ENQUEUE_JOB, return_value=True)
+@patch(helpers.MOCK_ENQUEUE_JOB, return_value=True)
 class TestResourceControllerHooksUpdate(object):
 
     def test_validation_does_not_run_on_other_fields(self, mock_enqueue):
@@ -123,7 +124,7 @@ class TestResourceControllerHooksUpdate(object):
 @pytest.mark.usefixtures("clean_db", "validation_setup")
 @pytest.mark.ckan_config(s.ASYNC_UPDATE_KEY, True)
 @pytest.mark.ckan_config(s.ASYNC_CREATE_KEY, True)
-@mock.patch(helpers.MOCK_ENQUEUE_JOB)
+@patch(helpers.MOCK_ENQUEUE_JOB)
 class TestResourceControllerHooksCreate(object):
 
     def test_validation_does_not_run_on_other_formats(self, mock_enqueue):
@@ -145,7 +146,7 @@ class TestResourceControllerHooksCreate(object):
 @pytest.mark.usefixtures("clean_db", "validation_setup")
 @pytest.mark.ckan_config(s.ASYNC_UPDATE_KEY, True)
 @pytest.mark.ckan_config(s.ASYNC_CREATE_KEY, True)
-@mock.patch(helpers.MOCK_ENQUEUE_JOB)
+@patch(helpers.MOCK_ENQUEUE_JOB)
 class TestPackageControllerHooksCreate(object):
 
     def test_validation_does_not_run_on_other_formats(self, mock_enqueue):
@@ -199,7 +200,7 @@ class TestPackageControllerHooksCreate(object):
 @pytest.mark.usefixtures("clean_db", "validation_setup")
 @pytest.mark.ckan_config(s.ASYNC_UPDATE_KEY, True)
 @pytest.mark.ckan_config(s.ASYNC_CREATE_KEY, True)
-@mock.patch(helpers.MOCK_ENQUEUE_JOB, return_value=True)
+@patch(helpers.MOCK_ENQUEUE_JOB, return_value=True)
 class TestPackageControllerHooksUpdate(object):
 
     def test_validation_runs_with_url(self, mock_enqueue):

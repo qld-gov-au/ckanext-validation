@@ -8,10 +8,10 @@ import responses
 import mock
 import six
 import pytest
-import ckantoolkit as tk
 
-from ckan.model import Session
 from ckan import model
+from ckan.model import Session
+from ckan.plugins import toolkit as tk
 from ckan.tests.helpers import call_action, call_auth
 from ckan.tests import factories
 

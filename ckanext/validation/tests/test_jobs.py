@@ -8,7 +8,7 @@ import responses
 import pytest
 from unittest.mock import patch
 
-import ckantoolkit
+from ckan.plugins import toolkit
 from ckan.lib.uploader import ResourceUpload
 from ckan.tests.helpers import call_action
 from ckan.tests import factories
@@ -50,7 +50,7 @@ class TestValidationJob(object):
 
     @patch(MOCK_ASYNC_VALIDATE, return_value=VALID_REPORT)
     @patch.object(Session, 'commit')
-    @patch.object(ckantoolkit, 'get_action')
+    @patch.object(toolkit, 'get_action')
     @patch.object(requests, 'Session', return_value='Some_Session')
     def test_job_run_no_schema(self, mock_requests, mock_get_action,
                                mock_commit, mock_validate, dataset):
@@ -69,7 +69,7 @@ class TestValidationJob(object):
 
     @patch(MOCK_ASYNC_VALIDATE, return_value=VALID_REPORT)
     @patch.object(Session, 'commit')
-    @patch.object(ckantoolkit, 'get_action')
+    @patch.object(toolkit, 'get_action')
     @patch.object(requests, 'Session', return_value='Some_Session')
     def test_job_run_schema(self, mock_requests, mock_get_action, mock_commit,
                             mock_validate, dataset):
@@ -95,7 +95,7 @@ class TestValidationJob(object):
     @patch.object(uploader, 'get_resource_uploader',
                   return_value=mock_get_resource_uploader({}))
     @patch.object(Session, 'commit')
-    @patch.object(ckantoolkit, 'get_action')
+    @patch.object(toolkit, 'get_action')
     @patch.object(requests, 'Session', return_value='Some_Session')
     def test_job_run_uploaded_file(self, mock_requests, mock_get_action,
                                    mock_commit, mock_uploader, mock_validate,

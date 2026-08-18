@@ -12,12 +12,12 @@ from datetime import datetime as dt
 
 import requests
 from frictionless import Report
-import ckantoolkit as tk
 from requests.exceptions import RequestException
 from six import string_types
 
 from ckan import model, plugins
 from ckan.lib import uploader
+import ckan.plugins.toolkit as tk
 
 from . import settings as s, jobs
 from .interfaces import IDataValidation, IPipeValidation
