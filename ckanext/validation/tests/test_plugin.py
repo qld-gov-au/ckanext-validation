@@ -5,7 +5,6 @@ from faker import Faker
 import pytest
 from unittest.mock import patch
 
-from ckan import model
 from ckan.tests.helpers import call_action
 from ckan.tests import factories
 
@@ -21,7 +20,7 @@ def _assert_validation_enqueued(mock_enqueue, resource_id):
     assert mock_enqueue.call_args[1]['kwargs']['resource'] == resource_id
 
 
-@pytest.mark.usefixtures("clean_db", "validation_setup")
+@pytest.mark.usefixtures("with_plugins", "validation_setup")
 @pytest.mark.ckan_config(s.ASYNC_UPDATE_KEY, True)
 @pytest.mark.ckan_config(s.ASYNC_CREATE_KEY, True)
 @patch(helpers.MOCK_ENQUEUE_JOB, return_value=True)
@@ -44,7 +43,7 @@ class TestResourceControllerHooksUpdate(object):
 
     def test_validation_does_not_run_on_other_formats(self, mock_enqueue):
         """PDF and TTF formats are not supported"""
-        resource = factories.Resource(format="PDF")
+        resource = factories.Resource(format="PDF", schema=helpers.SCHEMA)
 
         mock_enqueue.assert_not_called()
 
@@ -54,12 +53,12 @@ class TestResourceControllerHooksUpdate(object):
 
         mock_enqueue.assert_not_called()
 
-    def test_validation_run_on_upload(self, mock_enqueue, resource_factory):
+    def test_validation_run_on_upload(self, mock_enqueue):
         """Validation must be triggered during update on upload new file"""
         mock_upload = helpers.MockFileStorage(io.BytesIO(helpers.VALID_CSV),
                                               'valid.csv')
 
-        resource = resource_factory(format="pdf")
+        resource = factories.Resource(format="pdf", schema=helpers.SCHEMA)
 
         resource['format'] = 'csv'
         resource['upload'] = mock_upload
@@ -68,10 +67,9 @@ class TestResourceControllerHooksUpdate(object):
 
         _assert_validation_enqueued(mock_enqueue, resource['id'])
 
-    def test_validation_run_on_url_change(self, mock_enqueue,
-                                          resource_factory):
+    def test_validation_run_on_url_change(self, mock_enqueue):
         """Validation must be triggered during update on changing URL"""
-        resource = resource_factory(format="PDF")
+        resource = factories.Resource(format="PDF", schema=helpers.SCHEMA)
 
         resource['url'] = "https://some.new.url"
         resource['format'] = "CSV"
@@ -80,10 +78,9 @@ class TestResourceControllerHooksUpdate(object):
 
         _assert_validation_enqueued(mock_enqueue, resource['id'])
 
-    def test_validation_run_on_schema_change(self, mock_enqueue,
-                                             resource_factory):
+    def test_validation_run_on_schema_change(self, mock_enqueue):
         """Validation must be triggered during update on changing URL"""
-        resource = resource_factory(format="PDF")
+        resource = factories.Resource(format="PDF")
 
         resource['schema'] = helpers.NEW_SCHEMA
         resource['format'] = "CSV"
@@ -92,10 +89,9 @@ class TestResourceControllerHooksUpdate(object):
 
         _assert_validation_enqueued(mock_enqueue, resource['id'])
 
-    def test_validation_run_on_format_change(self, mock_enqueue,
-                                             resource_factory):
+    def test_validation_run_on_format_change(self, mock_enqueue):
         """Validation must be triggered during update on changing format"""
-        resource = resource_factory(format="PDF")
+        resource = factories.Resource(format="PDF", schema=helpers.SCHEMA)
 
         mock_enqueue.assert_not_called()
 
@@ -106,10 +102,10 @@ class TestResourceControllerHooksUpdate(object):
         _assert_validation_enqueued(mock_enqueue, resource['id'])
 
     def test_validation_run_on_validation_options_change(
-            self, mock_enqueue, resource_factory):
+            self, mock_enqueue):
         """Validation must be triggered during update on changing
         validation_options"""
-        resource = resource_factory(format="PDF")
+        resource = factories.Resource(format="PDF", schema=helpers.SCHEMA)
 
         mock_enqueue.assert_not_called()
 
@@ -121,29 +117,29 @@ class TestResourceControllerHooksUpdate(object):
         _assert_validation_enqueued(mock_enqueue, resource['id'])
 
 
-@pytest.mark.usefixtures("clean_db", "validation_setup")
+@pytest.mark.usefixtures("with_plugins", "validation_setup")
 @pytest.mark.ckan_config(s.ASYNC_UPDATE_KEY, True)
 @pytest.mark.ckan_config(s.ASYNC_CREATE_KEY, True)
 @patch(helpers.MOCK_ENQUEUE_JOB)
 class TestResourceControllerHooksCreate(object):
 
     def test_validation_does_not_run_on_other_formats(self, mock_enqueue):
-        factories.Resource(format='PDF')
+        factories.Resource(format='PDF', schema=helpers.SCHEMA)
 
         mock_enqueue.assert_not_called()
 
-    def test_validation_runs_with_upload(self, mock_enqueue, resource_factory):
-        resource_factory()
+    def test_validation_runs_with_upload(self, mock_enqueue):
+        factories.Resource(format="CSV", schema=helpers.SCHEMA)
 
         mock_enqueue.assert_called()
 
-    def test_validation_run_with_url(self, mock_enqueue, resource_factory):
-        resource = resource_factory(url='http://some.data')
+    def test_validation_run_with_url(self, mock_enqueue):
+        resource = factories.Resource(url='http://some.data', format="CSV", schema=helpers.SCHEMA)
 
         _assert_validation_enqueued(mock_enqueue, resource['id'])
 
 
-@pytest.mark.usefixtures("clean_db", "validation_setup")
+@pytest.mark.usefixtures("with_plugins", "validation_setup")
 @pytest.mark.ckan_config(s.ASYNC_UPDATE_KEY, True)
 @pytest.mark.ckan_config(s.ASYNC_CREATE_KEY, True)
 @patch(helpers.MOCK_ENQUEUE_JOB)
@@ -197,7 +193,7 @@ class TestPackageControllerHooksCreate(object):
         _assert_validation_enqueued(mock_enqueue, resource1['id'])
 
 
-@pytest.mark.usefixtures("clean_db", "validation_setup")
+@pytest.mark.usefixtures("with_plugins", "validation_setup")
 @pytest.mark.ckan_config(s.ASYNC_UPDATE_KEY, True)
 @pytest.mark.ckan_config(s.ASYNC_CREATE_KEY, True)
 @patch(helpers.MOCK_ENQUEUE_JOB, return_value=True)
