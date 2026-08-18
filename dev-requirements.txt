@@ -2,12 +2,11 @@ Appium-Python-Client==2.10.1
 beautifulsoup4==4.9.1
 behaving==3.3.*
 ckanapi>=4.7
+faker==18.3.0
 flake8==7.3.*
 mock
 pytest-ckan
 pytest-cov
 selenium<4.10
-splinter>=0.13.0
-faker==18.3.0
 
-git+https://github.com/ckan/ckanext-scheming.git@release-3.0.0#egg=ckanext-scheming
+git+https://github.com/ckan/ckanext-scheming.git@release-3.1.0#egg=ckanext-scheming
