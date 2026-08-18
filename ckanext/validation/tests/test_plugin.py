@@ -100,7 +100,7 @@ class TestResourceControllerHooksUpdate(object):
 
         resource['format'] = 'CSV'
 
-        call_action('resource_update', {}, **resource)
+        call_action('resource_update', {'defer_commit': True}, **resource)
 
         _assert_validation_enqueued(mock_enqueue, resource['id'])
 
