@@ -169,14 +169,7 @@ def title_random_text_with_prefix(context, prefix):
 @when(u'I create a resource with name "{name}" and URL "{url}"')
 def add_resource(context, name, url):
     context.execute_steps(u"""
-        When I log in
-        And I create a dataset with key-value parameters "notes=Link testing"
-        And I open the new resource form for dataset "$last_generated_name"
-        And I execute the script "$('#resource-edit [name=url]').val('{url}')"
-        And I fill in "name" with "{name}"
-        And I fill in "description" with "description"
-        And I execute the script "document.getElementById('field-format').value='HTML'"
-        And I press the element with xpath "//form[contains(@class, 'resource-form')]//button[contains(@class, 'btn-primary')]"
+        When I create a dataset and resource with key-value parameters "notes=Link testing" and "name={name}::url={url}"
     """.format(name=name, url=url))
 
 
