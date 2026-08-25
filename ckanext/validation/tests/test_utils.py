@@ -71,6 +71,7 @@ def _assert_schema_inputs_cleared(data_dict):
     assert 'schema_json' not in data_dict
 
 
+@pytest.mark.usefixtures("with_plugins")
 class TestProcessingSchemaFields(object):
 
     schema_url = 'https://github.com/qld-gov-au/ckanext-validation/raw/refs/heads/master/test/fixtures/test_schema.json'

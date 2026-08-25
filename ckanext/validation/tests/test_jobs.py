@@ -5,10 +5,10 @@ import json
 from faker import Faker
 
 import responses
-import mock
 import pytest
+from unittest.mock import patch
 
-import ckantoolkit
+from ckan.plugins import toolkit
 from ckan.lib.uploader import ResourceUpload
 from ckan.tests.helpers import call_action
 from ckan.tests import factories
@@ -48,10 +48,10 @@ def mock_get_resource_uploader(data_dict):
 @pytest.mark.ckan_config(s.ASYNC_CREATE_KEY, True)
 class TestValidationJob(object):
 
-    @mock.patch(MOCK_ASYNC_VALIDATE, return_value=VALID_REPORT)
-    @mock.patch.object(Session, 'commit')
-    @mock.patch.object(ckantoolkit, 'get_action')
-    @mock.patch.object(requests, 'Session', return_value='Some_Session')
+    @patch(MOCK_ASYNC_VALIDATE, return_value=VALID_REPORT)
+    @patch.object(Session, 'commit')
+    @patch.object(toolkit, 'get_action')
+    @patch.object(requests, 'Session', return_value='Some_Session')
     def test_job_run_no_schema(self, mock_requests, mock_get_action,
                                mock_commit, mock_validate, dataset):
         resource = {
@@ -67,10 +67,10 @@ class TestValidationJob(object):
                                          format='csv',
                                          schema=None)
 
-    @mock.patch(MOCK_ASYNC_VALIDATE, return_value=VALID_REPORT)
-    @mock.patch.object(Session, 'commit')
-    @mock.patch.object(ckantoolkit, 'get_action')
-    @mock.patch.object(requests, 'Session', return_value='Some_Session')
+    @patch(MOCK_ASYNC_VALIDATE, return_value=VALID_REPORT)
+    @patch.object(Session, 'commit')
+    @patch.object(toolkit, 'get_action')
+    @patch.object(requests, 'Session', return_value='Some_Session')
     def test_job_run_schema(self, mock_requests, mock_get_action, mock_commit,
                             mock_validate, dataset):
         json_schema = json.dumps(SCHEMA)
@@ -91,13 +91,12 @@ class TestValidationJob(object):
         #                                  format='csv',
         #                                  schema=json_schema)
 
-    @mock.patch(MOCK_ASYNC_VALIDATE, return_value=VALID_REPORT)
-    @mock.patch.object(uploader,
-                       'get_resource_uploader',
-                       return_value=mock_get_resource_uploader({}))
-    @mock.patch.object(Session, 'commit')
-    @mock.patch.object(ckantoolkit, 'get_action')
-    @mock.patch.object(requests, 'Session', return_value='Some_Session')
+    @patch(MOCK_ASYNC_VALIDATE, return_value=VALID_REPORT)
+    @patch.object(uploader, 'get_resource_uploader',
+                  return_value=mock_get_resource_uploader({}))
+    @patch.object(Session, 'commit')
+    @patch.object(toolkit, 'get_action')
+    @patch.object(requests, 'Session', return_value='Some_Session')
     def test_job_run_uploaded_file(self, mock_requests, mock_get_action,
                                    mock_commit, mock_uploader, mock_validate,
                                    dataset):
@@ -116,7 +115,7 @@ class TestValidationJob(object):
             format='csv',
             schema=None)
 
-    @mock.patch("ckanext.validation.jobs.validate", return_value=VALID_REPORT)
+    @patch("ckanext.validation.jobs.validate", return_value=VALID_REPORT)
     def test_job_run_valid_stores_validation_object(self, mocked_responses):
         url = 'http://example.com/file.csv'
 
@@ -135,7 +134,7 @@ class TestValidationJob(object):
         assert report['tasks'][0]['place'] == url
         assert validation.finished
 
-    @mock.patch(MOCK_ASYNC_VALIDATE, return_value=INVALID_REPORT)
+    @patch(MOCK_ASYNC_VALIDATE, return_value=INVALID_REPORT)
     def test_job_run_invalid_stores_validation_object(self, mock_report,
                                                       resource_factory):
         url = "http://example.com/invalid.csv"
@@ -151,7 +150,7 @@ class TestValidationJob(object):
         assert report == INVALID_REPORT
         assert validation.finished
 
-    @mock.patch(MOCK_ASYNC_VALIDATE, return_value=ERROR_REPORT)
+    @patch(MOCK_ASYNC_VALIDATE, return_value=ERROR_REPORT)
     def test_job_run_error_stores_validation_object(self, mock_validate, resource_factory):
         resource = resource_factory()
 
@@ -249,9 +248,10 @@ class TestValidationJob(object):
                                     validation_options=validation_options,
                                     do_not_validate=True)
 
-        invalid_stream = io.BufferedReader(io.BytesIO(invalid_csv))
-        with mock.patch("io.open", return_value=invalid_stream):
+        def invalid_stream(*args, **kwargs):
+            return io.BufferedReader(io.BytesIO(invalid_csv))
 
+        with patch("io.open", side_effect=invalid_stream):
             run_validation_job(resource)
 
         validation = Session.query(Validation).filter(

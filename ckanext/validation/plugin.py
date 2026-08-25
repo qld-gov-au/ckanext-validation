@@ -4,9 +4,8 @@ import json
 import logging
 import os
 
-import ckantoolkit as tk
-
 import ckan.plugins as p
+import ckan.plugins.toolkit as tk
 
 from ckan.lib.plugins import DefaultTranslation
 

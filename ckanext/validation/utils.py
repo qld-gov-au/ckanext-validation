@@ -7,18 +7,17 @@ import os
 
 from six import ensure_str
 import tempfile
+import typing
 from datetime import datetime as dt
-from cgi import FieldStorage
 
 import requests
 from frictionless import Report
-import ckantoolkit as tk
 from requests.exceptions import RequestException
 from six import string_types
 
-import ckan.plugins as plugins
-import ckan.lib.uploader as uploader
-from ckan import model
+from ckan import model, plugins
+from ckan.lib import uploader
+import ckan.plugins.toolkit as tk
 
 from . import settings as s, jobs
 from .interfaces import IDataValidation, IPipeValidation
@@ -26,6 +25,24 @@ from .validation_status_helper import ValidationStatusHelper, StatusTypes
 from .validators import resource_schema_validator
 
 log = logging.getLogger(__name__)
+
+upload_types: 'list[typing.Any]'
+if hasattr(uploader, 'ALLOWED_UPLOAD_TYPES'):
+    upload_types = getattr(uploader, 'ALLOWED_UPLOAD_TYPES')
+else:
+    from werkzeug.datastructures import FileStorage as FlaskFileStorage
+    upload_types = [FlaskFileStorage]
+    if tk.check_ckan_version(max_version='2.10.0'):
+        from cgi import FieldStorage
+        upload_types.append(FieldStorage)
+
+ALLOWED_UPLOAD_TYPES: 'tuple[typing.Any]' = tuple(upload_types)
+
+
+def _get_underlying_file(wrapper):
+    if hasattr(wrapper, 'stream'):
+        return wrapper.stream
+    return wrapper.file
 
 
 def process_schema_fields(data_dict):
@@ -54,7 +71,7 @@ def process_schema_fields(data_dict):
 
     if is_uploaded_file(schema_upload):
         data_dict[u'schema'] = ensure_str(
-            uploader._get_underlying_file(schema_upload).read())
+            _get_underlying_file(schema_upload).read())
 
     elif schema_url:
         if not tk.h.is_url_valid(schema_url):
@@ -234,7 +251,7 @@ def _get_session(resource_data):
 
 
 def _get_new_file_stream(file):
-    if isinstance(file, FieldStorage):
+    if hasattr(file, "file"):
         file = file.file
 
     # frictionless needs a file on disk, it can't work with in memory file streams :'(
@@ -406,7 +423,7 @@ def get_site_user_api_key():
 
 def is_uploaded_file(upload):
     return isinstance(upload,
-                      uploader.ALLOWED_UPLOAD_TYPES) and upload.filename
+                      ALLOWED_UPLOAD_TYPES) and upload.filename
 
 
 def validation_dictize(validation):

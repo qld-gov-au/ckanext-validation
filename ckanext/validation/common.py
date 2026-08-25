@@ -5,9 +5,7 @@ import logging
 import six
 import sys
 
-from ckantoolkit import (c, NotAuthorized,
-                         ObjectNotFound, abort, _,
-                         render, get_action, config)
+from ckan.plugins.toolkit import c, NotAuthorized, ObjectNotFound, abort, _, render, get_action, config
 
 from ckanext.validation import settings
 from ckanext.validation.logic.action import _search_datasets
