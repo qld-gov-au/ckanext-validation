@@ -40,7 +40,7 @@ class TestResourceControllerHooksUpdate(object):
 
         resource['description'] = 'Some resource'
 
-        call_action('resource_update', {}, **resource)
+        call_action('resource_update', **resource)
 
         mock_enqueue.assert_not_called()
 
@@ -52,7 +52,7 @@ class TestResourceControllerHooksUpdate(object):
 
         resource["format"] = "TTF"
 
-        call_action('resource_update', {}, **resource)
+        call_action('resource_update', **resource)
 
         mock_enqueue.assert_not_called()
 
@@ -66,7 +66,7 @@ class TestResourceControllerHooksUpdate(object):
 
         resource['upload'] = mock_upload
 
-        call_action('resource_update', {}, **resource)
+        call_action('resource_update', **resource)
 
         _assert_validation_enqueued(mock_enqueue, resource['id'])
 
@@ -77,7 +77,7 @@ class TestResourceControllerHooksUpdate(object):
 
         resource['url'] = "https://some.new.url"
 
-        call_action('resource_update', {}, **resource)
+        call_action('resource_update', **resource)
 
         _assert_validation_enqueued(mock_enqueue, resource['id'])
 
@@ -88,7 +88,7 @@ class TestResourceControllerHooksUpdate(object):
 
         resource['schema'] = helpers.NEW_SCHEMA
 
-        call_action('resource_update', {}, **resource)
+        call_action('resource_update', **resource)
 
         _assert_validation_enqueued(mock_enqueue, resource['id'])
 
@@ -115,7 +115,7 @@ class TestResourceControllerHooksUpdate(object):
 
         resource['validation_options'] = {'headers': 1, 'skip_rows': ['#']}
 
-        call_action('resource_update', {}, **resource)
+        call_action('resource_update', **resource)
 
         _assert_validation_enqueued(mock_enqueue, resource['id'])
 
@@ -231,7 +231,7 @@ class TestPackageControllerHooksUpdate(object):
 
         dataset['resources'][0]['url'] = 'http://some.other.doc'
 
-        call_action('package_update', {}, **dataset)
+        call_action('package_update', **dataset)
 
         mock_enqueue.assert_not_called()
 
@@ -256,7 +256,7 @@ class TestPackageControllerHooksUpdate(object):
 
         dataset['resources'][0]['url'] = 'http://some.other.data'
 
-        call_action('package_update', {}, **dataset)
+        call_action('package_update', **dataset)
         # one resource must be validated during update
         mock_enqueue.assert_called()
 
