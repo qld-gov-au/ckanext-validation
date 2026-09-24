@@ -103,14 +103,14 @@ def process_schema_fields(data_dict):
 
 
 def validate_resource(context, data_dict, new_resource=False):
-    create_mode = s.get_create_mode(context, data_dict)
-    update_mode = s.get_update_mode(context, data_dict)
+    mode = s.get_create_mode(context, data_dict) if new_resource \
+        else s.get_update_mode(context, data_dict)
+    log.info("Validating in %s mode", mode)
 
-    mode = create_mode if new_resource else update_mode
-
+    assert mode in [s.SYNC_MODE, s.ASYNC_MODE]
     if mode == s.SYNC_MODE:
         run_sync_validation(data_dict)
-    elif mode == s.ASYNC_MODE:
+    else:
         run_async_validation(data_dict["id"])
 
 

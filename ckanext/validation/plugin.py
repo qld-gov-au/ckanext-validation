@@ -189,7 +189,7 @@ class ValidationPlugin(p.SingletonPlugin, DefaultTranslation):
     def after_dataset_create(self, context, data_dict):
         for resource in data_dict.get(u'resources', []):
             if utils.is_resource_could_be_validated(context, resource):
-                utils.validate_resource(context, resource)
+                utils.validate_resource(context, resource, new_resource=True)
 
     # CKAN < 2.10
     # def after_update(self, context, data_dict):
