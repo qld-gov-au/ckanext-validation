@@ -52,6 +52,7 @@ def resource_validation_run(context, data_dict):
     resource = tk.get_action(u'resource_show')(context, {u'id': resource_id})
 
     if not resource.get('schema'):
+        log.warning("No schema found on %s, cannot validate", resource_id)
         try:
             tk.get_action(u'resource_validation_delete')(context, data_dict)
         except tk.ObjectNotFound:
@@ -65,6 +66,7 @@ def resource_validation_run(context, data_dict):
 
     # Ensure format is supported
     if not resource.get(u'format', u'').lower() in supported_formats:
+        log.error("Unable to run validation for resource: %s", resource)
         raise tk.ValidationError({
             u'format':
             u'Unsupported resource format.'

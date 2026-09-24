@@ -168,9 +168,11 @@ class ValidationPlugin(p.SingletonPlugin, DefaultTranslation):
             context, data_dict)
 
         if not validation_possible:
+            log.info("Resource validation is not possible, ending hook")
             return
 
         if data_dict["id"] not in context.get('_resources_to_validate', []):
+            log.warning("Resource ID not found in data dict, ending hook")
             return
 
         utils.validate_resource(context, data_dict)
