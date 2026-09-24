@@ -121,10 +121,11 @@ class ValidationPlugin(p.SingletonPlugin, DefaultTranslation):
 
     # CKAN >= 2.10
     def before_resource_update(self, context, current_resource, updated_resource):
+        log.debug("before_resource_update - context: %s, data_dict: %s", context, updated_resource)
         context['_resource_validation'] = True
         # avoid circular update, because validation job calls `resource_patch`
         # (which calls package_update)
-        if updated_resource.get('_validation_performed', None):
+        if context.get('_validation_performed'):
             return
 
         updated_resource = utils.process_schema_fields(updated_resource)
@@ -157,9 +158,10 @@ class ValidationPlugin(p.SingletonPlugin, DefaultTranslation):
 
     # CKAN >= 2.10
     def after_resource_update(self, context, data_dict):
+        log.debug("after_resource_update - context: %s, data_dict: %s", context, data_dict)
         context.pop('_resource_validation', None)
 
-        if data_dict.pop(u'_validation_performed', None) \
+        if context.pop('_validation_performed', None) \
                 or data_dict.pop(u'_do_not_validate', False) \
                 or data_dict.pop('_success_validation', False):
             return
@@ -199,8 +201,9 @@ class ValidationPlugin(p.SingletonPlugin, DefaultTranslation):
 
     # CKAN >= 2.10
     def after_dataset_update(self, context, data_dict):
-        if data_dict.pop('_validation_performed', None) \
-                or data_dict.pop('_resource_validation', None):
+        log.debug("after_dataset_update - context: %s, data_dict: %s", context, data_dict)
+        if context.pop('_validation_performed', None) \
+                or context.pop('_resource_validation', None):
             return
 
         for resource in data_dict.get('resources', []):
@@ -222,7 +225,6 @@ class ValidationPlugin(p.SingletonPlugin, DefaultTranslation):
 
     # CKAN >= 2.10
     def before_dataset_index(self, index_dict):
-
         res_status = []
         dataset_dict = json.loads(index_dict['validated_data_dict'])
         for resource in dataset_dict.get('resources', []):

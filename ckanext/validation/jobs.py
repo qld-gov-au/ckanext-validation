@@ -117,11 +117,11 @@ def run_validation_job(resource):
     # Store result status in resource
     t.get_action('resource_patch')(
         {'ignore_auth': True,
-         'user': t.get_action('get_site_user')({'ignore_auth': True})['name']},
+         'user': t.get_action('get_site_user')({'ignore_auth': True})['name'],
+         '_validation_performed': True},
         {'id': resource['id'],
          'validation_status': validation_record.status,
-         'validation_timestamp': validation_record.finished.isoformat(),
-         '_validation_performed': True})
+         'validation_timestamp': validation_record.finished.isoformat()})
     utils.send_validation_report(utils.validation_dictize(validation_record))
 
 
