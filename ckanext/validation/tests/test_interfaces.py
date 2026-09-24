@@ -1,5 +1,7 @@
 # encoding: utf-8
 
+import sys
+
 import pytest
 from unittest.mock import patch
 
@@ -25,6 +27,7 @@ class TestPlugin(p.SingletonPlugin):
 
     def can_validate(self, context, data_dict):
         self.calls += 1
+        print("Logging call %s to can_validate" % self.calls, file=sys.stderr)
 
         if data_dict.get('do_not_validate'):
             return False
@@ -42,6 +45,7 @@ class TestPlugin(p.SingletonPlugin):
     # IPipeValidation
 
     def receive_validation_report(self, validation_report):
+        print("Logging call %s to receive_validation_report" % self.calls, file=sys.stderr)
         self.calls += 1
 
 
