@@ -48,8 +48,6 @@ class TestPlugin(p.SingletonPlugin):
 
     def receive_validation_report(self, validation_report):
         self.calls += 1
-        print("Logging call %s to receive_validation_report" % self.calls, file=sys.stderr)
-        traceback.print_stack(file=sys.stderr)
 
 
 def _reset_plugin_counter():
@@ -183,7 +181,8 @@ class TestInterfaceAsync(BaseTestInterfaces):
         """Plugin must be called 3 times for ASYNC mode.
         1. resource after_create on resource create
         2. resource before_update on resource update
-        3. resource after_update on resource update
+        3. package after_update on resource update
+        4. resource after_update on resource update
         """
         resource = resource_factory(format="PDF")
 
@@ -194,7 +193,7 @@ class TestInterfaceAsync(BaseTestInterfaces):
 
         call_action('resource_update', context={'defer_commit': True}, **resource)
 
-        assert _get_data_plugin_calls() == 3
+        assert _get_data_plugin_calls() == 4
         assert _get_pipe_plugin_calls() == 3
         assert mock_validation.called
 
