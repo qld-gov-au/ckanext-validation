@@ -124,7 +124,7 @@ class ValidationPlugin(p.SingletonPlugin, DefaultTranslation):
         context['_resource_validation'] = True
         # avoid circular update, because validation job calls `resource_patch`
         # (which calls package_update)
-        if context.get('_validation_performed'):
+        if updated_resource.get('_validation_performed', None):
             return
 
         updated_resource = utils.process_schema_fields(updated_resource)
@@ -159,7 +159,7 @@ class ValidationPlugin(p.SingletonPlugin, DefaultTranslation):
     def after_resource_update(self, context, data_dict):
         context.pop('_resource_validation', None)
 
-        if context.pop('_validation_performed', None) \
+        if data_dict.pop(u'_validation_performed', None) \
                 or data_dict.pop(u'_do_not_validate', False) \
                 or data_dict.pop('_success_validation', False):
             return
@@ -199,8 +199,8 @@ class ValidationPlugin(p.SingletonPlugin, DefaultTranslation):
 
     # CKAN >= 2.10
     def after_dataset_update(self, context, data_dict):
-        if context.pop('_validation_performed', None) \
-                or context.pop('_resource_validation', None):
+        if data_dict.pop('_validation_performed', None) \
+                or data_dict.pop('_resource_validation', None):
             return
 
         for resource in data_dict.get('resources', []):
