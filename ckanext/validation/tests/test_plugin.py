@@ -252,11 +252,12 @@ class TestPackageControllerHooksUpdate(object):
 
         dataset = factories.Dataset(resources=[resource1, resource2])
 
-        # one resource must be validated during package + resources creation
-        mock_enqueue.assert_called()
+        mock_enqueue.assert_not_called()
 
         dataset['resources'][0]['url'] = 'http://some.other.data'
 
         call_action('package_update', {}, **dataset)
+        # one resource must be validated during update
+        mock_enqueue.assert_called()
 
         _assert_validation_enqueued(mock_enqueue, resource1['id'])
