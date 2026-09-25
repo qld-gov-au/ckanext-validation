@@ -88,6 +88,8 @@ class ValidationPlugin(p.SingletonPlugin, DefaultTranslation):
 
         if utils.is_resource_could_be_validated(context, data_dict):
             utils.validate_resource(context, data_dict, new_resource=True)
+        else:
+            log.debug("New resource does not qualify for validation: %s", data_dict)
 
     def _data_dict_is_dataset(self, data_dict):
         return (
@@ -102,10 +104,13 @@ class ValidationPlugin(p.SingletonPlugin, DefaultTranslation):
             return utils.create_success_validation_job(data_dict["id"])
 
         if s.get_create_mode(context, data_dict) == s.SYNC_MODE:
+            log.debug("Skipping post-create validation when in sync mode")
             return
 
         if utils.is_resource_could_be_validated(context, data_dict):
             utils.validate_resource(context, data_dict, new_resource=True)
+        else:
+            log.debug("New resource does not qualify for validation: %s", data_dict)
 
     def before_resource_update(self, context, current_resource, updated_resource):
         log.debug("before_resource_update - context: %s, data_dict: %s", context, updated_resource)
@@ -121,6 +126,7 @@ class ValidationPlugin(p.SingletonPlugin, DefaultTranslation):
             context, current_resource, updated_resource)
 
         if not validation_required:
+            log.debug("Updated resource does not qualify for validation: %s", updated_resource)
             updated_resource['_do_not_validate'] = True
             return
 
@@ -131,9 +137,7 @@ class ValidationPlugin(p.SingletonPlugin, DefaultTranslation):
         else:
             # if it's an async mode, gather ID's and use it in `after_update`
             # because only here we are able to compare current data with new
-
-            if validation_required:
-                self.redis.put(updated_resource['id'] + '/validate', True, 600)
+            self.redis.put(updated_resource['id'] + '/validate', True, 600)
 
     def after_resource_update(self, context, data_dict):
         log.debug("after_resource_update - context: %s, data_dict: %s", context, data_dict)
@@ -178,6 +182,7 @@ class ValidationPlugin(p.SingletonPlugin, DefaultTranslation):
                 continue
 
             if not utils.is_resource_could_be_validated(context, resource):
+                log.debug("Updated resource does not qualify for validation: %s", resource)
                 continue
 
             utils.validate_resource(context, resource)
