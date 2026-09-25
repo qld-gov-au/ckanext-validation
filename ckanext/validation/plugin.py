@@ -4,11 +4,11 @@ import json
 import logging
 import os
 
-import ckantoolkit as tk
-
 import ckan.plugins as p
+import ckan.plugins.toolkit as tk
 
 from ckan.lib.plugins import DefaultTranslation
+from .redis_helper import RedisHelper
 
 from . import settings as s, cli, utils, validators, views
 from .helpers import get_helpers
@@ -28,6 +28,8 @@ class ValidationPlugin(p.SingletonPlugin, DefaultTranslation):
     p.implements(p.ITranslation, inherit=True)
     p.implements(p.IClick)
     p.implements(p.IBlueprint)
+
+    redis = RedisHelper()
 
     # IClick
 
@@ -75,21 +77,20 @@ class ValidationPlugin(p.SingletonPlugin, DefaultTranslation):
 
     # IResourceController
 
-    # CKAN < 2.10
-    def before_create(self, context, data_dict):
-        return self.before_resource_create(context, data_dict)
-
-    # CKAN >= 2.10
     def before_resource_create(self, context, data_dict):
-        context['_resource_validation'] = True
+        log.debug("before_resource_create - context: %s, data_dict: %s", context, data_dict)
+        self.redis.put(data_dict['package_id'], True, 600)
 
         data_dict = utils.process_schema_fields(data_dict)
 
         if s.get_create_mode(context, data_dict) == s.ASYNC_MODE:
+            log.debug("Skipping before_resource_create validation as we are in async mode")
             return
 
         if utils.is_resource_could_be_validated(context, data_dict):
             utils.validate_resource(context, data_dict, new_resource=True)
+        else:
+            log.debug("New resource does not qualify for validation: %s", data_dict)
 
     def _data_dict_is_dataset(self, data_dict):
         return (
@@ -98,108 +99,82 @@ class ValidationPlugin(p.SingletonPlugin, DefaultTranslation):
             or u'resources' in data_dict
             or data_dict.get(u'type') == u'dataset')
 
-    # CKAN < 2.10
-    def after_create(self, context, data_dict):
-        if (self._data_dict_is_dataset(data_dict)):
-            return self.after_dataset_create(context, data_dict)
-        else:
-            return self.after_resource_create(context, data_dict)
-
-    # CKAN >= 2.10
     def after_resource_create(self, context, data_dict):
+        log.debug("after_resource_create - context: %s, data_dict: %s", context, data_dict)
         if data_dict.pop('_success_validation', False):
             return utils.create_success_validation_job(data_dict["id"])
 
         if s.get_create_mode(context, data_dict) == s.SYNC_MODE:
+            log.debug("Skipping post-create validation when in sync mode")
             return
 
         if utils.is_resource_could_be_validated(context, data_dict):
             utils.validate_resource(context, data_dict, new_resource=True)
+        else:
+            log.debug("New resource does not qualify for validation: %s", data_dict)
 
-    # CKAN < 2.10
-    def before_update(self, context, current_resource, updated_resource):
-        return self.before_resource_update(context, current_resource, updated_resource)
-
-    # CKAN >= 2.10
     def before_resource_update(self, context, current_resource, updated_resource):
-        context['_resource_validation'] = True
+        log.debug("before_resource_update - context: %s, data_dict: %s", context, updated_resource)
+        self.redis.put(updated_resource['package_id'], True, 600)
         # avoid circular update, because validation job calls `resource_patch`
         # (which calls package_update)
-        if context.get('_validation_performed'):
+        if self.redis.pop(updated_resource['id']):
+            log.debug("%s validation is locked, skipping before_resource_update hook", updated_resource['id'])
             return
 
         updated_resource = utils.process_schema_fields(updated_resource)
-        validation_requires = utils.is_resource_requires_validation(
+        validation_required = utils.is_resource_requires_validation(
             context, current_resource, updated_resource)
 
-        if not validation_requires:
+        if not validation_required:
+            log.debug("Updated resource does not qualify for validation: %s", updated_resource)
             updated_resource['_do_not_validate'] = True
             return
 
-        # if it's a sync mode, it's better run it before updating, because
+        # if in sync mode, it's better to run it before updating, because
         # the new uploaded file will be here
         if s.get_update_mode(context, updated_resource) == s.SYNC_MODE:
             utils.validate_resource(context, updated_resource)
         else:
             # if it's an async mode, gather ID's and use it in `after_update`
             # because only here we are able to compare current data with new
-            context.setdefault("_resources_to_validate", [])
+            self.redis.put(updated_resource['id'] + '/validate', True, 600)
 
-            if validation_requires:
-                context['_resources_to_validate'].append(
-                    updated_resource["id"])
-
-    # CKAN < 2.10
-    def after_update(self, context, data_dict):
-        if (self._data_dict_is_dataset(data_dict)):
-            return self.after_dataset_update(context, data_dict)
-        else:
-            return self.after_resource_update(context, data_dict)
-
-    # CKAN >= 2.10
     def after_resource_update(self, context, data_dict):
-        context.pop('_resource_validation', None)
+        log.debug("after_resource_update - context: %s, data_dict: %s", context, data_dict)
+        self.redis.delete(data_dict['package_id'])
 
-        if context.pop('_validation_performed', None) \
+        if self.redis.pop(data_dict['id']) \
                 or data_dict.pop(u'_do_not_validate', False) \
                 or data_dict.pop('_success_validation', False):
+            log.debug("%s validation is locked, skipping after_resource_update hook", data_dict['id'])
             return
 
         validation_possible = utils.is_resource_could_be_validated(
             context, data_dict)
 
         if not validation_possible:
+            log.info("Resource validation is not possible, ending hook")
             return
 
-        if data_dict["id"] not in context.get('_resources_to_validate', []):
+        if not self.redis.pop(data_dict['id'] + '/validate'):
+            log.warning("Resource ID not marked for validation, ending hook")
             return
 
         utils.validate_resource(context, data_dict)
 
-        context.pop('_resources_to_validate', None)
+    # IPackageController
 
-    # CKAN < 2.10
-    def before_delete(self, context, resource, resources):
-        return self.before_resource_delete(context, resource, resources)
-
-    # CKAN >= 2.10
-    def before_resource_delete(self, context, resource, resources):
-        context['_resource_validation'] = True
-
-    # CKAN >= 2.10
     def after_dataset_create(self, context, data_dict):
+        log.debug("after_dataset_create - context: %s, data_dict: %s", context, data_dict)
         for resource in data_dict.get(u'resources', []):
             if utils.is_resource_could_be_validated(context, resource):
-                utils.validate_resource(context, resource)
+                utils.validate_resource(context, resource, new_resource=True)
 
-    # CKAN < 2.10
-    # def after_update(self, context, data_dict):
-    #     return self.after_dataset_update(context, data_dict)
-
-    # CKAN >= 2.10
     def after_dataset_update(self, context, data_dict):
-        if context.pop('_validation_performed', None) \
-                or context.pop('_resource_validation', None):
+        log.debug("after_dataset_update - context: %s, data_dict: %s", context, data_dict)
+        if self.redis.pop(data_dict['id']):
+            log.debug("%s validation is locked, skipping after_dataset_update hook", data_dict['id'])
             return
 
         for resource in data_dict.get('resources', []):
@@ -208,20 +183,12 @@ class ValidationPlugin(p.SingletonPlugin, DefaultTranslation):
                 continue
 
             if not utils.is_resource_could_be_validated(context, resource):
+                log.debug("Updated resource does not qualify for validation: %s", resource)
                 continue
 
             utils.validate_resource(context, resource)
 
-    # IPackageController
-
-    # CKAN < 2.10
-    def before_index(self, index_dict):
-        if (self._data_dict_is_dataset(index_dict)):
-            return self.before_dataset_index(index_dict)
-
-    # CKAN >= 2.10
     def before_dataset_index(self, index_dict):
-
         res_status = []
         dataset_dict = json.loads(index_dict['validated_data_dict'])
         for resource in dataset_dict.get('resources', []):

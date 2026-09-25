@@ -1,7 +1,10 @@
 # encoding: utf-8
 
-import mock
+import sys
+import traceback
+
 import pytest
+from unittest.mock import patch
 
 from ckan import plugins as p
 from ckan.tests.helpers import call_action
@@ -25,6 +28,8 @@ class TestPlugin(p.SingletonPlugin):
 
     def can_validate(self, context, data_dict):
         self.calls += 1
+        print("Logging call %s to can_validate" % self.calls, file=sys.stderr)
+        traceback.print_stack(file=sys.stderr)
 
         if data_dict.get('do_not_validate'):
             return False
@@ -43,6 +48,8 @@ class TestPlugin(p.SingletonPlugin):
 
     def receive_validation_report(self, validation_report):
         self.calls += 1
+        print("Logging call %s to receive_validation_report" % self.calls, file=sys.stderr)
+        traceback.print_stack(file=sys.stderr)
 
 
 def _reset_plugin_counter():
@@ -71,7 +78,7 @@ class BaseTestInterfaces(object):
 
 
 @pytest.mark.usefixtures("clean_db", "validation_setup")
-@mock.patch(helpers.MOCK_SYNC_VALIDATE, return_value=helpers.VALID_REPORT)
+@patch(helpers.MOCK_SYNC_VALIDATE, return_value=helpers.VALID_REPORT)
 class TestInterfaceSync(BaseTestInterfaces):
 
     def test_can_validate_called_on_create_sync(self, mock_validation,
@@ -141,7 +148,7 @@ class TestInterfaceSync(BaseTestInterfaces):
 @pytest.mark.usefixtures("clean_db", "validation_setup")
 @pytest.mark.ckan_config(settings.ASYNC_UPDATE_KEY, True)
 @pytest.mark.ckan_config(settings.ASYNC_CREATE_KEY, True)
-@mock.patch(helpers.MOCK_ENQUEUE_JOB)
+@patch(helpers.MOCK_ENQUEUE_JOB)
 class TestInterfaceAsync(BaseTestInterfaces):
 
     def test_can_validate_called_on_create_async(self, mock_validation,
@@ -185,7 +192,7 @@ class TestInterfaceAsync(BaseTestInterfaces):
 
         resource['format'] = 'CSV'
 
-        call_action('resource_update', **resource)
+        call_action('resource_update', context={'defer_commit': True}, **resource)
 
         assert _get_data_plugin_calls() == 3
         assert _get_pipe_plugin_calls() == 3

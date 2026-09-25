@@ -5,7 +5,7 @@ from werkzeug.datastructures import FileStorage
 MOCK_COULD_BE_VALIDATED = "ckanext.validation.utils.is_resource_could_be_validated"
 MOCK_SYNC_VALIDATE = "ckanext.validation.jobs.validate"
 MOCK_ASYNC_VALIDATE = "ckanext.validation.jobs.validate"
-MOCK_ENQUEUE_JOB = "ckantoolkit.enqueue_job"
+MOCK_ENQUEUE_JOB = "ckanext.validation.logic.action.tk.enqueue_job"
 
 INVALID_CSV = b'''a,b,c,d
 1,2,3

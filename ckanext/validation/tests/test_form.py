@@ -7,7 +7,7 @@ import mock
 import pytest
 from bs4 import BeautifulSoup
 
-from ckan.tests.factories import Sysadmin, Dataset
+from ckan.tests.factories import SysadminWithToken, Dataset
 from ckan.tests.helpers import call_action
 
 from ckanext.validation.tests.helpers import (
@@ -27,7 +27,7 @@ def _get_resource_new_page_as_sysadmin(app, id):
     """Returns a resource create page response"""
     response = app.get(
         url=NEW_RESOURCE_URL.format(id),
-        extra_environ=_get_sysadmin_env(),
+        headers=_get_sysadmin_env(),
     )
     return response
 
@@ -36,14 +36,14 @@ def _get_resource_update_page_as_sysadmin(app, id, resource_id):
     """Returns a resource update page response"""
     response = app.get(
         url=EDIT_RESOURCE_URL.format(id, resource_id),
-        extra_environ=_get_sysadmin_env(),
+        headers=_get_sysadmin_env(),
     )
     return response
 
 
 def _get_sysadmin_env():
-    user = Sysadmin()
-    return {'REMOTE_USER': user['name'].encode('ascii')}
+    user = SysadminWithToken()
+    return {"Authorization": user["token"]}
 
 
 def _get_response_body(response):
@@ -77,7 +77,7 @@ def _post(app, url, params, upload=None):
     kwargs = {
         'url': url,
         'data': params,
-        'extra_environ': _get_sysadmin_env()
+        'headers': _get_sysadmin_env()
     }
 
     return app.post(*args, **kwargs)

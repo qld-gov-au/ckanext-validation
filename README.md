@@ -52,12 +52,9 @@ If you are eager to get started, jump to the [Installation](#installation) and [
 
 ## Versions supported and requirements
 
-This extension has been tested with CKAN 2.9.
+This extension has been tested with CKAN 2.10 and 2.11.
 
-It is strongly recommended to use it alongside [ckanext-scheming](https://github.com/ckan/ckanext-scheming) to define the necessary extra fields in the default CKAN schema. By default, the extension installs ckanext-scheming version 2.1.0.
-
-If you want to use [asynchronous validation](#asynchronous-validation) with background jobs and are using CKAN 2.6 or lower (NOT TESTED!), [ckanext-rq](https://github.com/ckan/ckanext-rq) is also needed. Please refer to both READMEs for installation instructions.
-
+It is strongly recommended to use this extension alongside [ckanext-scheming](https://github.com/ckan/ckanext-scheming) to define the necessary extra fields in the default CKAN schema.
 
 ## Installation
 
@@ -84,8 +81,6 @@ Create the database tables by running:
 Once installed, add the `validation` plugin to the `ckan.plugins` configuration option in your INI file:
 
     ckan.plugins = ... validation
-
-*Note:* if using CKAN 2.6 or lower and [asynchronous validation](#asynchronous-validation), also add the `rq` plugin ([see Versions supported and requirements](#versions-supported-and-requirements)) to `ckan.plugins`.
 
 ### Adding schema fields to the Resource metadata
 
@@ -698,7 +693,7 @@ To run the tests, do:
 
 ## CICD Github actions locally
 
-act -W '.github/workflows/test.yml' --matrix ckan-version:2.9 --container-architecture linux/amd64
+act -W '.github/workflows/test.yml' --matrix ckan-version:2.11 --container-architecture linux/amd64
 
 
 ## Copying and License
