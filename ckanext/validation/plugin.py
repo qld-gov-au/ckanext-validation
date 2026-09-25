@@ -8,6 +8,7 @@ import ckan.plugins as p
 import ckan.plugins.toolkit as tk
 
 from ckan.lib.plugins import DefaultTranslation
+from .redis_helper import RedisHelper
 
 from . import settings as s, cli, utils, validators, views
 from .helpers import get_helpers
@@ -27,6 +28,8 @@ class ValidationPlugin(p.SingletonPlugin, DefaultTranslation):
     p.implements(p.ITranslation, inherit=True)
     p.implements(p.IClick)
     p.implements(p.IBlueprint)
+
+    redis = RedisHelper()
 
     # IClick
 
@@ -76,7 +79,7 @@ class ValidationPlugin(p.SingletonPlugin, DefaultTranslation):
 
     def before_resource_create(self, context, data_dict):
         log.debug("before_resource_create - context: %s, data_dict: %s", context, data_dict)
-        context['_resource_validation'] = True
+        self.redis.put(data_dict['package_id'], True, 600)
 
         data_dict = utils.process_schema_fields(data_dict)
 
@@ -106,10 +109,10 @@ class ValidationPlugin(p.SingletonPlugin, DefaultTranslation):
 
     def before_resource_update(self, context, current_resource, updated_resource):
         log.debug("before_resource_update - context: %s, data_dict: %s", context, updated_resource)
-        context['_resource_validation'] = True
+        self.redis.put(updated_resource['package_id'], True, 600)
         # avoid circular update, because validation job calls `resource_patch`
         # (which calls package_update)
-        if context.get('_validation_performed'):
+        if self.redis.pop(updated_resource['id']):
             return
 
         updated_resource = utils.process_schema_fields(updated_resource)
@@ -127,17 +130,15 @@ class ValidationPlugin(p.SingletonPlugin, DefaultTranslation):
         else:
             # if it's an async mode, gather ID's and use it in `after_update`
             # because only here we are able to compare current data with new
-            context.setdefault("_resources_to_validate", [])
 
             if validation_required:
-                context['_resources_to_validate'].append(
-                    updated_resource["id"])
+                self.redis.put(updated_resource['id'] + '/validate', True, 600)
 
     def after_resource_update(self, context, data_dict):
         log.debug("after_resource_update - context: %s, data_dict: %s", context, data_dict)
-        context.pop('_resource_validation', None)
+        self.redis.delete(data_dict['package_id'])
 
-        if context.pop('_validation_performed', None) \
+        if self.redis.pop(data_dict['id']) \
                 or data_dict.pop(u'_do_not_validate', False) \
                 or data_dict.pop('_success_validation', False):
             return
@@ -149,13 +150,11 @@ class ValidationPlugin(p.SingletonPlugin, DefaultTranslation):
             log.info("Resource validation is not possible, ending hook")
             return
 
-        if data_dict["id"] not in context.get('_resources_to_validate', []):
-            log.warning("Resource ID not found in data dict, ending hook")
+        if not self.redis.pop(data_dict['id'] + '/validate'):
+            log.warning("Resource ID not marked for validation, ending hook")
             return
 
         utils.validate_resource(context, data_dict)
-
-        context.pop('_resources_to_validate', None)
 
     # IPackageController
 
@@ -167,8 +166,7 @@ class ValidationPlugin(p.SingletonPlugin, DefaultTranslation):
 
     def after_dataset_update(self, context, data_dict):
         log.debug("after_dataset_update - context: %s, data_dict: %s", context, data_dict)
-        if context.pop('_validation_performed', None) \
-                or context.pop('_resource_validation', None):
+        if self.redis.pop(data_dict['id']):
             return
 
         for resource in data_dict.get('resources', []):

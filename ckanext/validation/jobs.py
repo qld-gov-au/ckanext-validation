@@ -13,6 +13,7 @@ import ckan.lib.uploader as uploader
 import ckan.plugins.toolkit as t
 
 from . import utils
+from .redis_helper import RedisHelper
 from .validation_status_helper import (ValidationStatusHelper, ValidationJobDoesNotExist,
                                        ValidationJobAlreadyRunning, StatusTypes)
 
@@ -114,10 +115,10 @@ def run_validation_job(resource):
     validation_record = vsh.updateValidationJobStatus(Session, resource['id'], status, json.dumps(report), error_payload, validation_record)
 
     # Store result status in resource
+    RedisHelper().put(resource_id, 'True', 600)
     t.get_action('resource_patch')(
         {'ignore_auth': True,
-         'user': t.get_action('get_site_user')({'ignore_auth': True})['name'],
-         '_validation_performed': True},
+         'user': t.get_action('get_site_user')({'ignore_auth': True})['name']},
         {'id': resource['id'],
          'validation_status': validation_record.status,
          'validation_timestamp': validation_record.finished.isoformat()})
