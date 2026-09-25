@@ -80,6 +80,7 @@ class ValidationPlugin(p.SingletonPlugin, DefaultTranslation):
 
     # CKAN >= 2.10
     def before_resource_create(self, context, data_dict):
+        log.debug("before_resource_create - context: %s, data_dict: %s", context, data_dict)
         context['_resource_validation'] = True
 
         data_dict = utils.process_schema_fields(data_dict)
@@ -106,6 +107,7 @@ class ValidationPlugin(p.SingletonPlugin, DefaultTranslation):
 
     # CKAN >= 2.10
     def after_resource_create(self, context, data_dict):
+        log.debug("after_resource_create - context: %s, data_dict: %s", context, data_dict)
         if data_dict.pop('_success_validation', False):
             return utils.create_success_validation_job(data_dict["id"])
 
@@ -191,6 +193,7 @@ class ValidationPlugin(p.SingletonPlugin, DefaultTranslation):
 
     # CKAN >= 2.10
     def after_dataset_create(self, context, data_dict):
+        log.debug("after_dataset_create - context: %s, data_dict: %s", context, data_dict)
         for resource in data_dict.get(u'resources', []):
             if utils.is_resource_could_be_validated(context, resource):
                 utils.validate_resource(context, resource, new_resource=True)
