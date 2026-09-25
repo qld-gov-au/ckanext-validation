@@ -111,7 +111,7 @@ def validate_resource(context, data_dict, new_resource=False):
     if mode == s.SYNC_MODE:
         run_sync_validation(data_dict)
     else:
-        run_async_validation(data_dict['id'])
+        run_async_validation(data_dict)
 
 
 def run_sync_validation(resource_data):
@@ -264,15 +264,15 @@ def _get_new_file_stream(file):
     return temp_file_path
 
 
-def run_async_validation(resource_id):
+def run_async_validation(data_dict):
     try:
         tk.get_action(u'resource_validation_run')(
-            {u'ignore_auth': True},
-            {u'resource_id': resource_id,
+            {u'ignore_auth': True, 'resource': data_dict},
+            {u'resource_id': data_dict['id'],
              u'async': True})
     except tk.ValidationError as e:
         log.warning(u'Could not run validation for resource {}: {}'.format(
-            resource_id, e))
+            data_dict['id'], e))
 
 
 def is_resource_could_be_validated(context, data_dict):

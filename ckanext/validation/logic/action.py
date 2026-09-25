@@ -45,11 +45,15 @@ def resource_validation_run(context, data_dict):
 
     tk.check_access(u'resource_validation_run', context, data_dict)
 
-    resource_id = data_dict.get(u'resource_id')
-    if not resource_id:
-        raise tk.ValidationError({u'resource_id': u'Missing value'})
+    if 'resource' in context:
+        resource = context['resource']
+        resource_id = resource['id']
+    else:
+        resource_id = data_dict.get(u'resource_id')
+        if not resource_id:
+            raise tk.ValidationError({u'resource_id': u'Missing value'})
 
-    resource = tk.get_action(u'resource_show')(context, {u'id': resource_id})
+        resource = tk.get_action(u'resource_show')(context, {u'id': resource_id})
     log.debug("Attempting to validate resource: %s", resource)
 
     if not resource.get('schema'):
