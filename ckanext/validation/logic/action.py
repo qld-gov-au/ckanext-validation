@@ -50,6 +50,7 @@ def resource_validation_run(context, data_dict):
         raise tk.ValidationError({u'resource_id': u'Missing value'})
 
     resource = tk.get_action(u'resource_show')(context, {u'id': resource_id})
+    log.debug("Attempting to validate resource: %s", resource)
 
     if not resource.get('schema'):
         log.warning("No schema found on %s, cannot validate", resource_id)
