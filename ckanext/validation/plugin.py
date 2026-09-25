@@ -113,6 +113,7 @@ class ValidationPlugin(p.SingletonPlugin, DefaultTranslation):
         # avoid circular update, because validation job calls `resource_patch`
         # (which calls package_update)
         if self.redis.pop(updated_resource['id']):
+            log.debug("%s validation is locked, skipping before_resource_update hook", updated_resource['id'])
             return
 
         updated_resource = utils.process_schema_fields(updated_resource)
@@ -141,6 +142,7 @@ class ValidationPlugin(p.SingletonPlugin, DefaultTranslation):
         if self.redis.pop(data_dict['id']) \
                 or data_dict.pop(u'_do_not_validate', False) \
                 or data_dict.pop('_success_validation', False):
+            log.debug("%s validation is locked, skipping after_resource_update hook", data_dict['id'])
             return
 
         validation_possible = utils.is_resource_could_be_validated(
@@ -167,6 +169,7 @@ class ValidationPlugin(p.SingletonPlugin, DefaultTranslation):
     def after_dataset_update(self, context, data_dict):
         log.debug("after_dataset_update - context: %s, data_dict: %s", context, data_dict)
         if self.redis.pop(data_dict['id']):
+            log.debug("%s validation is locked, skipping after_dataset_update hook", data_dict['id'])
             return
 
         for resource in data_dict.get('resources', []):
