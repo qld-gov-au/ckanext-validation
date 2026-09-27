@@ -79,6 +79,8 @@ class ValidationPlugin(p.SingletonPlugin, DefaultTranslation):
 
     def before_resource_create(self, context, data_dict):
         log.debug("before_resource_create - context: %s, data_dict: %s", context, data_dict)
+        # Don't run the after_dataset_update validation hook
+        # when we're only changing a single resource.
         self.redis.put(data_dict['package_id'], True, 600)
 
         data_dict = utils.process_schema_fields(data_dict)
@@ -115,10 +117,14 @@ class ValidationPlugin(p.SingletonPlugin, DefaultTranslation):
 
     def before_resource_update(self, context, current_resource, updated_resource):
         log.debug("before_resource_update - context: %s, data_dict: %s", context, updated_resource)
+
+        # Don't run the after_dataset_update validation hook
+        # when we're only changing a single resource.
         self.redis.put(updated_resource['package_id'], True, 600)
-        # avoid circular update, because validation job calls `resource_patch`
-        # (which calls package_update)
-        if self.redis.pop(updated_resource['id']):
+
+        # Avoid loop - skip validation when the current update is
+        # the validation job recording its results.
+        if self.redis.get(updated_resource['id']):
             log.debug("%s validation is locked, skipping before_resource_update hook", updated_resource['id'])
             return
 
@@ -142,8 +148,11 @@ class ValidationPlugin(p.SingletonPlugin, DefaultTranslation):
 
     def after_resource_update(self, context, data_dict):
         log.debug("after_resource_update - context: %s, data_dict: %s", context, data_dict)
+        # Finished updating resource, unlock the after_dataset_update hook.
         self.redis.delete(data_dict['package_id'])
 
+        # Avoid loop - skip validation if the current update is
+        # the validation job recording its results.
         if self.redis.pop(data_dict['id']) \
                 or data_dict.pop(u'_do_not_validate', False) \
                 or data_dict.pop('_success_validation', False):
@@ -173,6 +182,7 @@ class ValidationPlugin(p.SingletonPlugin, DefaultTranslation):
 
     def after_dataset_update(self, context, data_dict):
         log.debug("after_dataset_update - context: %s, data_dict: %s", context, data_dict)
+        # Skip package validation if it's already handled.
         if self.redis.pop(data_dict['id']):
             log.debug("%s validation is locked, skipping after_dataset_update hook", data_dict['id'])
             return

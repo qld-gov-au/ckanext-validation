@@ -114,7 +114,7 @@ def run_validation_job(resource):
 
     validation_record = vsh.updateValidationJobStatus(Session, resource['id'], status, json.dumps(report), error_payload, validation_record)
 
-    # Store result status in resource
+    # Store result status, without triggering another round of validation.
     RedisHelper().put(resource_id, 'True', 600)
     t.get_action('resource_patch')(
         {'ignore_auth': True,
