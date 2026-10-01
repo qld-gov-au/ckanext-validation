@@ -1,4 +1,3 @@
-import six
 import uuid
 
 from behave import when, then
@@ -107,7 +106,7 @@ def attempt_login(context, password):
 def fill_in_field_if_present(context, name, value):
     context.execute_steps(u"""
         When I execute the script "field = $('#{0}'); if (!field.length) field = $('[name={0}]'); if (!field.length) field = $('#field-{0}'); field.val('{1}'); field.keyup();"
-    """.format(name, value))
+    """.format(name, value.replace("'", r"\'")))
 
 
 @when(u'I clear the URL field')
@@ -130,8 +129,8 @@ def go_to_new_resource_form(context, name):
     elif context.browser.is_element_present_by_xpath("//*[contains(string(), 'Add new resource')]"):
         # Existing dataset, browse to the resource form
         context.execute_steps(u"""
-                   When I press "Add new resource"
-               """)
+            When I press "Add new resource"
+        """)
     else:
         # Existing dataset, browse to the resource form
         if context.browser.is_element_present_by_xpath(
@@ -170,14 +169,7 @@ def title_random_text_with_prefix(context, prefix):
 @when(u'I create a resource with name "{name}" and URL "{url}"')
 def add_resource(context, name, url):
     context.execute_steps(u"""
-        When I log in
-        And I create a dataset with key-value parameters "notes=Link testing"
-        And I open the new resource form for dataset "$last_generated_name"
-        And I execute the script "$('#resource-edit [name=url]').val('{url}')"
-        And I fill in "name" with "{name}"
-        And I fill in "description" with "description"
-        And I execute the script "document.getElementById('field-format').value='HTML'"
-        And I press the element with xpath "//form[contains(@class, 'resource-form')]//button[contains(@class, 'btn-primary')]"
+        When I create a dataset and resource with key-value parameters "notes=Link testing" and "name={name}::url={url}"
     """.format(name=name, url=url))
 
 
@@ -343,7 +335,7 @@ def _parse_params(param_string):
     for param in param_string.split("::"):
         entry = param.split("=", 1)
         params[entry[0]] = entry[1] if len(entry) > 1 else ""
-    return six.iteritems(params)
+    return params.items()
 
 
 # Enter a JSON schema value

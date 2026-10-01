@@ -1,3 +1,4 @@
+---
 name: Tests (direct)
 on:
   push:
@@ -6,13 +7,15 @@ on:
       - master
 
 jobs:
+  # Quick check so we don't waste minutes if there's a Flake8 error
   lint:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
         with:
-          python-version: '3.10'
+          python-version: '3.x'
       - name: Install requirements
         run: pip install flake8 pycodestyle
       - name: Check syntax
@@ -31,17 +34,13 @@ jobs:
             ckan-image: "2.10-py3.10"
             ckan-solr: "2.10-solr9"
             experimental: true
-          - ckan-version: "2.9"
-            ckan-image: "2.9-py3.9"
-            ckan-solr: "2.9-solr8"
-            experimental: true
           - ckan-version: "master"
             ckan-image: "master"
             ckan-solr: "master-solr9"
             experimental: true  # master is unstable, good to know if we are compatible or not
       fail-fast: false
 
-    name: ${{ matrix.experimental && '**Fail_Ignored** ' || '' }}CKAN ${{ matrix.ckan-version }}
+    name: ${{ matrix.experimental && '**Fail_Ignored** ' || '' }} CKAN ${{ matrix.ckan-version }}
     runs-on: ubuntu-latest
     container:
       image: ckan/ckan-dev:${{ matrix.ckan-image }}
@@ -75,12 +74,8 @@ jobs:
       CKAN__PLUGINS: "datastore envvars validation scheming_datasets test_validation_plugin"
 
     steps:
-      - uses: actions/checkout@v4
-        continue-on-error: ${{ matrix.experimental }}
-
-      - name: Pin setuptools for ckan 2.9 only
-        if: ${{ matrix.ckan-version == 2.9 }}
-        run: pip install "setuptools>=44.1.0,<71"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        timeout-minutes: 2
         continue-on-error: ${{ matrix.experimental }}
 
       - name: Install requirements
@@ -92,11 +87,6 @@ jobs:
           # Replace default path to CKAN core config file with the one on the container
           sed -i -e 's/use = config:.*/use = config:\/srv\/app\/src\/ckan\/test-core.ini/' test.ini
 
-      - name: Pin jinja2 for ckan 2.9 only (last jinja version that had escape class)
-        if: ${{ matrix.ckan-version == 2.9 }}
-        run: pip install "jinja2<3.1"
-        continue-on-error: ${{ matrix.experimental }}
-
       - name: Setup extension
         continue-on-error: ${{ matrix.experimental }}
         run: |
@@ -104,8 +94,8 @@ jobs:
           ckan -c test.ini validation init-db
 
       - name: Run tests
-        continue-on-error: ${{ matrix.experimental }}
         run: pytest --ckan-ini=test.ini --cov=ckanext.validation --cov-report=xml:coverage.xml --cov-append --disable-warnings ckanext/validation/tests -vv  --junit-xml=TESTS-results.xml
+        continue-on-error: ${{ matrix.experimental }}
 
       - name: Config for BDD testing
         run: |
@@ -151,11 +141,6 @@ jobs:
 
           pip install -r test/dev-requirements.txt
 
-      - name: Pin urllib3 for ckan 2.9 only (last urllib3 version that requests is happy with)
-        if: ${{ matrix.ckan-version == 2.9 }}
-        run: pip install "urllib3<1.27"
-        continue-on-error: ${{ matrix.experimental }}
-
       - name: Run BDD tests
         continue-on-error: ${{ matrix.experimental }}
         run: |
@@ -200,14 +185,14 @@ jobs:
         continue-on-error: ${{ matrix.experimental }}
 
       - name: Test Summary
-        uses: test-summary/action@v2
-        continue-on-error: ${{ matrix.experimental }}
+        uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5  # v2.6
         with:
           paths: "./TEST*.xml"
         if: always()
+        continue-on-error: ${{ matrix.experimental }}
 
       - name: "Upload coverage report to codecov flag: ${{ matrix.ckan-version }}"
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f  # v6.0.2
         continue-on-error: ${{ matrix.experimental }}
         with:
           file: ./coverage.xml

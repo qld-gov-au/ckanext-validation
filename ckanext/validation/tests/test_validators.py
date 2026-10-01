@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from ckantoolkit import Invalid
+from ckan.plugins.toolkit import Invalid
 
 from ckan.tests.helpers import change_config
 

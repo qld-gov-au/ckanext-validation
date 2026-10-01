@@ -1,13 +1,12 @@
-beautifulsoup4==4.9.1
-behaving==3.1.5
 Appium-Python-Client==2.10.1
-ckanapi>=4.3
-flake8==3.8.3
+beautifulsoup4==4.9.1
+behaving==3.3.*
+ckanapi>=4.7
+faker==18.3.0
+flake8==7.3.*
 mock
 pytest-ckan
 pytest-cov
-selenium==4.8.2
-splinter>=0.13.0
-faker==18.3.0
+typing-extensions>=4.14.1  # for pydantic
 
-git+https://github.com/ckan/ckanext-scheming.git@release-3.0.0#egg=ckanext-scheming
+git+https://github.com/ckan/ckanext-scheming.git@release-3.1.0#egg=ckanext-scheming
