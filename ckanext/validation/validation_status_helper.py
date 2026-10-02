@@ -59,7 +59,6 @@ class ValidationStatusHelper:
     def deleteValidationJob(self, session=None, validationRecord=None):
         # type: (object, Session, model.Validation) -> None
         session.delete(validationRecord)
-        session.commit()
         session.flush()
 
     def createValidationJob(self, session=None, resource_id=None, validationRecord=None):
@@ -103,7 +102,6 @@ class ValidationStatusHelper:
         validationRecord.status = StatusTypes.created
 
         session.add(validationRecord)
-        session.commit()
         session.flush()
         return validationRecord
 
@@ -139,7 +137,6 @@ class ValidationStatusHelper:
             validationRecord.finished = datetime.datetime.utcnow()
 
         Session.add(validationRecord)
-        Session.commit()
         # Flush so other transactions are not waiting
         Session.flush()
         return validationRecord

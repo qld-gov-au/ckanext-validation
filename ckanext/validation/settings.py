@@ -1,9 +1,8 @@
 # encoding: utf-8
 import json
 
-import ckantoolkit as tk
-
 import ckan.plugins as plugins
+import ckan.plugins.toolkit as tk
 
 from ckanext.validation.interfaces import IDataValidation
 

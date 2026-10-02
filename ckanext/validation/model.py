@@ -8,14 +8,7 @@ from sqlalchemy.dialects.postgresql import JSON
 from ckan import model
 from ckan.model import types as _types
 from ckan.model.meta import metadata
-
-try:
-    from ckan.plugins.toolkit import BaseModel as Base
-except ImportError:
-    # CKAN <= 2.9
-    from sqlalchemy.ext.declarative import declarative_base
-
-    Base = declarative_base(metadata=metadata)
+from ckan.plugins.toolkit import BaseModel as Base
 
 log = logging.getLogger(__name__)
 
