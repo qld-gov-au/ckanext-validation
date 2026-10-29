@@ -19,6 +19,8 @@ from ckan import model, plugins
 from ckan.lib import uploader
 import ckan.plugins.toolkit as tk
 
+from werkzeug.datastructures import FileStorage as FlaskFileStorage
+
 from . import settings as s, jobs
 from .interfaces import IDataValidation, IPipeValidation
 from .validation_status_helper import ValidationStatusHelper, StatusTypes
@@ -26,17 +28,7 @@ from .validators import resource_schema_validator
 
 log = logging.getLogger(__name__)
 
-upload_types: 'list[typing.Any]'
-if hasattr(uploader, 'ALLOWED_UPLOAD_TYPES'):
-    upload_types = getattr(uploader, 'ALLOWED_UPLOAD_TYPES')
-else:
-    from werkzeug.datastructures import FileStorage as FlaskFileStorage
-    upload_types = [FlaskFileStorage]
-    if tk.check_ckan_version(max_version='2.10.0'):
-        from cgi import FieldStorage
-        upload_types.append(FieldStorage)
-
-ALLOWED_UPLOAD_TYPES: 'tuple[typing.Any]' = tuple(upload_types)
+ALLOWED_UPLOAD_TYPES: 'tuple[typing.Any]' = (FlaskFileStorage,)
 
 
 def _get_underlying_file(wrapper):
