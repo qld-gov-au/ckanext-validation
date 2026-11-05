@@ -257,6 +257,11 @@ def _get_new_file_stream(file):
 
 
 def run_async_validation(data_dict):
+    # TODO Find a way to obtain the ID before reaching this point
+    # or validate without it
+    if not data_dict.get('id'):
+        log.warning('Could not create validation job for resource without ID')
+        return
     try:
         tk.get_action(u'resource_validation_run')(
             {u'ignore_auth': True, 'resource': data_dict},

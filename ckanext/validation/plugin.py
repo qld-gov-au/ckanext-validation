@@ -196,7 +196,7 @@ class ValidationPlugin(p.SingletonPlugin, DefaultTranslation):
                 log.debug("Updated resource does not qualify for validation: %s", resource)
                 continue
 
-            utils.validate_resource(context, resource)
+            utils.validate_resource(context, resource, new_resource=resource.get('id') is None)
 
     def before_dataset_index(self, index_dict):
         res_status = []
