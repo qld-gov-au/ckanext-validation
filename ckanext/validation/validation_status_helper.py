@@ -2,10 +2,9 @@
 
 import datetime
 import logging
-
-from ckan.model import Session
-from ckanext.validation import model
 from sqlalchemy.orm.exc import NoResultFound
+
+from ckanext.validation import model
 
 log = logging.getLogger(__name__)
 
@@ -40,7 +39,7 @@ class ValidationStatusHelper:
     * Allow validation job to be re-queued in all other states i.e. ('success', 'failure', 'error')
     """
 
-    def getValidationJob(self, session=None, resource_id=None):
+    def getValidationJob(self, session, resource_id):
         # type: (object, Session, str) -> model.Validation
         """
         Gets Validation record for resource if exists
@@ -52,16 +51,36 @@ class ValidationStatusHelper:
         log.debug("getValidationJob: %s", resource_id)
         try:
             return session.query(model.Validation).filter(
-                model.Validation.resource_id == resource_id).order_by(model.Validation.created.desc()).one()
+                model.Validation.resource_id == resource_id
+            ).order_by(
+                model.Validation.created.desc(), model.Validation.id.desc()
+            ).first()
         except NoResultFound:
             return None
 
-    def deleteValidationJob(self, session=None, validationRecord=None):
+    def _pruneValidationJobs(self, session, resource_id):
+        records = session.query(model.Validation).filter(
+            model.Validation.resource_id == resource_id
+        ).order_by(
+            model.Validation.created.desc(), model.Validation.id.desc()
+        ).all()
+        if records:
+            # drop older records that shouldn't exist
+            for validationRecord in records[1:]:
+                session.delete(validationRecord)
+
+    def deleteValidationJob(self, session, validationRecord):
         # type: (object, Session, model.Validation) -> None
-        session.delete(validationRecord)
+        if not validationRecord:
+            log.warn("Unable to delete missing validation record")
+            return
+        for record in session.query(model.Validation).filter(
+            model.Validation.resource_id == validationRecord.resource_id
+        ).all():
+            session.delete(record)
         session.flush()
 
-    def createValidationJob(self, session=None, resource_id=None, validationRecord=None):
+    def createValidationJob(self, session, resource_id):
         # type: (object, Session, str) -> model.Validation
         '''
         If validation object not exist:
@@ -81,19 +100,18 @@ class ValidationStatusHelper:
 
         '''
         log.debug("createValidationJob: %s", resource_id)
-        if validationRecord is None:
-            validationRecord = self.getValidationJob(session, resource_id)
+        validationRecord = self.getValidationJob(session, resource_id)
 
-        if validationRecord is not None:
+        if validationRecord is None:
+            validationRecord = model.Validation(resource_id=resource_id)
+        else:
+            self._pruneValidationJobs(session, resource_id)
             status = validationRecord.status
             if status in (StatusTypes.running, StatusTypes.created) and self.getHoursSince(validationRecord.created) < 1:
                 error_message = "Validation Job already in pending state: {} on resource: {} created on (gmt): {} data: {}"\
                     .format(validationRecord.status, resource_id, validationRecord.created.isoformat(), validationRecord)
                 log.error(error_message)
                 raise ValidationJobAlreadyEnqueued(error_message)
-
-        if validationRecord is None:
-            validationRecord = model.Validation(resource_id=resource_id)
 
         validationRecord.finished = None
         validationRecord.report = None
@@ -105,7 +123,7 @@ class ValidationStatusHelper:
         session.flush()
         return validationRecord
 
-    def updateValidationJobStatus(self, session=None, resource_id=None, status=None, report=None, error=None, validationRecord=None):
+    def updateValidationJobStatus(self, session, resource_id, status, report=None, error=None, validationRecord=None):
         # type: (object, Session, str, str, object, object) -> model.Validation
         """
         If report or error is attached, update finished to be now
@@ -122,8 +140,10 @@ class ValidationStatusHelper:
             validationRecord = self.getValidationJob(session, resource_id)
 
         if validationRecord is None:
-            log.error("record not found to update statues: %s", resource_id)
+            log.error("record not found to update status: %s", resource_id)
             raise ValidationJobDoesNotExist()
+
+        self._pruneValidationJobs(session, resource_id)
 
         # Handle already running status in in last hour
         if status == StatusTypes.running and validationRecord.status == status:
@@ -136,9 +156,9 @@ class ValidationStatusHelper:
         if status in (StatusTypes.success, StatusTypes.failure, StatusTypes.error):
             validationRecord.finished = datetime.datetime.utcnow()
 
-        Session.add(validationRecord)
+        session.add(validationRecord)
         # Flush so other transactions are not waiting
-        Session.flush()
+        session.flush()
         return validationRecord
 
     def getHoursSince(self, created):
