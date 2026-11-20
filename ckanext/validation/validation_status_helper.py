@@ -143,8 +143,6 @@ class ValidationStatusHelper:
             log.error("record not found to update status: %s", resource_id)
             raise ValidationJobDoesNotExist()
 
-        self._pruneValidationJobs(session, resource_id)
-
         # Handle already running status in in last hour
         if status == StatusTypes.running and validationRecord.status == status:
             if self.getHoursSince(validationRecord.created) < 1:
